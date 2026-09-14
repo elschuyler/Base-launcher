@@ -81,7 +81,6 @@ import org.fossify.home.extensions.roleManager
 import org.fossify.home.extensions.supportsDarkText
 import org.fossify.home.extensions.uninstallApp
 import org.fossify.home.fragments.MyFragment
-import org.fossify.home.helpers.BUILT_IN_CLOCK_CLASS_NAME
 import org.fossify.home.helpers.ITEM_TYPE_FOLDER
 import org.fossify.home.helpers.ITEM_TYPE_ICON
 import org.fossify.home.helpers.ITEM_TYPE_SHORTCUT
@@ -89,7 +88,6 @@ import org.fossify.home.helpers.ITEM_TYPE_WIDGET
 import org.fossify.home.helpers.IconCache
 import org.fossify.home.helpers.REQUEST_ALLOW_BINDING_WIDGET
 import org.fossify.home.helpers.REQUEST_CONFIGURE_WIDGET
-import org.fossify.home.helpers.WIDGET_ID_BUILTIN_CLOCK
 import org.fossify.home.helpers.REQUEST_CREATE_SHORTCUT
 import org.fossify.home.helpers.REQUEST_SET_DEFAULT
 import org.fossify.home.helpers.UNINSTALL_APP_REQUEST_CODE
@@ -128,7 +126,7 @@ class MainActivity : SimpleActivity(), FlingListener {
 
     private lateinit var mDetector: GestureDetectorCompat
     private val binding by viewBinding(ActivityMainBinding::inflate)
-    val logKeeper by lazy { org.fossify.home.helpers.LogKeeperHelper(applicationContext) }
+    private val logKeeper by lazy { org.fossify.home.helpers.LogKeeperHelper(applicationContext) }
 
     companion object {
         private var mLastUpEvent = 0L
@@ -236,7 +234,7 @@ class MainActivity : SimpleActivity(), FlingListener {
             closeWidgetsFragment()
         }
 
-        binding.allAppsFragment.root.closeSearchMode()
+        binding.allAppsFragment.searchBar.closeSearch()
 
         // scroll to first page when home button is pressed
         val alreadyOnHome = intent.flags and FLAG_ACTIVITY_BROUGHT_TO_FRONT == 0
@@ -296,8 +294,7 @@ class MainActivity : SimpleActivity(), FlingListener {
 
         binding.homeScreenGrid.root.resizeGrid(
             newRowCount = config.homeRowCount,
-            newColumnCount = config.homeColumnCount,
-            newDockColumnCount = config.dockColumnCount
+            newColumnCount = config.homeColumnCount
         )
         binding.homeScreenGrid.root.updateColors()
         binding.allAppsFragment.root.onResume()
@@ -576,8 +573,8 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
 
         for (page in 0 until maxPage) {
-            for (checkedYCell in 0 until config.homeRowCount - 1) {
-                for (checkedXCell in 0 until config.homeColumnCount) {
+            for (checkedYCell in 0 until config.homeColumnCount) {
+                for (checkedXCell in 0 until config.homeRowCount - 1) {
                     val wantedCell = Triple(page, checkedXCell, checkedYCell)
                     if (!occupiedCells.contains(wantedCell)) {
                         return Pair(
@@ -621,44 +618,10 @@ class MainActivity : SimpleActivity(), FlingListener {
             ensureBackgroundThread {
                 getDefaultAppPackages(launchers)
                 config.wasHomeScreenInit = true
-                config.wasDefaultClockAdded = true
                 binding.homeScreenGrid.root.fetchGridItems()
             }
         } else {
-            if (!config.wasDefaultClockAdded) {
-                ensureBackgroundThread {
-                    config.homeRowCount = 10
-                    config.homeColumnCount = 5
-                    val allItems = homeScreenGridItemsDB.getAllItems()
-                    if (allItems.none { it.className == BUILT_IN_CLOCK_CLASS_NAME }) {
-                        val clockWidget = HomeScreenGridItem(
-                            id = null,
-                            left = 0,
-                            top = 0,
-                            right = 4,
-                            bottom = 1,
-                            page = 0,
-                            packageName = packageName,
-                            activityName = "",
-                            title = getString(R.string.clock_widget_title),
-                            type = ITEM_TYPE_WIDGET,
-                            className = BUILT_IN_CLOCK_CLASS_NAME,
-                            widgetId = WIDGET_ID_BUILTIN_CLOCK,
-                            shortcutId = "",
-                            icon = null,
-                            docked = false,
-                            parentId = null,
-                            widthCells = 5,
-                            heightCells = 2
-                        )
-                        homeScreenGridItemsDB.insert(clockWidget)
-                    }
-                    config.wasDefaultClockAdded = true
-                    binding.homeScreenGrid.root.fetchGridItems()
-                }
-            } else {
-                binding.homeScreenGrid.root.fetchGridItems()
-            }
+            binding.homeScreenGrid.root.fetchGridItems()
         }
     }
 
@@ -698,7 +661,7 @@ class MainActivity : SimpleActivity(), FlingListener {
             && config.autoShowKeyboardInAppDrawer
         ) {
             fragment.root.post {
-                fragment.root.openSearchMode()
+                showKeyboard(fragment.searchBar.binding.topToolbarSearch)
             }
         }
 
@@ -719,8 +682,6 @@ class MainActivity : SimpleActivity(), FlingListener {
         updateStatusBarIcons()
         if (fragment is WidgetsFragmentBinding) {
             clearWidgetsSearch()
-        } else if (fragment is AllAppsFragmentBinding) {
-            fragment.root.closeSearchMode()
         }
         Handler(Looper.getMainLooper()).postDelayed({
             if (fragment is AllAppsFragmentBinding) {
@@ -785,7 +746,6 @@ class MainActivity : SimpleActivity(), FlingListener {
                 binding.allAppsFragment.root.y = mScreenHeight.toFloat()
                 binding.allAppsFragment.allAppsGrid.scrollToPosition(0)
                 binding.allAppsFragment.root.touchDownY = -1
-                binding.allAppsFragment.root.closeSearchMode()
                 binding.homeScreenGrid.root.fragmentCollapsed()
                 updateStatusBarIcons()
             }
@@ -1181,202 +1141,157 @@ class MainActivity : SimpleActivity(), FlingListener {
 
     private fun getDefaultAppPackages(appLaunchers: ArrayList<AppLauncher>) {
         val homeScreenGridItems = ArrayList<HomeScreenGridItem>()
-        var dockSlot = 0
-        val maxDockSlots = config.dockColumnCount
-
-        if (dockSlot < maxDockSlots) {
-            try {
-                val defaultDialerPackage =
-                    (getSystemService(TELECOM_SERVICE) as TelecomManager).defaultDialerPackage
-                appLaunchers.firstOrNull { it.packageName == defaultDialerPackage }?.apply {
-                    val dialerIcon =
-                        HomeScreenGridItem(
-                            id = null,
-                            left = dockSlot,
-                            top = config.homeRowCount - 1,
-                            right = dockSlot,
-                            bottom = config.homeRowCount - 1,
-                            page = 0,
-                            packageName = defaultDialerPackage,
-                            activityName = "",
-                            title = title,
-                            type = ITEM_TYPE_ICON,
-                            className = "",
-                            widgetId = -1,
-                            shortcutId = "",
-                            icon = null,
-                            docked = true,
-                            parentId = null
-                        )
-                    homeScreenGridItems.add(dialerIcon)
-                    dockSlot++
-                }
-            } catch (e: Exception) {
-                logKeeper.log("MainActivity", "Default dialer icon detection failed", e)
-            }
-        }
-
-        if (dockSlot < maxDockSlots) {
-            try {
-                val defaultSMSMessengerPackage = Telephony.Sms.getDefaultSmsPackage(this)
-                appLaunchers.firstOrNull { it.packageName == defaultSMSMessengerPackage }?.apply {
-                    val messengerIcon =
-                        HomeScreenGridItem(
-                            id = null,
-                            left = dockSlot,
-                            top = config.homeRowCount - 1,
-                            right = dockSlot,
-                            bottom = config.homeRowCount - 1,
-                            page = 0,
-                            packageName = defaultSMSMessengerPackage,
-                            activityName = "",
-                            title = title,
-                            type = ITEM_TYPE_ICON,
-                            className = "",
-                            widgetId = -1,
-                            shortcutId = "",
-                            icon = null,
-                            docked = true,
-                            parentId = null
-                        )
-                    homeScreenGridItems.add(messengerIcon)
-                    dockSlot++
-                }
-            } catch (e: Exception) {
-                logKeeper.log("MainActivity", "Default SMS messenger icon detection failed", e)
-            }
-        }
-
-        if (dockSlot < maxDockSlots) {
-            try {
-                val browserIntent = Intent(Intent.ACTION_VIEW, "http://".toUri())
-                val resolveInfo =
-                    packageManager.resolveActivity(browserIntent, PackageManager.MATCH_DEFAULT_ONLY)
-                val defaultBrowserPackage = resolveInfo!!.activityInfo.packageName
-                appLaunchers.firstOrNull { it.packageName == defaultBrowserPackage }?.apply {
-                    val browserIcon =
-                        HomeScreenGridItem(
-                            id = null,
-                            left = dockSlot,
-                            top = config.homeRowCount - 1,
-                            right = dockSlot,
-                            bottom = config.homeRowCount - 1,
-                            page = 0,
-                            packageName = defaultBrowserPackage,
-                            activityName = "",
-                            title = title,
-                            type = ITEM_TYPE_ICON,
-                            className = "",
-                            widgetId = -1,
-                            shortcutId = "",
-                            icon = null,
-                            docked = true,
-                            parentId = null
-                        )
-                    homeScreenGridItems.add(browserIcon)
-                    dockSlot++
-                }
-            } catch (e: Exception) {
-                logKeeper.log("MainActivity", "Default browser icon detection failed", e)
-            }
-        }
-
-        if (dockSlot < maxDockSlots) {
-            try {
-                val potentialStores = arrayListOf(
-                    "com.android.vending", "org.fdroid.fdroid", "com.aurora.store"
-                )
-                val storePackage = potentialStores.firstOrNull {
-                    isPackageInstalled(it) && appLaunchers.map { it.packageName }.contains(it)
-                }
-                if (storePackage != null) {
-                    appLaunchers.firstOrNull { it.packageName == storePackage }?.apply {
-                        val storeIcon = HomeScreenGridItem(
-                            id = null,
-                            left = dockSlot,
-                            top = config.homeRowCount - 1,
-                            right = dockSlot,
-                            bottom = config.homeRowCount - 1,
-                            page = 0,
-                            packageName = storePackage,
-                            activityName = "",
-                            title = title,
-                            type = ITEM_TYPE_ICON,
-                            className = "",
-                            widgetId = -1,
-                            shortcutId = "",
-                            icon = null,
-                            docked = true,
-                            parentId = null
-                        )
-                        homeScreenGridItems.add(storeIcon)
-                        dockSlot++
-                    }
-                }
-            } catch (e: Exception) {
-                logKeeper.log("MainActivity", "Default app store icon detection failed", e)
-            }
-        }
-
-        if (dockSlot < maxDockSlots) {
-            try {
-                val cameraIntent = Intent("android.media.action.IMAGE_CAPTURE")
-                val resolveInfo =
-                    packageManager.resolveActivity(cameraIntent, PackageManager.MATCH_DEFAULT_ONLY)
-                val defaultCameraPackage = resolveInfo!!.activityInfo.packageName
-                appLaunchers.firstOrNull { it.packageName == defaultCameraPackage }?.apply {
-                    val cameraIcon =
-                        HomeScreenGridItem(
-                            id = null,
-                            left = dockSlot,
-                            top = config.homeRowCount - 1,
-                            right = dockSlot,
-                            bottom = config.homeRowCount - 1,
-                            page = 0,
-                            packageName = defaultCameraPackage,
-                            activityName = "",
-                            title = title,
-                            type = ITEM_TYPE_ICON,
-                            className = "",
-                            widgetId = -1,
-                            shortcutId = "",
-                            icon = null,
-                            docked = true,
-                            parentId = null
-                        )
-                    homeScreenGridItems.add(cameraIcon)
-                    dockSlot++
-                }
-            } catch (e: Exception) {
-                logKeeper.log("MainActivity", "Default camera icon detection failed", e)
-            }
-        }
-
-        // Add default Digital Clock widget (5x2) at the top of the home screen
         try {
-            val clockWidget = HomeScreenGridItem(
-                id = null,
-                left = 0,
-                top = 0,
-                right = 4,
-                bottom = 1,
-                page = 0,
-                packageName = packageName,
-                activityName = "",
-                title = getString(R.string.clock_widget_title),
-                type = ITEM_TYPE_WIDGET,
-                className = BUILT_IN_CLOCK_CLASS_NAME,
-                widgetId = WIDGET_ID_BUILTIN_CLOCK,
-                shortcutId = "",
-                icon = null,
-                docked = false,
-                parentId = null,
-                widthCells = 5,
-                heightCells = 2
-            )
-            homeScreenGridItems.add(clockWidget)
+            val defaultDialerPackage =
+                (getSystemService(TELECOM_SERVICE) as TelecomManager).defaultDialerPackage
+            appLaunchers.firstOrNull { it.packageName == defaultDialerPackage }?.apply {
+                val dialerIcon =
+                    HomeScreenGridItem(
+                        id = null,
+                        left = 0,
+                        top = config.homeRowCount - 1,
+                        right = 0,
+                        bottom = config.homeRowCount - 1,
+                        page = 0,
+                        packageName = defaultDialerPackage,
+                        activityName = "",
+                        title = title,
+                        type = ITEM_TYPE_ICON,
+                        className = "",
+                        widgetId = -1,
+                        shortcutId = "",
+                        icon = null,
+                        docked = true,
+                        parentId = null
+                    )
+                homeScreenGridItems.add(dialerIcon)
+            }
         } catch (e: Exception) {
-            logKeeper.log("MainActivity", "Default clock widget placement failed", e)
+            logKeeper.log("MainActivity", "Default dialer icon detection failed", e)
+        }
+
+        try {
+            val defaultSMSMessengerPackage = Telephony.Sms.getDefaultSmsPackage(this)
+            appLaunchers.firstOrNull { it.packageName == defaultSMSMessengerPackage }?.apply {
+                val messengerIcon =
+                    HomeScreenGridItem(
+                        id = null,
+                        left = 1,
+                        top = config.homeRowCount - 1,
+                        right = 1,
+                        bottom = config.homeRowCount - 1,
+                        page = 0,
+                        packageName = defaultSMSMessengerPackage,
+                        activityName = "",
+                        title = title,
+                        type = ITEM_TYPE_ICON,
+                        className = "",
+                        widgetId = -1,
+                        shortcutId = "",
+                        icon = null,
+                        docked = true,
+                        parentId = null
+                    )
+                homeScreenGridItems.add(messengerIcon)
+            }
+        } catch (e: Exception) {
+            logKeeper.log("MainActivity", "Default SMS messenger icon detection failed", e)
+        }
+
+        try {
+            val browserIntent = Intent(Intent.ACTION_VIEW, "http://".toUri())
+            val resolveInfo =
+                packageManager.resolveActivity(browserIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            val defaultBrowserPackage = resolveInfo!!.activityInfo.packageName
+            appLaunchers.firstOrNull { it.packageName == defaultBrowserPackage }?.apply {
+                val browserIcon =
+                    HomeScreenGridItem(
+                        id = null,
+                        left = 2,
+                        top = config.homeRowCount - 1,
+                        right = 2,
+                        bottom = config.homeRowCount - 1,
+                        page = 0,
+                        packageName = defaultBrowserPackage,
+                        activityName = "",
+                        title = title,
+                        type = ITEM_TYPE_ICON,
+                        className = "",
+                        widgetId = -1,
+                        shortcutId = "",
+                        icon = null,
+                        docked = true,
+                        parentId = null
+                    )
+                homeScreenGridItems.add(browserIcon)
+            }
+        } catch (e: Exception) {
+            logKeeper.log("MainActivity", "Default browser icon detection failed", e)
+        }
+
+        try {
+            val potentialStores = arrayListOf(
+                "com.android.vending", "org.fdroid.fdroid", "com.aurora.store"
+            )
+            val storePackage = potentialStores.firstOrNull {
+                isPackageInstalled(it) && appLaunchers.map { it.packageName }.contains(it)
+            }
+            if (storePackage != null) {
+                appLaunchers.firstOrNull { it.packageName == storePackage }?.apply {
+                    val storeIcon = HomeScreenGridItem(
+                        id = null,
+                        left = 3,
+                        top = config.homeRowCount - 1,
+                        right = 3,
+                        bottom = config.homeRowCount - 1,
+                        page = 0,
+                        packageName = storePackage,
+                        activityName = "",
+                        title = title,
+                        type = ITEM_TYPE_ICON,
+                        className = "",
+                        widgetId = -1,
+                        shortcutId = "",
+                        icon = null,
+                        docked = true,
+                        parentId = null
+                    )
+                    homeScreenGridItems.add(storeIcon)
+                }
+            }
+        } catch (e: Exception) {
+            logKeeper.log("MainActivity", "Default app store icon detection failed", e)
+        }
+
+        try {
+            val cameraIntent = Intent("android.media.action.IMAGE_CAPTURE")
+            val resolveInfo =
+                packageManager.resolveActivity(cameraIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            val defaultCameraPackage = resolveInfo!!.activityInfo.packageName
+            appLaunchers.firstOrNull { it.packageName == defaultCameraPackage }?.apply {
+                val cameraIcon =
+                    HomeScreenGridItem(
+                        id = null,
+                        left = 4,
+                        top = config.homeRowCount - 1,
+                        right = 4,
+                        bottom = config.homeRowCount - 1,
+                        page = 0,
+                        packageName = defaultCameraPackage,
+                        activityName = "",
+                        title = title,
+                        type = ITEM_TYPE_ICON,
+                        className = "",
+                        widgetId = -1,
+                        shortcutId = "",
+                        icon = null,
+                        docked = true,
+                        parentId = null
+                    )
+                homeScreenGridItems.add(cameraIcon)
+            }
+        } catch (e: Exception) {
+            logKeeper.log("MainActivity", "Default camera icon detection failed", e)
         }
 
         homeScreenGridItemsDB.insertAll(homeScreenGridItems)
