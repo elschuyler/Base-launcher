@@ -1,6 +1,0 @@
-{
-  "name": "Vian Launcher",
-  "description": "A lightweight, customizable, privacy-focused open-source Android home launcher",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
