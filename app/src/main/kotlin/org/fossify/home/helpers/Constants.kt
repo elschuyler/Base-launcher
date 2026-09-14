@@ -9,6 +9,7 @@ const val REPOSITORY_NAME = "Launcher"
 const val WAS_HOME_SCREEN_INIT = "was_home_screen_init"
 const val HOME_ROW_COUNT = "home_row_count"
 const val HOME_COLUMN_COUNT = "home_column_count"
+const val DOCK_COLUMN_COUNT = "dock_column_count"
 const val DRAWER_COLUMN_COUNT = "drawer_column_count"
 const val SHOW_SEARCH_BAR = "show_search_bar"
 const val CLOSE_APP_DRAWER = "close_app_drawer"
@@ -16,14 +17,18 @@ const val AUTO_SHOW_KEYBOARD_IN_APP_DRAWER = "auto_show_keyboard_in_app_drawer"
 const val SHOW_DRAWER_APP_LABELS = "show_drawer_app_labels"
 const val SHOW_HOME_APP_LABELS = "show_home_app_labels"
 const val LOG_KEEPER_ENABLED = "log_keeper_enabled"
+const val WAS_DEFAULT_CLOCK_ADDED = "was_default_clock_added"
 
-// default home screen grid size
-const val ROW_COUNT = 6
+// default home screen grid size (9 rows beside dock + 1 dock row = 10 total)
+const val ROW_COUNT = 10
 const val COLUMN_COUNT = 5
 const val MIN_ROW_COUNT = 2
 const val MAX_ROW_COUNT = 15
 const val MIN_COLUMN_COUNT = 2
 const val MAX_COLUMN_COUNT = 15
+
+const val BUILT_IN_CLOCK_CLASS_NAME = "org.fossify.home.built_in_clock_widget"
+const val WIDGET_ID_BUILTIN_CLOCK = -100
 
 const val UNINSTALL_APP_REQUEST_CODE = 50
 const val REQUEST_CONFIGURE_WIDGET = 51

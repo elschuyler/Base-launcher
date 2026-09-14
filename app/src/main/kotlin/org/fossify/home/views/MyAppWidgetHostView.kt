@@ -9,7 +9,7 @@ import android.view.ViewConfiguration
 import org.fossify.home.R
 import kotlin.math.abs
 
-class MyAppWidgetHostView(context: Context) : AppWidgetHostView(context) {
+open class MyAppWidgetHostView(context: Context) : AppWidgetHostView(context) {
     private var longPressHandler = Handler()
     private var actionDownCoords = PointF()
     private var currentCoords = PointF()

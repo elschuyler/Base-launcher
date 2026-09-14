@@ -13,9 +13,17 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(WAS_HOME_SCREEN_INIT, false)
         set(wasHomeScreenInit) = prefs.edit().putBoolean(WAS_HOME_SCREEN_INIT, wasHomeScreenInit).apply()
 
+    var wasDefaultClockAdded: Boolean
+        get() = prefs.getBoolean(WAS_DEFAULT_CLOCK_ADDED, false)
+        set(wasDefaultClockAdded) = prefs.edit().putBoolean(WAS_DEFAULT_CLOCK_ADDED, wasDefaultClockAdded).apply()
+
     var homeColumnCount: Int
         get() = prefs.getInt(HOME_COLUMN_COUNT, COLUMN_COUNT)
         set(homeColumnCount) = prefs.edit().putInt(HOME_COLUMN_COUNT, homeColumnCount).apply()
+
+    var dockColumnCount: Int
+        get() = prefs.getInt(DOCK_COLUMN_COUNT, COLUMN_COUNT)
+        set(dockColumnCount) = prefs.edit().putInt(DOCK_COLUMN_COUNT, dockColumnCount).apply()
 
     var homeRowCount: Int
         get() = prefs.getInt(HOME_ROW_COUNT, ROW_COUNT)
