@@ -2,19 +2,33 @@ package org.fossify.home.fragments
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.AttributeSet
+import android.view.Gravity
 import android.view.MotionEvent
+import android.view.View
 import android.view.inputmethod.EditorInfo
+import androidx.appcompat.view.ContextThemeWrapper
+import androidx.appcompat.widget.PopupMenu
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
+import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.beGone
+import org.fossify.commons.extensions.beVisible
 import org.fossify.commons.extensions.beVisibleIf
+import org.fossify.commons.extensions.getPopupMenuTheme
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.extensions.hideKeyboard
 import org.fossify.commons.extensions.normalizeString
+import org.fossify.commons.extensions.showKeyboard
 import org.fossify.commons.views.MyGridLayoutManager
+import org.fossify.home.R
+import org.fossify.home.activities.HiddenIconsActivity
 import org.fossify.home.activities.MainActivity
+import org.fossify.home.activities.SettingsActivity
 import org.fossify.home.adapters.LaunchersAdapter
 import org.fossify.home.databinding.AllAppsFragmentBinding
 import org.fossify.home.extensions.config
@@ -193,10 +207,42 @@ class AllAppsFragment(
         setupDrawerBackground()
         getAdapter()?.updateTextColor(context.getProperTextColor())
 
-        binding.searchBar.beVisibleIf(context.config.showSearchBar)
+        val textColor = context.getProperTextColor()
+        binding.drawerTitle.setTextColor(textColor)
+        binding.drawerBtnSearch.applyColorFilter(textColor)
+        binding.drawerBtnPlayStore.applyColorFilter(textColor)
+        binding.drawerBtnMenu.applyColorFilter(textColor)
+
+        binding.drawerBtnSearch.beVisibleIf(context.config.showSearchBar)
+        binding.drawerBtnSearch.setOnClickListener {
+            openSearchMode()
+        }
+        binding.drawerTitle.setOnClickListener {
+            if (context.config.showSearchBar) {
+                openSearchMode()
+            }
+        }
+
+        binding.drawerBtnPlayStore.setOnClickListener {
+            launchPlayStore()
+        }
+
+        binding.drawerBtnMenu.setOnClickListener {
+            showDrawerMenu(binding.drawerBtnMenu)
+        }
+
         binding.searchBar.requireToolbar().beGone()
         binding.searchBar.updateColors()
         binding.searchBar.setupMenu()
+        binding.searchBar.toggleForceArrowBackIcon(true)
+
+        binding.searchBar.onNavigateBackClickListener = {
+            closeSearchMode()
+        }
+
+        binding.searchBar.onSearchClosedListener = {
+            closeSearchMode()
+        }
 
         binding.searchBar.onSearchTextChangedListener = {
             submitList(launchers)
@@ -210,6 +256,83 @@ class AllAppsFragment(
                 EditorInfo.IME_ACTION_GO -> getAdapter()?.launchFirstApp() == true
                 else -> false
             }
+        }
+    }
+
+    fun openSearchMode() {
+        binding.drawerIdleTopbar.beGone()
+        binding.searchBar.beVisible()
+        binding.searchBar.focusView()
+        activity?.showKeyboard(binding.searchBar.binding.topToolbarSearch)
+    }
+
+    fun closeSearchMode() {
+        if (binding.searchBar.isSearchOpen) {
+            binding.searchBar.closeSearch()
+        }
+        binding.searchBar.beGone()
+        binding.drawerIdleTopbar.beVisible()
+        activity?.hideKeyboard()
+        submitList(launchers)
+    }
+
+    fun isSearchModeActive(): Boolean {
+        return binding.searchBar.isVisible && (binding.searchBar.isSearchOpen || binding.searchBar.getCurrentQuery().isNotEmpty())
+    }
+
+    private fun showDrawerMenu(anchorView: View) {
+        val currentActivity = activity ?: return
+        val contextTheme = ContextThemeWrapper(currentActivity, currentActivity.getPopupMenuTheme())
+        PopupMenu(contextTheme, anchorView, Gravity.TOP or Gravity.END).apply {
+            inflate(R.menu.menu_drawer)
+            setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    R.id.drawer_menu_hidden_apps -> {
+                        currentActivity.startActivity(Intent(currentActivity, HiddenIconsActivity::class.java))
+                        true
+                    }
+                    R.id.drawer_menu_settings -> {
+                        currentActivity.startActivity(Intent(currentActivity, SettingsActivity::class.java))
+                        true
+                    }
+                    else -> false
+                }
+            }
+            show()
+        }
+    }
+
+    private fun launchPlayStore() {
+        val pm = context.packageManager
+        val storePackages = listOf("com.android.vending", "org.fdroid.fdroid", "com.aurora.store")
+        for (pkg in storePackages) {
+            val intent = pm.getLaunchIntentForPackage(pkg)
+            if (intent != null) {
+                try {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    return
+                } catch (e: Exception) {
+                    activity?.logKeeper?.log("AllAppsFragment", "Failed to launch $pkg", e)
+                }
+            }
+        }
+
+        try {
+            val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://search?q="))
+            marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            if (marketIntent.resolveActivity(pm) != null) {
+                context.startActivity(marketIntent)
+                return
+            }
+        } catch (ignored: Exception) {}
+
+        try {
+            val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps"))
+            webIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(webIntent)
+        } catch (e: Exception) {
+            activity?.logKeeper?.log("AllAppsFragment", "Failed to launch web store", e)
         }
     }
 
@@ -242,12 +365,12 @@ class AllAppsFragment(
         activity?.showHomeIconMenu(x, y, gridItem, true)
         ignoreTouches = true
 
-        binding.searchBar.closeSearch()
+        closeSearchMode()
     }
 
     fun onBackPressed(): Boolean {
-        if (binding.searchBar.isSearchOpen) {
-            binding.searchBar.closeSearch()
+        if (isSearchModeActive()) {
+            closeSearchMode()
             return true
         }
 

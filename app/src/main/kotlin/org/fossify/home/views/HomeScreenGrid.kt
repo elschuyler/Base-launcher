@@ -59,6 +59,7 @@ import org.fossify.home.databinding.HomeScreenGridBinding
 import org.fossify.home.extensions.config
 import org.fossify.home.extensions.getDrawableForPackageName
 import org.fossify.home.extensions.homeScreenGridItemsDB
+import org.fossify.home.helpers.BUILT_IN_CLOCK_CLASS_NAME
 import org.fossify.home.helpers.ITEM_TYPE_FOLDER
 import org.fossify.home.helpers.ITEM_TYPE_ICON
 import org.fossify.home.helpers.ITEM_TYPE_SHORTCUT
@@ -80,15 +81,17 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
 
     private lateinit var binding: HomeScreenGridBinding
     private var columnCount = context.config.homeColumnCount
+    private var dockColumnCount = context.config.dockColumnCount
     private var rowCount = context.config.homeRowCount
     private var pageIndicatorsYPos = 0
     private val cells = mutableMapOf<Point, Rect>()
     private var dockCellY = 0
     var cellWidth = 0
+    var dockCellWidth = 0
     var cellHeight = 0
 
     private var iconMargin =
-        (context.resources.getDimension(R.dimen.icon_side_margin) * 5 / columnCount).toInt()
+        (context.resources.getDimension(R.dimen.icon_side_margin) * 5 / max(columnCount, dockColumnCount)).toInt()
     private var labelSideMargin =
         context.resources.getDimension(org.fossify.commons.R.dimen.small_margin).toInt()
     private var roundedCornerRadius =
@@ -260,16 +263,18 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         }
     }
 
-    fun resizeGrid(newRowCount: Int, newColumnCount: Int) {
-        if (columnCount != newColumnCount || rowCount != newRowCount) {
+    fun resizeGrid(newRowCount: Int, newColumnCount: Int, newDockColumnCount: Int = context.config.dockColumnCount) {
+        if (columnCount != newColumnCount || rowCount != newRowCount || dockColumnCount != newDockColumnCount) {
             rowCount = newRowCount
             columnCount = newColumnCount
+            dockColumnCount = newDockColumnCount
             cells.clear()
             gridCenters.clear()
+            val maxCols = max(columnCount, dockColumnCount)
             iconMargin =
-                (context.resources.getDimension(R.dimen.icon_side_margin) * 5 / columnCount).toInt()
+                (context.resources.getDimension(R.dimen.icon_side_margin) * 5 / maxCols).toInt()
             isFirstDraw = true
-            gridItems.filter { it.type == ITEM_TYPE_WIDGET }.forEach {
+            gridItems.filter { it.type == ITEM_TYPE_WIDGET && it.className != BUILT_IN_CLOCK_CLASS_NAME }.forEach {
                 appWidgetHost.deleteAppWidgetId(it.widgetId)
             }
             widgetViews.forEach { removeView(it) }
@@ -337,7 +342,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 }
             }
 
-            if (item.type == ITEM_TYPE_WIDGET) {
+            if (item.type == ITEM_TYPE_WIDGET && item.className != BUILT_IN_CLOCK_CLASS_NAME) {
                 appWidgetHost.deleteAppWidgetId(item.widgetId)
             }
 
@@ -1085,6 +1090,17 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             return
         }
 
+        if (item.className == BUILT_IN_CLOCK_CLASS_NAME) {
+            if (item.widgetId >= 0) {
+                item.widgetId = -((System.currentTimeMillis() % 100000).toInt() + 100)
+                ensureBackgroundThread {
+                    context.homeScreenGridItemsDB.updateWidgetId(item.widgetId, item.id!!)
+                }
+            }
+            placeBuiltInClockWidget(item)
+            return
+        }
+
         val activity = context as MainActivity
         val appWidgetProviderInfo = item.providerInfo
             ?: appWidgetManager!!.installedProviders
@@ -1160,6 +1176,36 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         gridItems.removeIf { it.id == item.id }
         gridItems.add(item)
         (context as MainActivity).clearWidgetsSearch()
+    }
+
+    private fun placeBuiltInClockWidget(item: HomeScreenGridItem) {
+        widgetViews.firstOrNull { it.tag == item.widgetId }?.let {
+            removeView(it)
+            widgetViews.remove(it)
+        }
+
+        val clockView = BuiltInClockWidgetView(context)
+        clockView.tag = item.widgetId
+        clockView.longPressListener = { x, y ->
+            val activity = context as? MainActivity
+            if (activity?.isAllAppsFragmentExpanded() == false) {
+                activity.showHomeIconMenu(x, clockView.y, item, false)
+                performHapticFeedback()
+            }
+        }
+
+        clockView.onIgnoreInterceptedListener = {
+            hideResizeLines()
+        }
+
+        val widgetSize = updateWidgetPositionAndSize(clockView, item)
+        addView(clockView, widgetSize.width, widgetSize.height)
+        widgetViews.add(clockView)
+
+        item.drawable = null
+        gridItems.removeIf { it.id == item.id }
+        gridItems.add(item)
+        (context as? MainActivity)?.clearWidgetsSearch()
     }
 
     private fun updateWidgetPositionAndSize(
@@ -1294,14 +1340,18 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             gridItems
                 .filter { it.type == ITEM_TYPE_WIDGET && !it.outOfBounds() }
                 .forEach { item ->
-                    val providerInfo = item.providerInfo
-                        ?: appWidgetManager!!.installedProviders
-                            .firstOrNull { it.provider.className == item.className }
-
-                    if (providerInfo != null) {
-                        placeAppWidget(providerInfo, item)
+                    if (item.className == BUILT_IN_CLOCK_CLASS_NAME) {
+                        placeBuiltInClockWidget(item)
                     } else {
-                        removeWidget(item)
+                        val providerInfo = item.providerInfo
+                            ?: appWidgetManager!!.installedProviders
+                                .firstOrNull { it.provider.className == item.className }
+
+                        if (providerInfo != null) {
+                            placeAppWidget(providerInfo, item)
+                        } else {
+                            removeWidget(item)
+                        }
                     }
                 }
         } else {
@@ -1428,7 +1478,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                     val gridCells = getClosestGridCells(center)
                     if (gridCells != null) {
                         cells[gridCells]?.let { cell ->
-                            val shadowX = cell.left + iconMargin + iconSize / 2f + sideMargins.left
+                            val shadowX = cell.centerX().toFloat() + sideMargins.left
                             val shadowY = if (gridCells.y == rowCount - 1) {
                                 cellHeight - iconMargin - iconSize / 2f
                             } else {
@@ -1509,6 +1559,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
 
     private fun fillCellSizes() {
         cellWidth = getFakeWidth() / columnCount
+        dockCellWidth = getFakeWidth() / dockColumnCount
         cellHeight = getFakeHeight() / rowCount
         val extraXMargin = if (cellWidth > cellHeight) {
             (cellWidth - cellHeight) / 2
@@ -1520,23 +1571,44 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         } else {
             0
         }
-        iconSize = min(cellWidth, cellHeight) - 2 * iconMargin
-        pageIndicatorsYPos = (rowCount - 1) * cellHeight + extraYMargin
+        val effectiveCellWidth = min(cellWidth, dockCellWidth)
+        val maxCols = max(columnCount, dockColumnCount)
+        iconMargin =
+            (context.resources.getDimension(R.dimen.icon_side_margin) * 5 / maxCols).toInt()
+        iconSize = min(effectiveCellWidth, cellHeight) - 2 * iconMargin
+        dockCellY = (rowCount - 1) * cellHeight
+        pageIndicatorsYPos = dockCellY + extraYMargin
+
+        cells.clear()
+        gridCenters.clear()
+
         for (i in 0 until columnCount) {
-            for (j in 0 until rowCount) {
-                val yMarginToAdd = if (j == rowCount - 1) 0 else extraYMargin
+            for (j in 0 until rowCount - 1) {
                 val rect = Rect(
                     i * cellWidth + extraXMargin,
-                    j * cellHeight + yMarginToAdd,
+                    j * cellHeight + extraYMargin,
                     (i + 1) * cellWidth - extraXMargin,
-                    (j + 1) * cellHeight - yMarginToAdd,
+                    (j + 1) * cellHeight - extraYMargin,
                 )
                 cells[Point(i, j)] = rect
                 gridCenters.add(Point(rect.centerX(), rect.centerY()))
-                if (j == rowCount - 1) {
-                    dockCellY = j * cellHeight
-                }
             }
+        }
+
+        val dockExtraXMargin = if (dockCellWidth > cellHeight) {
+            (dockCellWidth - cellHeight) / 2
+        } else {
+            0
+        }
+        for (i in 0 until dockColumnCount) {
+            val rect = Rect(
+                i * dockCellWidth + dockExtraXMargin,
+                dockCellY,
+                (i + 1) * dockCellWidth - dockExtraXMargin,
+                dockCellY + cellHeight,
+            )
+            cells[Point(i, rowCount - 1)] = rect
+            gridCenters.add(Point(rect.centerX(), rect.centerY()))
         }
     }
 
@@ -1568,7 +1640,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             clickableTop = itemRect.top - iconMargin
         } else {
             val cell = cells[item.getTopLeft(rowCount)] ?: return Rect(0, 0, 0, 0)
-            clickableLeft = cell.left + sideMargins.left
+            clickableLeft = cell.left + (cell.width() - (iconSize + 2 * iconMargin)) / 2 + sideMargins.left
             clickableTop = if (item.docked) {
                 dockCellY + cellHeight - iconSize - iconMargin
             } else {
@@ -1672,8 +1744,9 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
     }
 
     private fun HomeScreenGridItem.outOfBounds(): Boolean {
-        return (left >= columnCount
-                || right >= columnCount
+        val maxCols = if (docked) dockColumnCount else columnCount
+        return (left >= maxCols
+                || right >= maxCols
                 || (!docked && (top >= rowCount - 1 || bottom >= rowCount - 1))
                 || (type == ITEM_TYPE_WIDGET && (bottom - top > rowCount - 1 || right - left > columnCount - 1))
                 )
@@ -1863,7 +1936,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
 
     private fun Canvas.drawItemInCell(item: HomeScreenGridItem, cell: Rect) {
         if (item.id != draggedItem?.id) {
-            val drawableX = cell.left + iconMargin
+            val drawableX = cell.left + (cell.width() - iconSize) / 2
 
             val drawable = if (item.type == ITEM_TYPE_FOLDER) {
                 item.toFolder().generateDrawable()
@@ -1903,7 +1976,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                             0,
                             item.title.length,
                             textPaintToUse,
-                            cellWidth - 2 * labelSideMargin
+                            cell.width() - 2 * labelSideMargin
                         )
                         .setMaxLines(2)
                         .setEllipsize(TextUtils.TruncateAt.END)

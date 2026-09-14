@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.os.Process
 import android.util.AttributeSet
 import android.view.MotionEvent
+import androidx.core.content.ContextCompat
 import org.fossify.commons.extensions.beGone
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.getProperTextColor
@@ -24,6 +25,7 @@ import org.fossify.home.databinding.WidgetsFragmentBinding
 import org.fossify.home.extensions.config
 import org.fossify.home.extensions.getInitialCellSize
 import org.fossify.home.extensions.setupDrawerBackground
+import org.fossify.home.helpers.BUILT_IN_CLOCK_CLASS_NAME
 import org.fossify.home.helpers.ITEM_TYPE_SHORTCUT
 import org.fossify.home.helpers.ITEM_TYPE_WIDGET
 import org.fossify.home.interfaces.WidgetsFragmentListener
@@ -184,6 +186,24 @@ class WidgetsFragment(context: Context, attributeSet: AttributeSet) :
                 appWidgets.add(widget)
             }
 
+            // Add built-in Digital Clock (5x2) widget
+            val clockPreview = ContextCompat.getDrawable(context, R.drawable.ic_clock_widget_preview)
+            val clockAppIcon = ContextCompat.getDrawable(context, R.mipmap.ic_launcher)
+            val clockWidget = AppWidget(
+                appPackageName = context.packageName,
+                appTitle = context.getString(R.string.clock),
+                appIcon = clockAppIcon,
+                widgetTitle = context.getString(R.string.clock_widget_title),
+                widgetPreviewImage = clockPreview,
+                widthCells = 5,
+                heightCells = 2,
+                isShortcut = false,
+                className = BUILT_IN_CLOCK_CLASS_NAME,
+                providerInfo = null,
+                activityInfo = null
+            )
+            appWidgets.add(clockWidget)
+
             appWidgets = appWidgets.sortedWith(
                 compareBy({ it.appTitle },
                     { it.appPackageName },
@@ -310,7 +330,7 @@ class WidgetsFragment(context: Context, attributeSet: AttributeSet) :
             page = 0,
             packageName = appWidget.appPackageName,
             activityName = "",
-            title = "",
+            title = appWidget.widgetTitle,
             type = type,
             className = appWidget.className,
             widgetId = -1,
