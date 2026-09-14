@@ -54,7 +54,6 @@ class SettingsActivity : SimpleActivity() {
         setupShowDrawerAppLabels()
         setupHomeRowCount()
         setupHomeColumnCount()
-        setupDockColumnCount()
         setupShowHomeAppLabels()
         setupLanguage()
         setupManageHiddenIcons()
@@ -246,32 +245,6 @@ class SettingsActivity : SimpleActivity() {
                 if (currentColumnCount != newColumnCount) {
                     config.homeColumnCount = newColumnCount
                     setupHomeColumnCount()
-                }
-            }
-        }
-    }
-
-    private fun setupDockColumnCount() {
-        val currentColumnCount = config.dockColumnCount
-        binding.settingsDockColumnCount.text = currentColumnCount.toString()
-        binding.settingsDockColumnCountHolder.setOnClickListener {
-            val items = ArrayList<RadioItem>()
-            for (i in MIN_COLUMN_COUNT..MAX_COLUMN_COUNT) {
-                items.add(
-                    RadioItem(
-                        id = i,
-                        title = resources.getQuantityString(
-                            org.fossify.commons.R.plurals.column_counts, i, i
-                        )
-                    )
-                )
-            }
-
-            RadioGroupDialog(this, items, currentColumnCount) {
-                val newColumnCount = it as Int
-                if (currentColumnCount != newColumnCount) {
-                    config.dockColumnCount = newColumnCount
-                    setupDockColumnCount()
                 }
             }
         }
