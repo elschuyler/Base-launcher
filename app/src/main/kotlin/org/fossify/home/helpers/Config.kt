@@ -13,9 +13,17 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(WAS_HOME_SCREEN_INIT, false)
         set(wasHomeScreenInit) = prefs.edit().putBoolean(WAS_HOME_SCREEN_INIT, wasHomeScreenInit).apply()
 
+    var wasDefaultClockAdded: Boolean
+        get() = prefs.getBoolean(WAS_DEFAULT_CLOCK_ADDED, false)
+        set(wasDefaultClockAdded) = prefs.edit().putBoolean(WAS_DEFAULT_CLOCK_ADDED, wasDefaultClockAdded).apply()
+
     var homeColumnCount: Int
         get() = prefs.getInt(HOME_COLUMN_COUNT, COLUMN_COUNT)
         set(homeColumnCount) = prefs.edit().putInt(HOME_COLUMN_COUNT, homeColumnCount).apply()
+
+    var dockColumnCount: Int
+        get() = prefs.getInt(DOCK_COLUMN_COUNT, COLUMN_COUNT)
+        set(dockColumnCount) = prefs.edit().putInt(DOCK_COLUMN_COUNT, dockColumnCount).apply()
 
     var homeRowCount: Int
         get() = prefs.getInt(HOME_ROW_COUNT, ROW_COUNT)
@@ -49,4 +57,20 @@ class Config(context: Context) : BaseConfig(context) {
     var logKeeperEnabled: Boolean
         get() = prefs.getBoolean(LOG_KEEPER_ENABLED, true)
         set(logKeeperEnabled) = prefs.edit().putBoolean(LOG_KEEPER_ENABLED, logKeeperEnabled).apply()
+
+    var isAppLockEnabled: Boolean
+        get() = prefs.getBoolean(APP_LOCK_ENABLED, false)
+        set(isAppLockEnabled) = prefs.edit().putBoolean(APP_LOCK_ENABLED, isAppLockEnabled).apply()
+
+    var appLockTimeout: Int
+        get() = prefs.getInt(APP_LOCK_TIMEOUT, APP_LOCK_TIMEOUT_IMMEDIATELY)
+        set(appLockTimeout) = prefs.edit().putInt(APP_LOCK_TIMEOUT, appLockTimeout).apply()
+
+    var appLockUseBiometrics: Boolean
+        get() = prefs.getBoolean(APP_LOCK_USE_BIOMETRICS, true)
+        set(appLockUseBiometrics) = prefs.edit().putBoolean(APP_LOCK_USE_BIOMETRICS, appLockUseBiometrics).apply()
+
+    var appLockProtectHiddenApps: Boolean
+        get() = prefs.getBoolean(APP_LOCK_PROTECT_HIDDEN_APPS, false)
+        set(appLockProtectHiddenApps) = prefs.edit().putBoolean(APP_LOCK_PROTECT_HIDDEN_APPS, appLockProtectHiddenApps).apply()
 }
