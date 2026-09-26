@@ -15,33 +15,14 @@ import org.fossify.home.databinding.ActivityHiddenIconsBinding
 import org.fossify.home.extensions.config
 import org.fossify.home.extensions.getDrawableForPackageName
 import org.fossify.home.extensions.hiddenIconsDB
-import org.fossify.home.helpers.AppLockManager
 import org.fossify.home.models.HiddenIcon
 
 class HiddenIconsActivity : SimpleActivity(), RefreshRecyclerViewListener {
     private val binding by viewBinding(ActivityHiddenIconsBinding::inflate)
-    private var isAuthenticated = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-
-        if (config.isAppLockEnabled && config.appLockProtectHiddenApps && !isAuthenticated) {
-            AppLockManager.authenticateAndLaunch(
-                activity = this,
-                packageName = packageName,
-                appTitle = getString(org.fossify.home.R.string.hidden_icons)
-            ) {
-                isAuthenticated = true
-                initActivity()
-            }
-        } else {
-            isAuthenticated = true
-            initActivity()
-        }
-    }
-
-    private fun initActivity() {
         updateIcons()
 
         setupEdgeToEdge(padBottomSystem = listOf(binding.manageHiddenIconsList))

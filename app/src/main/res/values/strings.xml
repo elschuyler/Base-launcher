@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_launcher_name">Launcher</string>
+    <string name="app_launcher_name">Vian Launcher</string>
+    <string name="all_apps">All apps</string>
+    <string name="play_store">Play Store</string>
+    <string name="hidden_apps">Hidden apps</string>
     <string name="launcher_settings">Launcher Settings</string>
     <string name="app_info">App info</string>
     <string name="touch_hold_widget">Long press the widget and drag it on your home screen</string>
@@ -25,6 +28,32 @@
     <string name="double_tap_to_lock">Double tap to lock screen</string>
     <string name="lock_device_admin_hint">To enable the double tap to lock screen feature, you need to grant admin permission. Note that the app cannot be uninstalled until this permission is removed.</string>
     <string name="lock_device_admin_warning">Deactivating admin permission will disable the double tap to lock screen feature.</string>
+    <string name="clock">Clock</string>
+    <string name="clock_widget_title">Digital Clock (5x2)</string>
+    <string name="dock_column_count">Dock column count</string>
+    <string name="pin_to_home">Pin to home screen</string>
+    <string name="shortcut_pinned">Shortcut pinned to home screen</string>
+    <string name="set_as_default_to_enable_shortcuts">Set Vian as default launcher to enable app shortcuts</string>
+    <string name="set_default">Set default</string>
+    <string name="unlock_app_title">Unlock %1$s</string>
+    <string name="unlock_app_subtitle">Verify your identity to open this application</string>
+    <string name="lock_app">Lock app</string>
+    <string name="unlock_app">Unlock app</string>
+    <string name="app_locked">App locked</string>
+    <string name="app_unlocked">App unlocked</string>
+    <string name="app_lock">App Lock</string>
+    <string name="app_lock_description">Protect apps behind biometric unlock or device PIN</string>
+    <string name="enable_app_lock">Enable App Lock</string>
+    <string name="app_lock_timeout">Relock timeout</string>
+    <string name="timeout_immediately">Immediately</string>
+    <string name="timeout_1_min">After 1 minute</string>
+    <string name="timeout_5_min">After 5 minutes</string>
+    <string name="timeout_screen_off">When screen turns off</string>
+    <string name="manage_locked_apps">Manage locked apps</string>
+    <string name="no_apps_locked">No apps currently locked</string>
+    <string name="protect_hidden_apps">Protect hidden apps</string>
+    <string name="protect_hidden_apps_desc">Require authentication to open hidden apps</string>
+    <string name="select_apps_to_lock">Select apps to lock</string>
     <!--
         Haven't found some strings? There's more at
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res

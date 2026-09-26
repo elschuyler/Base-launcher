@@ -16,7 +16,8 @@ import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.Menu
 import android.view.View
-import androidx.appcompat.widget.PopupMenu
+import android.widget.PopupWindow
+import org.fossify.home.views.AppShortcutsPopupWindow
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.MenuCompat
@@ -30,6 +31,9 @@ import org.fossify.commons.helpers.isQPlus
 import org.fossify.commons.helpers.isSPlus
 import org.fossify.home.R
 import org.fossify.home.activities.SettingsActivity
+import androidx.fragment.app.FragmentActivity
+import org.fossify.home.helpers.AppLockManager
+import org.fossify.home.helpers.BUILT_IN_CLOCK_CLASS_NAME
 import org.fossify.home.helpers.ITEM_TYPE_FOLDER
 import org.fossify.home.helpers.ITEM_TYPE_ICON
 import org.fossify.home.helpers.ITEM_TYPE_WIDGET
@@ -37,7 +41,25 @@ import org.fossify.home.helpers.UNINSTALL_APP_REQUEST_CODE
 import org.fossify.home.interfaces.ItemMenuListener
 import org.fossify.home.models.HomeScreenGridItem
 
-fun Activity.launchApp(packageName: String, activityName: String) {
+fun Activity.launchApp(packageName: String, activityName: String, appTitle: String = "") {
+    if (this is FragmentActivity && !AppLockManager.canLaunchWithoutAuth(this, packageName)) {
+        val title = if (appTitle.isNotEmpty()) appTitle else {
+            try {
+                val appInfo = packageManager.getApplicationInfo(packageName, 0)
+                packageManager.getApplicationLabel(appInfo).toString()
+            } catch (e: Exception) {
+                packageName
+            }
+        }
+        AppLockManager.authenticateAndLaunch(this, packageName, title) {
+            performActualAppLaunch(packageName, activityName)
+        }
+    } else {
+        performActualAppLaunch(packageName, activityName)
+    }
+}
+
+private fun Activity.performActualAppLaunch(packageName: String, activityName: String) {
     try {
         Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
@@ -84,95 +106,15 @@ fun Activity.handleGridItemPopupMenu(
     gridItem: HomeScreenGridItem,
     isOnAllAppsFragment: Boolean,
     listener: ItemMenuListener,
-): PopupMenu {
-    val contextTheme = ContextThemeWrapper(this, getPopupMenuTheme())
-    return PopupMenu(contextTheme, anchorView, Gravity.TOP or Gravity.END).apply {
-        if (isQPlus()) {
-            setForceShowIcon(true)
-        }
-
-        inflate(R.menu.menu_app_icon)
-        menu.forEach {
-            val default = getProperTextColor()
-            val color = if (isSPlus() && isDynamicTheme()) {
-                default
-            } else {
-                MaterialColors.getColor(contextTheme, android.R.attr.actionMenuTextColor, default)
-            }
-            it.iconTintList = ColorStateList.valueOf(color)
-        }
-        menu.findItem(R.id.rename).isVisible =
-            (gridItem.type == ITEM_TYPE_ICON || gridItem.type == ITEM_TYPE_FOLDER) && !isOnAllAppsFragment
-        menu.findItem(R.id.hide_icon).isVisible =
-            gridItem.type == ITEM_TYPE_ICON && isOnAllAppsFragment
-        menu.findItem(R.id.resize).isVisible = gridItem.type == ITEM_TYPE_WIDGET
-        menu.findItem(R.id.app_info).isVisible = gridItem.type == ITEM_TYPE_ICON
-        menu.findItem(R.id.uninstall).isVisible = gridItem.type == ITEM_TYPE_ICON
-                && canAppBeUninstalled(gridItem.packageName)
-                && gridItem.packageName != packageName
-        menu.findItem(R.id.remove).isVisible = !isOnAllAppsFragment
-
-        val launcherApps =
-            applicationContext.getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
-        val shortcuts = if (launcherApps.hasShortcutHostPermission()) {
-            try {
-                val query = LauncherApps.ShortcutQuery().setQueryFlags(
-                    LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED
-                ).setPackage(gridItem.packageName)
-                launcherApps.getShortcuts(query, Process.myUserHandle())
-            } catch (e: Exception) {
-                null
-            }
-        } else {
-            null
-        }
-
-        val hasShortcuts = !shortcuts.isNullOrEmpty()
-        MenuCompat.setGroupDividerEnabled(menu, hasShortcuts)
-        menu.setGroupVisible(R.id.group_shortcuts, hasShortcuts)
-        if (hasShortcuts) {
-            val iconSize = resources.getDimensionPixelSize(R.dimen.menu_icon_size)
-            shortcuts?.forEach { shortcutInfo ->
-                val iconDrawable = launcherApps.getShortcutIconDrawable(
-                    shortcutInfo, resources.displayMetrics.densityDpi
-                )
-
-                menu.add(R.id.group_shortcuts, Menu.NONE, Menu.NONE, shortcutInfo.getLabel())
-                    .setIcon(
-                        (iconDrawable ?: Color.TRANSPARENT.toDrawable())
-                            .toBitmap(width = iconSize, height = iconSize)
-                            .toDrawable(resources)
-                    )
-                    .setOnMenuItemClickListener { _ ->
-                        listener.onAnyClick()
-                        val id = shortcutInfo.id
-                        val packageName = shortcutInfo.`package`
-                        val userHandle = Process.myUserHandle()
-                        launcherApps.startShortcut(packageName, id, Rect(), null, userHandle)
-                        true
-                    }
-            }
-        }
-
-        setOnMenuItemClickListener { item ->
-            listener.onAnyClick()
-            when (item.itemId) {
-                R.id.hide_icon -> listener.hide(gridItem)
-                R.id.rename -> listener.rename(gridItem)
-                R.id.resize -> listener.resize(gridItem)
-                R.id.app_info -> listener.appInfo(gridItem)
-                R.id.remove -> listener.remove(gridItem)
-                R.id.uninstall -> listener.uninstall(gridItem)
-            }
-            true
-        }
-
-        setOnDismissListener {
-            listener.onDismiss()
-        }
-
-        listener.beforeShow(menu)
-
-        show()
-    }
+    iconRect: Rect? = null,
+): PopupWindow {
+    val popup = AppShortcutsPopupWindow(
+        activity = this,
+        gridItem = gridItem,
+        isOnAllAppsFragment = isOnAllAppsFragment,
+        listener = listener,
+        iconRect = iconRect
+    )
+    popup.show(anchorView)
+    return popup
 }

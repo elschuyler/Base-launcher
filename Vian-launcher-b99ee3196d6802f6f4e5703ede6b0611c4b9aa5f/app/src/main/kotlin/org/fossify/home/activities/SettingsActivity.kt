@@ -19,10 +19,6 @@ import org.fossify.home.BuildConfig
 import org.fossify.home.R
 import org.fossify.home.databinding.ActivitySettingsBinding
 import org.fossify.home.extensions.config
-import org.fossify.home.helpers.APP_LOCK_TIMEOUT_1_MIN
-import org.fossify.home.helpers.APP_LOCK_TIMEOUT_5_MIN
-import org.fossify.home.helpers.APP_LOCK_TIMEOUT_IMMEDIATELY
-import org.fossify.home.helpers.APP_LOCK_TIMEOUT_SCREEN_OFF
 import org.fossify.home.helpers.MAX_COLUMN_COUNT
 import org.fossify.home.helpers.MAX_ROW_COUNT
 import org.fossify.home.helpers.MIN_COLUMN_COUNT
@@ -58,11 +54,9 @@ class SettingsActivity : SimpleActivity() {
         setupShowDrawerAppLabels()
         setupHomeRowCount()
         setupHomeColumnCount()
-        setupDockColumnCount()
         setupShowHomeAppLabels()
         setupLanguage()
         setupManageHiddenIcons()
-        setupAppLock()
         setupViewAppLogs()
         updateTextColors(binding.settingsHolder)
 
@@ -70,8 +64,7 @@ class SettingsActivity : SimpleActivity() {
             binding.settingsColorCustomizationSectionLabel,
             binding.settingsGeneralSettingsLabel,
             binding.settingsDrawerSettingsLabel,
-            binding.settingsHomeScreenLabel,
-            binding.settingsAppLockLabel
+            binding.settingsHomeScreenLabel
         ).forEach {
             it.setTextColor(getProperPrimaryColor())
         }
@@ -257,32 +250,6 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
-    private fun setupDockColumnCount() {
-        val currentColumnCount = config.dockColumnCount
-        binding.settingsDockColumnCount.text = currentColumnCount.toString()
-        binding.settingsDockColumnCountHolder.setOnClickListener {
-            val items = ArrayList<RadioItem>()
-            for (i in MIN_COLUMN_COUNT..MAX_COLUMN_COUNT) {
-                items.add(
-                    RadioItem(
-                        id = i,
-                        title = resources.getQuantityString(
-                            org.fossify.commons.R.plurals.column_counts, i, i
-                        )
-                    )
-                )
-            }
-
-            RadioGroupDialog(this, items, currentColumnCount) {
-                val newColumnCount = it as Int
-                if (currentColumnCount != newColumnCount) {
-                    config.dockColumnCount = newColumnCount
-                    setupDockColumnCount()
-                }
-            }
-        }
-    }
-
     private fun setupShowHomeAppLabels() {
         binding.settingsShowHomeAppLabels.isChecked = config.showHomeAppLabels
         binding.settingsShowHomeAppLabelsHolder.setOnClickListener {
@@ -303,60 +270,6 @@ class SettingsActivity : SimpleActivity() {
     private fun setupManageHiddenIcons() {
         binding.settingsManageHiddenIconsHolder.setOnClickListener {
             startActivity(Intent(this, HiddenIconsActivity::class.java))
-        }
-    }
-
-    private fun setupAppLock() {
-        val isEnabled = config.isAppLockEnabled
-        binding.settingsEnableAppLock.isChecked = isEnabled
-        binding.settingsAppLockTimeoutHolder.beVisibleIf(isEnabled)
-        binding.settingsProtectHiddenAppsHolder.beVisibleIf(isEnabled)
-
-        binding.settingsEnableAppLockHolder.setOnClickListener {
-            binding.settingsEnableAppLock.toggle()
-            config.isAppLockEnabled = binding.settingsEnableAppLock.isChecked
-            val enabled = config.isAppLockEnabled
-            binding.settingsAppLockTimeoutHolder.beVisibleIf(enabled)
-            binding.settingsProtectHiddenAppsHolder.beVisibleIf(enabled)
-        }
-
-        setupAppLockTimeout()
-
-        binding.settingsProtectHiddenApps.isChecked = config.appLockProtectHiddenApps
-        binding.settingsProtectHiddenAppsHolder.setOnClickListener {
-            binding.settingsProtectHiddenApps.toggle()
-            config.appLockProtectHiddenApps = binding.settingsProtectHiddenApps.isChecked
-        }
-    }
-
-    private fun setupAppLockTimeout() {
-        val currentTimeout = config.appLockTimeout
-        binding.settingsAppLockTimeout.text = getAppLockTimeoutText(currentTimeout)
-        binding.settingsAppLockTimeoutHolder.setOnClickListener {
-            val timeouts = listOf(
-                RadioItem(APP_LOCK_TIMEOUT_IMMEDIATELY, getString(R.string.timeout_immediately)),
-                RadioItem(APP_LOCK_TIMEOUT_1_MIN, getString(R.string.timeout_1_min)),
-                RadioItem(APP_LOCK_TIMEOUT_5_MIN, getString(R.string.timeout_5_min)),
-                RadioItem(APP_LOCK_TIMEOUT_SCREEN_OFF, getString(R.string.timeout_screen_off))
-            )
-
-            RadioGroupDialog(this, ArrayList(timeouts), currentTimeout) { selected ->
-                val newTimeout = selected as Int
-                if (currentTimeout != newTimeout) {
-                    config.appLockTimeout = newTimeout
-                    binding.settingsAppLockTimeout.text = getAppLockTimeoutText(newTimeout)
-                }
-            }
-        }
-    }
-
-    private fun getAppLockTimeoutText(timeout: Int): String {
-        return when (timeout) {
-            APP_LOCK_TIMEOUT_IMMEDIATELY -> getString(R.string.timeout_immediately)
-            APP_LOCK_TIMEOUT_1_MIN -> getString(R.string.timeout_1_min)
-            APP_LOCK_TIMEOUT_5_MIN -> getString(R.string.timeout_5_min)
-            APP_LOCK_TIMEOUT_SCREEN_OFF -> getString(R.string.timeout_screen_off)
-            else -> getString(R.string.timeout_immediately)
         }
     }
 
