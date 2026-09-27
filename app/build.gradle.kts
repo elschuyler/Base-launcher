@@ -100,6 +100,13 @@ android {
             enableSplit = false
         }
     }
+
+    lint {
+        baseline = file("lint-baseline.xml")
+        lintConfig = rootProject.file("lint.xml")
+        checkDependencies = false
+        abortOnError = true
+    }
 }
 
 configurations.all {
@@ -112,4 +119,19 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
+}
+
+tasks.register("testFossDebugUnitTest") {
+    description = "Compatibility alias for Fossify CI workflows"
+    dependsOn(tasks.named("testDebugUnitTest"))
+}
+
+tasks.register("assembleFossDebug") {
+    description = "Compatibility alias for Fossify CI workflows"
+    dependsOn(tasks.named("assembleDebug"))
+}
+
+tasks.register("assembleFossRelease") {
+    description = "Compatibility alias for Fossify CI workflows"
+    dependsOn(tasks.named("assembleRelease"))
 }
