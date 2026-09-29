@@ -147,3 +147,32 @@
 - **Any deviation from what was requested, and why**: None.
 - **Any known issue or follow-up needed**: None. Repository is clean and ready for export and GitHub Actions CI.
 
+### Entry 006
+- **Timestamp**: 2026-09-29T12:54:40-07:00
+- **One-line summary of what was requested**: Implement standalone GitHub Actions APK build workflow and eliminate failing external Fossify Org workflow dependencies.
+- **Exact files touched**:
+  - `/.github/workflows/no-response.yml` (deleted)
+  - `/.github/workflows/prepare-release-pr.yml` (deleted)
+  - `/.github/workflows/pr-labeler.yml` (deleted)
+  - `/.github/workflows/update-commons.yml` (deleted)
+  - `/.github/workflows/update-lint-baselines.yml` (deleted)
+  - `/.github/workflows/validate-fastlane-metadata.yml` (deleted)
+  - `/.github/workflows/image-minimizer.yml` (deleted)
+  - `/.github/workflows/testing-build.yml` (deleted)
+  - `/.github/workflows/release.yml` (deleted)
+  - `/.github/workflows/pr.yml` (deleted)
+  - `/.github/workflows/build-debug-apk.yml` (created)
+  - `/gradlew` (chmod 755 confirmed)
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_001.md`
+- **What was actually done**:
+  - Purged all upstream FossifyOrg-delegating workflows that fail on missing GitHub App / Org credentials (`actions/create-github-app-token`).
+  - Created standalone workflow `/.github/workflows/build-debug-apk.yml` with triggers for push to main, pull request to main, and manual `workflow_dispatch`.
+  - Configured Temurin JDK 17, Gradle caching, unit tests execution (`testDebugUnitTest`), debug packaging (`assembleDebug`), and artifact uploading with `actions/upload-artifact@v4`.
+  - Ensured executable permissions on `/gradlew` (0755).
+  - Executed local build and test verification (`./gradlew testDebugUnitTest`, `./gradlew assembleDebug`, `./gradlew assembleRelease`).
+  - Performed security sanitization scan and purged ephemeral build artifacts (`debug.keystore`, `debug.keystore.base64`, `.build-outputs/`, `app/build/outputs/apk`).
+- **How it was verified**: Local build only (`./gradlew testDebugUnitTest` passed, `./gradlew assembleDebug` passed, `./gradlew assembleRelease` passed, and `compile_applet` clean).
+- **Any deviation from what was requested, and why**: None. Built exactly as agreed.
+- **Any known issue or follow-up needed**: Ready to push/export to GitHub repository to trigger the automated Actions pipeline.
+

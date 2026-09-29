@@ -55,11 +55,9 @@
   - Purged `/debug.keystore.base64` and `/.build-outputs/` binary artifacts from repo.
   - Strengthened `/.gitignore` with rules for `debug.keystore.base64`, `*.base64`, `.build-outputs/`, `*.apk`, and `*.aab`.
   - Verified clean build via `compile_applet` and local unit test suite.
-- [CI Pipeline & Build Remediation]
-  - Configured `gradlew` executable permissions (0755) preventing exit code 126 in GitHub Actions.
-  - Added compatibility tasks `testFossDebugUnitTest`, `assembleFossDebug`, and `assembleFossRelease` to `app/build.gradle.kts` mapped to single-variant targets.
-  - Registered root `detekt` compatibility placeholder task.
-  - Configured `.github/workflows/pr.yml` to specify `test_task: :app:testDebugUnitTest` and `run_detekt: false`.
-  - Resolved Android Lint errors by extracting API 29 contrast items (`enforceStatusBarContrast`, `enforceNavigationBarContrast`) into `values-v29/styles.xml`, keeping `values-v28/styles.xml` clean.
-  - Verified full test suite (`testDebugUnitTest`), lint (`lintDebug`, `lint`), and release assembly (`assembleRelease`) with zero errors.
+- [CI Pipeline Standalone APK Builder Implementation]
+  - Removed upstream FossifyOrg-dependent workflow files (`no-response.yml`, `prepare-release-pr.yml`, `pr-labeler.yml`, `update-commons.yml`, `release.yml`, `testing-build.yml`, `validate-fastlane-metadata.yml`, `image-minimizer.yml`, `update-lint-baselines.yml`, `pr.yml`) that crashed on missing GitHub App / Org credentials.
+  - Implemented standalone GitHub Actions workflow `.github/workflows/build-debug-apk.yml` configured with JDK 17, `temurin` distribution, Gradle caching, unit testing (`testDebugUnitTest`), debug packaging (`assembleDebug`), and artifact upload (`actions/upload-artifact@v4`).
+  - Verified local Gradle execution (`testDebugUnitTest`, `assembleDebug`, and `assembleRelease`) all succeed cleanly.
+  - Enforced security sanitization: deleted ephemeral keystore files and build output APKs; confirmed zero credentials committed.
 
