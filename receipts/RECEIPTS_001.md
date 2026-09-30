@@ -176,3 +176,49 @@
 - **Any deviation from what was requested, and why**: None. Built exactly as agreed.
 - **Any known issue or follow-up needed**: Ready to push/export to GitHub repository to trigger the automated Actions pipeline.
 
+### Entry 007
+- **Timestamp**: 2026-09-29T14:30:50-07:00
+- **One-line summary of what was requested**: Fix AppShortcutsPopupWindow crash (IllegalArgumentException empty range coerce) triggered on widget add/long-press and app drawer long-press.
+- **Exact files touched**:
+  - `/app/src/main/kotlin/org/fossify/home/views/AppShortcutsPopupWindow.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_001.md`
+- **What was actually done**:
+  - Fixed `idealX.coerceIn(...)` and arrow translation in `AppShortcutsPopupWindow.kt:384` where `maximum -24 is less than minimum 24` caused crash due to `match_parent` elements expanding popup width to full screen.
+  - Constrained popup measure width to `minOf((screenWidth - 2 * horizontalMargin), 280dp)`.
+  - Added defensive clamping guarantees: `maxX = (screenWidth - popupWidth - horizontalMargin).coerceAtLeast(minX)`, `maxArrow = (popupWidth - cornerRadius - arrowWidth).coerceAtLeast(minArrow)`.
+  - Enforced security sanitization: deleted ephemeral build outputs and keystores after compilation.
+- **How it was verified**: Local build only (`./gradlew testDebugUnitTest` passed, `compile_applet` passed cleanly).
+- **Any deviation from what was requested, and why**: None. Built exactly as agreed.
+- **Any known issue or follow-up needed**: Ready for on-device manual validation.
+
+### Entry 008
+- **Timestamp**: 2026-09-29T14:55:40-07:00
+- **One-line summary of what was requested**: Configure drawer search button before Play Store button and 3-dots menu, with expand/collapse on back navigation, and implement lightweight bidirectional name and time sorting in 3-dots dropdown menu.
+- **Exact files touched**:
+  - `/app/src/main/res/values/strings.xml`
+  - `/app/src/main/res/menu/menu_drawer.xml`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/Constants.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/Config.kt`
+  - `/app/src/main/kotlin/org/fossify/home/models/AppLauncher.kt`
+  - `/app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `/app/src/main/kotlin/org/fossify/home/fragments/AllAppsFragment.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_001.md`
+- **What was actually done**:
+  - Added `sort_by_name` and `sort_by_time` string resources to `strings.xml`.
+  - Added `drawer_menu_sort_name` and `drawer_menu_sort_time` items to `menu_drawer.xml`.
+  - Defined `DRAWER_SORT_BY`, `DRAWER_SORT_ORDER`, `DRAWER_SORT_BY_NAME`, `DRAWER_SORT_BY_TIME`, `DRAWER_SORT_ASCENDING`, and `DRAWER_SORT_DESCENDING` in `Constants.kt`.
+  - Added `drawerSortBy` and `drawerSortOrder` persistent properties to `Config.kt`.
+  - Added `@Ignore var installTime: Long` to `AppLauncher.kt` to avoid Room migrations while enabling timestamp tracking.
+  - Attached `firstInstallTime` during launcher loading in `MainActivity.kt`.
+  - Implemented lazy `firstInstallTime` query cache and bidirectional sorting in `AllAppsFragment.kt`.
+  - Added dynamic directional indicators to 3-dots menu items: `(A-Z) ↑` / `(Z-A) ↓` and `(Oldest) ↑` / `(Newest) ↓`.
+  - Confirmed top bar action row ordering: `[Search Button]` $\to$ `[Play Store Button]` $\to$ `[3-Dots Menu Button]`.
+  - Verified tap expands full search bar and back navigation / dismiss restores search button state.
+  - Purged ephemeral keystores and build output APKs; confirmed clean security scan.
+- **How it was verified**: Local build only (`compile_applet` passed, `./gradlew testDebugUnitTest` passed).
+- **Any deviation from what was requested, and why**: None. Built exactly as agreed.
+- **Any known issue or follow-up needed**: Ready for on-device manual validation.
+
+

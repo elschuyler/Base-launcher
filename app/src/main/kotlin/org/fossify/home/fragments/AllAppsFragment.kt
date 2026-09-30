@@ -34,6 +34,10 @@ import org.fossify.home.databinding.AllAppsFragmentBinding
 import org.fossify.home.extensions.config
 import org.fossify.home.extensions.launchApp
 import org.fossify.home.extensions.setupDrawerBackground
+import org.fossify.home.helpers.DRAWER_SORT_ASCENDING
+import org.fossify.home.helpers.DRAWER_SORT_BY_NAME
+import org.fossify.home.helpers.DRAWER_SORT_BY_TIME
+import org.fossify.home.helpers.DRAWER_SORT_DESCENDING
 import org.fossify.home.helpers.ITEM_TYPE_ICON
 import org.fossify.home.interfaces.AllAppsListener
 import org.fossify.home.models.AppLauncher
@@ -136,14 +140,53 @@ class AllAppsFragment(
     }
 
     fun gotLaunchers(appLaunchers: List<AppLauncher>) {
-        launchers = appLaunchers.sortedWith(
-            compareBy(
-                { it.title.normalizeString().lowercase() },
-                { it.packageName }
-            )
-        )
-
+        launchers = sortAppLaunchers(appLaunchers)
         setupAdapter(launchers)
+    }
+
+    private fun getInstallTime(launcher: AppLauncher): Long {
+        if (launcher.installTime != 0L) return launcher.installTime
+        val time = try {
+            context.packageManager.getPackageInfo(launcher.packageName, 0).firstInstallTime
+        } catch (e: Exception) {
+            0L
+        }
+        launcher.installTime = time
+        return time
+    }
+
+    private fun sortAppLaunchers(list: List<AppLauncher>): List<AppLauncher> {
+        val sortBy = context.config.drawerSortBy
+        val sortOrder = context.config.drawerSortOrder
+        val isAscending = sortOrder == DRAWER_SORT_ASCENDING
+
+        return if (sortBy == DRAWER_SORT_BY_TIME) {
+            if (isAscending) {
+                list.sortedWith(
+                    compareBy<AppLauncher> { getInstallTime(it) }
+                        .thenBy { it.title.normalizeString().lowercase() }
+                        .thenBy { it.packageName }
+                )
+            } else {
+                list.sortedWith(
+                    compareByDescending<AppLauncher> { getInstallTime(it) }
+                        .thenBy { it.title.normalizeString().lowercase() }
+                        .thenBy { it.packageName }
+                )
+            }
+        } else {
+            if (isAscending) {
+                list.sortedWith(
+                    compareBy<AppLauncher> { it.title.normalizeString().lowercase() }
+                        .thenBy { it.packageName }
+                )
+            } else {
+                list.sortedWith(
+                    compareByDescending<AppLauncher> { it.title.normalizeString().lowercase() }
+                        .thenBy { it.packageName }
+                )
+            }
+        }
     }
 
     private fun getAdapter() = binding.allAppsGrid.adapter as? LaunchersAdapter
@@ -286,8 +329,33 @@ class AllAppsFragment(
         val contextTheme = ContextThemeWrapper(currentActivity, currentActivity.getPopupMenuTheme())
         PopupMenu(contextTheme, anchorView, Gravity.TOP or Gravity.END).apply {
             inflate(R.menu.menu_drawer)
+
+            val sortBy = currentActivity.config.drawerSortBy
+            val sortOrder = currentActivity.config.drawerSortOrder
+
+            val sortNameItem = menu.findItem(R.id.drawer_menu_sort_name)
+            val sortTimeItem = menu.findItem(R.id.drawer_menu_sort_time)
+
+            val nameArrow = if (sortBy == DRAWER_SORT_BY_NAME) {
+                if (sortOrder == DRAWER_SORT_ASCENDING) " (A-Z) ↑" else " (Z-A) ↓"
+            } else ""
+            sortNameItem?.title = "${context.getString(R.string.sort_by_name)}$nameArrow"
+
+            val timeArrow = if (sortBy == DRAWER_SORT_BY_TIME) {
+                if (sortOrder == DRAWER_SORT_ASCENDING) " (Oldest) ↑" else " (Newest) ↓"
+            } else ""
+            sortTimeItem?.title = "${context.getString(R.string.sort_by_time)}$timeArrow"
+
             setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
+                    R.id.drawer_menu_sort_name -> {
+                        toggleSortByName()
+                        true
+                    }
+                    R.id.drawer_menu_sort_time -> {
+                        toggleSortByTime()
+                        true
+                    }
                     R.id.drawer_menu_hidden_apps -> {
                         currentActivity.startActivity(Intent(currentActivity, HiddenIconsActivity::class.java))
                         true
@@ -301,6 +369,42 @@ class AllAppsFragment(
             }
             show()
         }
+    }
+
+    private fun toggleSortByName() {
+        val config = context.config
+        if (config.drawerSortBy == DRAWER_SORT_BY_NAME) {
+            config.drawerSortOrder = if (config.drawerSortOrder == DRAWER_SORT_ASCENDING) {
+                DRAWER_SORT_DESCENDING
+            } else {
+                DRAWER_SORT_ASCENDING
+            }
+        } else {
+            config.drawerSortBy = DRAWER_SORT_BY_NAME
+            config.drawerSortOrder = DRAWER_SORT_ASCENDING
+        }
+        applyCurrentSort()
+    }
+
+    private fun toggleSortByTime() {
+        val config = context.config
+        if (config.drawerSortBy == DRAWER_SORT_BY_TIME) {
+            config.drawerSortOrder = if (config.drawerSortOrder == DRAWER_SORT_DESCENDING) {
+                DRAWER_SORT_ASCENDING
+            } else {
+                DRAWER_SORT_DESCENDING
+            }
+        } else {
+            config.drawerSortBy = DRAWER_SORT_BY_TIME
+            config.drawerSortOrder = DRAWER_SORT_DESCENDING
+        }
+        applyCurrentSort()
+    }
+
+    private fun applyCurrentSort() {
+        launchers = sortAppLaunchers(launchers)
+        submitList(launchers)
+        binding.allAppsGrid.scrollToPosition(0)
     }
 
     private fun launchPlayStore() {

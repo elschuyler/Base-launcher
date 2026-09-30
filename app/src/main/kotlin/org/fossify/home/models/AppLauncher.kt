@@ -18,6 +18,8 @@ data class AppLauncher(
     @Ignore var drawable: Drawable?
 ) : Comparable<AppLauncher> {
 
+    @Ignore var installTime: Long = 0L
+
     constructor() : this(null, "", "", "", 0, 0, null)
 
     companion object {

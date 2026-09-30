@@ -22,6 +22,13 @@ const val APP_LOCK_ENABLED = "app_lock_enabled"
 const val APP_LOCK_TIMEOUT = "app_lock_timeout"
 const val APP_LOCK_USE_BIOMETRICS = "app_lock_use_biometrics"
 const val APP_LOCK_PROTECT_HIDDEN_APPS = "app_lock_protect_hidden_apps"
+const val DRAWER_SORT_BY = "drawer_sort_by"
+const val DRAWER_SORT_ORDER = "drawer_sort_order"
+
+const val DRAWER_SORT_BY_NAME = 1
+const val DRAWER_SORT_BY_TIME = 2
+const val DRAWER_SORT_ASCENDING = 1
+const val DRAWER_SORT_DESCENDING = 2
 
 const val APP_LOCK_TIMEOUT_IMMEDIATELY = 0
 const val APP_LOCK_TIMEOUT_1_MIN = 60

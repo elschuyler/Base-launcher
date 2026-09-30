@@ -356,12 +356,16 @@ class AppShortcutsPopupWindow(
         val screenWidth = activity.realScreenSize.x
         val screenHeight = activity.realScreenSize.y
 
-        // Measure content view
+        val horizontalMargin = (12 * density).toInt()
+        val maxAllowedWidth = (screenWidth - 2 * horizontalMargin).coerceAtLeast(100)
+        val targetMeasureWidth = minOf(maxAllowedWidth, (280 * density).toInt())
+
+        // Measure content view with capped width
         binding.root.measure(
-            View.MeasureSpec.makeMeasureSpec(screenWidth, View.MeasureSpec.AT_MOST),
+            View.MeasureSpec.makeMeasureSpec(targetMeasureWidth, View.MeasureSpec.AT_MOST),
             View.MeasureSpec.makeMeasureSpec(screenHeight, View.MeasureSpec.AT_MOST)
         )
-        val popupWidth = binding.root.measuredWidth
+        val popupWidth = binding.root.measuredWidth.coerceAtMost(maxAllowedWidth)
         val popupHeight = binding.root.measuredHeight
 
         // Determine icon center and vertical bounds
@@ -379,9 +383,10 @@ class AppShortcutsPopupWindow(
         }
 
         // Horizontal positioning: centered above icon, clamped inside screen padding
-        val horizontalMargin = (12 * density).toInt()
         val idealX = (iconCenterX - popupWidth / 2f).toInt()
-        val popupX = idealX.coerceIn(horizontalMargin, screenWidth - popupWidth - horizontalMargin)
+        val minX = horizontalMargin
+        val maxX = (screenWidth - popupWidth - horizontalMargin).coerceAtLeast(minX)
+        val popupX = if (maxX >= minX) idealX.coerceIn(minX, maxX) else minX
 
         // Vertical positioning: placed above icon if space permits, else below
         val verticalMargin = (6 * density).toInt()
@@ -391,20 +396,22 @@ class AppShortcutsPopupWindow(
         val spaceAbove = iconTop - statusBarHeight
         val placeAbove = spaceAbove >= popupHeight + verticalMargin
 
+        val minY = statusBarHeight
+        val maxY = (screenHeight - popupHeight - navBarHeight).coerceAtLeast(minY)
         val popupY = if (placeAbove) {
-            (iconTop - popupHeight - verticalMargin).toInt()
+            (iconTop - popupHeight - verticalMargin).toInt().coerceAtLeast(minY)
         } else {
-            (iconBottom + verticalMargin).toInt().coerceAtMost(screenHeight - popupHeight - navBarHeight)
+            (iconBottom + verticalMargin).toInt().coerceIn(minY, maxY)
         }
 
         // Arrow positioning: align with icon center
         val arrowWidth = (16 * density).toInt()
         val cornerRadius = (22 * density).toInt()
         val relativeCenter = iconCenterX - popupX
-        val arrowLeft = (relativeCenter - arrowWidth / 2f).coerceIn(
-            cornerRadius.toFloat(),
-            (popupWidth - cornerRadius - arrowWidth).toFloat()
-        )
+        val minArrow = cornerRadius.toFloat()
+        val maxArrow = (popupWidth - cornerRadius - arrowWidth).toFloat().coerceAtLeast(minArrow)
+        val idealArrow = relativeCenter - arrowWidth / 2f
+        val arrowLeft = if (maxArrow >= minArrow) idealArrow.coerceIn(minArrow, maxArrow) else minArrow
 
         if (placeAbove) {
             binding.popupArrowBottom.beVisible()

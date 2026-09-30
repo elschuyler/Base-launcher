@@ -73,4 +73,12 @@ class Config(context: Context) : BaseConfig(context) {
     var appLockProtectHiddenApps: Boolean
         get() = prefs.getBoolean(APP_LOCK_PROTECT_HIDDEN_APPS, false)
         set(appLockProtectHiddenApps) = prefs.edit().putBoolean(APP_LOCK_PROTECT_HIDDEN_APPS, appLockProtectHiddenApps).apply()
+
+    var drawerSortBy: Int
+        get() = prefs.getInt(DRAWER_SORT_BY, DRAWER_SORT_BY_NAME)
+        set(drawerSortBy) = prefs.edit().putInt(DRAWER_SORT_BY, drawerSortBy).apply()
+
+    var drawerSortOrder: Int
+        get() = prefs.getInt(DRAWER_SORT_ORDER, DRAWER_SORT_ASCENDING)
+        set(drawerSortOrder) = prefs.edit().putInt(DRAWER_SORT_ORDER, drawerSortOrder).apply()
 }

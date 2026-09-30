@@ -1275,6 +1275,11 @@ class MainActivity : SimpleActivity(), FlingListener {
                 config = Bitmap.Config.ARGB_8888
             )
             val placeholderColor = calculateAverageColor(bitmap)
+            val appInstallTime = try {
+                packageManager.getPackageInfo(packageName, 0).firstInstallTime
+            } catch (e: Exception) {
+                0L
+            }
             allApps.add(
                 AppLauncher(
                     id = null,
@@ -1284,7 +1289,9 @@ class MainActivity : SimpleActivity(), FlingListener {
                     order = 0,
                     thumbnailColor = placeholderColor,
                     drawable = bitmap.toDrawable(resources)
-                )
+                ).apply {
+                    installTime = appInstallTime
+                }
             )
         }
 

@@ -60,4 +60,19 @@
   - Implemented standalone GitHub Actions workflow `.github/workflows/build-debug-apk.yml` configured with JDK 17, `temurin` distribution, Gradle caching, unit testing (`testDebugUnitTest`), debug packaging (`assembleDebug`), and artifact upload (`actions/upload-artifact@v4`).
   - Verified local Gradle execution (`testDebugUnitTest`, `assembleDebug`, and `assembleRelease`) all succeed cleanly.
   - Enforced security sanitization: deleted ephemeral keystore files and build output APKs; confirmed zero credentials committed.
+- [Bugfix: AppShortcutsPopupWindow Empty Range Coerce Crash]
+  - Resolved `IllegalArgumentException: Cannot coerce value to an empty range: maximum -24 is less than minimum 24` in `AppShortcutsPopupWindow.kt`.
+  - Enforced capped measure pass width (`targetMeasureWidth = minOf(maxAllowedWidth, (280 * density).toInt())`), preventing match_parent children from expanding the card to full screen width.
+  - Implemented defensive boundary clamping on `popupX`, `popupY`, and `arrowLeft` (`maxX.coerceAtLeast(minX)`, `maxArrow.coerceAtLeast(minArrow)`), mathematically eliminating empty-range exceptions.
+  - Verified stability on widget placement/long-press and app drawer launcher long-press.
+- [Feature: Drawer Top Bar Search Button & 3-Dots Sort Toggle]
+  - Configured top bar action button ordering: Search button positioned directly before Google Play Store button and 3-dots dropdown menu.
+  - Implemented search unfolding into full search bar on button tap, and graceful return to button on search exit or back navigation.
+  - Added lightweight "Sort by name" and "Sort by time" directly into 3-dots popup menu (`menu_drawer.xml`).
+  - Implemented "once for up and switch down" bidirectional toggles:
+    - Sort by name: A-Z (up) $\leftrightarrow$ Z-A (down) with dynamic title indicators.
+    - Sort by time: Newest (down) $\leftrightarrow$ Oldest (up) with dynamic title indicators.
+  - Added in-memory `@Ignore var installTime` on `AppLauncher` with lazy `PackageInfo` caching — 0 Room migrations and zero DB schema risks.
+  - Persisted user sort preferences in `Config` (SharedPreferences).
+  - Executed compilation and unit test verification; confirmed clean security scan.
 
