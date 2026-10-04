@@ -66,10 +66,6 @@ class BuiltInClockWidgetView(context: Context) : MyAppWidgetHostView(context) {
         }
     }
 
-    private var touchDownX = 0f
-    private var touchDownY = 0f
-    private var touchDownTime = 0L
-
     init {
         setWillNotDraw(false)
         updateTime()
@@ -155,35 +151,6 @@ class BuiltInClockWidgetView(context: Context) : MyAppWidgetHostView(context) {
         // Draw date: high-contrast outline first, then fill
         canvas.drawText(dateText, centerX, dateY, dateStrokePaint)
         canvas.drawText(dateText, centerX, dateY, dateFillPaint)
-    }
-
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (ignoreTouches) {
-            onIgnoreInterceptedListener?.invoke()
-            return true
-        }
-        if (event == null) return super.onTouchEvent(event)
-
-        when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                touchDownX = event.rawX
-                touchDownY = event.rawY
-                touchDownTime = System.currentTimeMillis()
-                return true
-            }
-
-            MotionEvent.ACTION_UP -> {
-                val dx = abs(event.rawX - touchDownX)
-                val dy = abs(event.rawY - touchDownY)
-                val duration = System.currentTimeMillis() - touchDownTime
-                val slop = ViewConfiguration.get(context).scaledTouchSlop
-                if (!hasLongPressed && dx < slop && dy < slop && duration < 500) {
-                    performClick()
-                    return true
-                }
-            }
-        }
-        return super.onTouchEvent(event)
     }
 
     override fun performClick(): Boolean {

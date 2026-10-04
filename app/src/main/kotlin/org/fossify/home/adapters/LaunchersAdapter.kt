@@ -9,20 +9,19 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.target.DrawableImageViewTarget
-import com.bumptech.glide.request.transition.Transition
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getColoredDrawableWithColor
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.extensions.realScreenSize
+import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.home.R
 import org.fossify.home.activities.SimpleActivity
 import org.fossify.home.databinding.ItemLauncherLabelBinding
 import org.fossify.home.extensions.animateScale
 import org.fossify.home.extensions.config
+import org.fossify.home.extensions.getDrawableForPackageName
+import org.fossify.home.helpers.IconCache
 import org.fossify.home.interfaces.AllAppsListener
 import org.fossify.home.models.AppLauncher
 
@@ -68,9 +67,7 @@ class LaunchersAdapter(
     }
 
     private fun calculateIconWidth() {
-        val currentColumnCount = activity.config.drawerColumnCount
-        val iconWidth = activity.realScreenSize.x / currentColumnCount
-        iconPadding = (iconWidth * 0.1f).toInt()
+        iconPadding = 0
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -89,28 +86,40 @@ class LaunchersAdapter(
                 binding.launcherLabel.text = launcher.title
                 binding.launcherLabel.setTextColor(textColor)
                 binding.launcherLabel.beVisibleIf(activity.config.showDrawerAppLabels)
-                binding.launcherIcon.setPadding(iconPadding, iconPadding, iconPadding, 0)
+                binding.launcherIcon.setPadding(0, 0, 0, 0)
 
-                if (launcher.drawable != null && binding.launcherIcon.tag == true) {
-                    binding.launcherIcon.setImageDrawable(launcher.drawable)
+                val key = launcher.getLauncherIdentifier()
+                val cachedDrawable = launcher.drawable ?: IconCache.getDrawable(key)
+
+                if (cachedDrawable != null) {
+                    launcher.drawable = cachedDrawable
+                    binding.launcherIcon.setImageDrawable(cachedDrawable)
+                    binding.launcherIcon.tag = key
                 } else {
                     val placeholderDrawable = activity.resources.getColoredDrawableWithColor(
                         drawableId = R.drawable.placeholder_drawable,
                         color = launcher.thumbnailColor
                     )
-                    Glide.with(activity)
-                        .load(launcher.drawable)
-                        .placeholder(placeholderDrawable)
-                        .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
-                        .into(object : DrawableImageViewTarget(binding.launcherIcon) {
-                            override fun onResourceReady(
-                                resource: Drawable,
-                                transition: Transition<in Drawable>?
-                            ) {
-                                super.onResourceReady(resource, transition)
-                                view.tag = true
+                    binding.launcherIcon.setImageDrawable(placeholderDrawable)
+                    binding.launcherIcon.tag = key
+
+                    ensureBackgroundThread {
+                        val loadedDrawable = activity.getDrawableForPackageName(launcher.packageName)
+                            ?: try {
+                                activity.packageManager.getApplicationIcon(launcher.packageName)
+                            } catch (e: Exception) {
+                                null
                             }
-                        })
+                        if (loadedDrawable != null) {
+                            IconCache.putDrawable(key, loadedDrawable)
+                            launcher.drawable = loadedDrawable
+                            activity.runOnUiThread {
+                                if (binding.launcherIcon.tag == key) {
+                                    binding.launcherIcon.setImageDrawable(loadedDrawable)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 setOnClickListener { itemClick(launcher) }

@@ -44,6 +44,11 @@ val Context.roleManager: RoleManager
     get() = getSystemService(RoleManager::class.java)
 
 fun Context.getDrawableForPackageName(packageName: String): Drawable? {
+    val customIcon = org.fossify.home.helpers.CustomIconManager.getCustomIcon(this, packageName)
+    if (customIcon != null) {
+        return customIcon
+    }
+
     var drawable: Drawable? = null
     try {
         // try getting the properly colored launcher icons

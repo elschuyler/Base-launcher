@@ -4,29 +4,108 @@ import android.appwidget.AppWidgetHostView
 import android.content.Context
 import android.graphics.PointF
 import android.os.Handler
+import android.os.Looper
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import org.fossify.home.R
 import kotlin.math.abs
 
 open class MyAppWidgetHostView(context: Context) : AppWidgetHostView(context) {
-    private var longPressHandler = Handler()
+    private var longPressHandler = Handler(Looper.getMainLooper())
     private var actionDownCoords = PointF()
     private var currentCoords = PointF()
     private var actionDownMS = 0L
     private val moveGestureThreshold = resources.getDimension(R.dimen.move_gesture_threshold).toInt() / 4
+
     var hasLongPressed = false
+    var isDragging = false
     var ignoreTouches = false
     var longPressListener: ((x: Float, y: Float) -> Unit)? = null
-    var onIgnoreInterceptedListener: (() -> Unit)? = null       // let the home grid react on swallowed clicks, for example by hiding the widget resize frame
+    var dragListener: ((event: MotionEvent, isUp: Boolean) -> Unit)? = null
+    var onIgnoreInterceptedListener: (() -> Unit)? = null
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        resetTouches()
+    }
+
+    override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
+        super.onWindowFocusChanged(hasWindowFocus)
+        if (!hasWindowFocus) {
+            resetTouches()
+        }
+    }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return if (ignoreTouches) {
+        if (ignoreTouches) {
             onIgnoreInterceptedListener?.invoke()
-            true
-        } else {
-            super.onTouchEvent(event)
+            return true
         }
+        if (event == null) {
+            return super.onTouchEvent(event)
+        }
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                actionDownCoords.set(event.rawX, event.rawY)
+                currentCoords.set(event.rawX, event.rawY)
+                actionDownMS = System.currentTimeMillis()
+                hasLongPressed = false
+                isDragging = false
+                resetTouches()
+                longPressHandler.postDelayed(longPressRunnable, ViewConfiguration.getLongPressTimeout().toLong())
+                return true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                currentCoords.set(event.rawX, event.rawY)
+                if (hasLongPressed) {
+                    if (hasFingerMoved(event.rawX, event.rawY)) {
+                        isDragging = true
+                        dragListener?.invoke(event, false)
+                    }
+                } else if (hasFingerMoved(event.rawX, event.rawY)) {
+                    resetTouches()
+                }
+                return true
+            }
+
+            MotionEvent.ACTION_UP -> {
+                val wasDragging = isDragging
+                val wasLongPressed = hasLongPressed
+                resetTouches()
+                if (wasDragging) {
+                    dragListener?.invoke(event, true)
+                    isDragging = false
+                    hasLongPressed = false
+                } else if (!wasLongPressed) {
+                    hasLongPressed = false
+                    val duration = System.currentTimeMillis() - actionDownMS
+                    val slop = ViewConfiguration.get(context).scaledTouchSlop
+                    val dx = abs(event.rawX - actionDownCoords.x)
+                    val dy = abs(event.rawY - actionDownCoords.y)
+                    if (duration < 500 && dx < slop && dy < slop) {
+                        performClick()
+                    }
+                } else {
+                    hasLongPressed = false
+                }
+                return true
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                resetTouches()
+                if (isDragging) {
+                    dragListener?.invoke(event, true)
+                    isDragging = false
+                }
+                hasLongPressed = false
+                return true
+            }
+        }
+
+        return super.onTouchEvent(event)
     }
 
     override fun onInterceptTouchEvent(event: MotionEvent?): Boolean {
@@ -34,32 +113,40 @@ open class MyAppWidgetHostView(context: Context) : AppWidgetHostView(context) {
             return true
         }
 
-        if (hasLongPressed) {
-            hasLongPressed = false
-            return true
-        }
-
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                longPressHandler.postDelayed(longPressRunnable, ViewConfiguration.getLongPressTimeout().toLong())
-                actionDownCoords.x = event.rawX
-                actionDownCoords.y = event.rawY
-                currentCoords.x = event.rawX
-                currentCoords.y = event.rawY
+                actionDownCoords.set(event.rawX, event.rawY)
+                currentCoords.set(event.rawX, event.rawY)
                 actionDownMS = System.currentTimeMillis()
+                hasLongPressed = false
+                isDragging = false
+                resetTouches()
+                longPressHandler.postDelayed(longPressRunnable, ViewConfiguration.getLongPressTimeout().toLong())
+                return false
             }
 
             MotionEvent.ACTION_MOVE -> {
-                currentCoords.x = event.rawX
-                currentCoords.y = event.rawY
-                if (abs(actionDownCoords.x - currentCoords.x) > moveGestureThreshold) {
+                currentCoords.set(event.rawX, event.rawY)
+                if (hasLongPressed) {
+                    if (hasFingerMoved(event.rawX, event.rawY)) {
+                        isDragging = true
+                        dragListener?.invoke(event, false)
+                        return true
+                    }
+                } else if (hasFingerMoved(event.rawX, event.rawY)) {
                     resetTouches()
-                    return true
                 }
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 resetTouches()
+                if (isDragging) {
+                    dragListener?.invoke(event, true)
+                    isDragging = false
+                    hasLongPressed = false
+                    return true
+                }
+                hasLongPressed = false
             }
         }
 
@@ -67,9 +154,10 @@ open class MyAppWidgetHostView(context: Context) : AppWidgetHostView(context) {
     }
 
     private val longPressRunnable = Runnable {
-        if (abs(actionDownCoords.x - currentCoords.x) < moveGestureThreshold && abs(actionDownCoords.y - currentCoords.y) < moveGestureThreshold) {
+        if (!hasFingerMoved(currentCoords.x, currentCoords.y)) {
             longPressHandler.removeCallbacksAndMessages(null)
             hasLongPressed = true
+            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             longPressListener?.invoke(actionDownCoords.x, actionDownCoords.y)
         }
     }

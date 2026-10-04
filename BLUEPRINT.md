@@ -75,4 +75,41 @@
   - Added in-memory `@Ignore var installTime` on `AppLauncher` with lazy `PackageInfo` caching — 0 Room migrations and zero DB schema risks.
   - Persisted user sort preferences in `Config` (SharedPreferences).
   - Executed compilation and unit test verification; confirmed clean security scan.
+- [Feature: Home Screen Long-Press "Add" Menu (App, Widget, Shortcut, Folder, Page)]
+  - Updated home screen long-press context menu (`menu_home_screen.xml`) to include `Add` (`@string/add`) at the top while retaining existing options (`Widgets`, `Wallpapers`, `Launcher settings`, `Set as default`).
+  - Implemented cascading `Add` popup menu (`menu_add_to_home.xml`) with five options:
+    - **App**: Opens `AddAppDialog` with real-time title search and application icon list; placing an app pins it to the long-pressed cell (or first vacant grid cell on the current page).
+    - **Widget**: Directly expands the widgets drawer (`WidgetsFragment`) for widget selection and placement.
+    - **Shortcut**: Opens `AddShortcutDialog` listing all installed apps advertising `ACTION_CREATE_SHORTCUT`; supports both modern `LauncherApps.PinItemRequest` and legacy `ACTION_CREATE_SHORTCUT` result intents with fallback icons.
+    - **Folder**: Opens `CreateFolderDialog` with customizable name (defaults to "Folder"); creates an empty folder and handles empty folder rendering (`generateDrawable()` fallback and scalable open folder view).
+    - **Page**: Invokes `HomeScreenGrid.addNewPage()`, increments max page tracking, updates page indicator dots, and navigates immediately to the new home page.
+  - Added smart cell targeting (`HomeScreenGrid.getTargetCell()` and `findFirstEmptyCellOnCurrentPage()`) prioritizing the exact long-pressed vacant cell.
+  - Verified clean compilation via `compile_applet` and Gradle test task; purged ephemeral artifacts in compliance with Security Scan Protocol.
+- [Feature & Bugfix: Clock Widget Tap/Long-Press/Drag, System-Wide Widget Moving, Drawer Fast Icon Loading, and Proportional Icon Sizing]
+  - **Clock Widget Tap vs. Menu Fix**: Resolved bug where tapping the clock widget opened the long-press menu upon returning from the clock app. Tapping cancels any pending long-press handlers immediately in `BuiltInClockWidgetView` and `MyAppWidgetHostView`, so tap solely launches the clock app.
+  - **Widget Long-Press & Move**: Unified touch dispatching in `MyAppWidgetHostView` and `BuiltInClockWidgetView` to provide tactile long-press menus and drag-and-drop repositioning across pages and grid cells, matching modern launcher behavior. Replaced deprecated `drawingCache` with modern `View.draw(Canvas)` for widget drag previews.
+  - **Drawer Fast Icon Loading & Async Cache**: Added in-memory `LruCache` to `IconCache` to eliminate duplicate icon loading. Bypassed redundant Glide pipeline for in-memory drawables; loads cached drawables instantly on main thread and fetches uncached package icons asynchronously. Optimized `getAllAppLaunchers` to reuse existing database thumbnail colors without full bitmap pixel scanning.
+  - **Proportional Icon Sizing**: Updated drawer icon layout dimensions and minimized padding in `LaunchersAdapter` so drawer icons render at standard ~60dp launcher size. Tuned home screen grid cell `iconMargin` to 4dp-6dp to ensure icons are balanced and prominent on high-density grids.
+- [Feature: Dock Folders Support]
+  - Enabled dragging existing folders into the dock row (`yIndex == rowCount - 1`) with dock column boundary safety (`xIndex < dockColumnCount`).
+  - Enabled creating new folders directly in the dock by dropping app icons onto docked apps (`potentialParent` logic in `HomeScreenGrid.kt`).
+  - Enabled dropping items into existing docked folders and auto-opening docked folders upon drag hover.
+  - Ensured items inside folders maintain `docked = false` and properly belong to their parent container.
+- [Feature: Custom App & Folder Icon Customization (Option B + Style 1)]
+  - Implemented safe bitmap downsampling in `CustomIconManager` (capping dimensions to 192x192) to strictly protect against SQLite `CursorWindow` 2MB OOM crashes.
+  - Added global package-level custom icon persistence via internal storage (`filesDir/custom_icons/<pkg>.png`) and in-memory `IconCache` updates, reflecting custom icons across both the app drawer and home screen.
+  - Added folder custom icon persistence directly in `HomeScreenGridItem.icon` column.
+  - Upgraded rename dialog to `EditItemDialog` (Style 1), featuring instant icon preview, title editor, and a modal action sheet offering Gallery/Photo Picker (zero-permission), installed app icon selection, and reset to default.
+- [Feature: Decoupled Log Catcher & Log Keeper UI]
+  - **Early Process Startup Hook**: Introduce `VianApp : FossifyApp()` in `AndroidManifest.xml` to initialize `LogCatcher` at the earliest point in the application lifecycle (`Application.onCreate()`). Captures unhandled exceptions, runtime errors, and early startup telemetry before any Activity starts.
+  - **Lightweight LogCatcher Core**: Headless singleton that records sanitized, structured log entries (timestamp, component tag, message, sanitized stack trace) without UI overhead. Adheres to Mandate 17 (Log Keeper Standard: no PII, no user content, no credentials).
+  - **2MB Auto-Dump & Scoped Storage**: Maintains a rolling buffer up to 2MB in app-private storage. When 2MB is reached or on application crash, automatically flushes logs directly to the public device `Download/` folder as `vian logs.txt` via `MediaStore.Downloads` (zero-permission on Android 10+; fallback on Android 8/9).
+  - **Crash Handler Integration**: Installs `Thread.setDefaultUncaughtExceptionHandler` during `VianApp` init, writes crash dump with system context immediately to `Download/vian logs.txt` via synchronous I/O, and passes to the system default handler for clean termination.
+  - **Dedicated Log Keeper UI (Screenshot Match)**: Overhaul `LogViewerActivity` into a dedicated on-demand page:
+    - Top bar: Back arrow, "Log Keeper" title, Master On/Off Switch (`config.logKeeperEnabled`), Copy icon (copies active logs to clipboard), Download icon (manual dump to `Download/vian logs.txt`).
+    - Time filter pills: `6h`, `12h`, `24h`, and `All` tabs with dynamic filtering.
+    - Log cards: Rounded card layout displaying monospace timestamp (`HH:mm:ss.SSS`), component/tag, bold log message, and expandable stack trace.
+  - **Backward-Compatible Migration**: Integrate with existing `settingsViewAppLogsHolder` in `SettingsActivity.kt` and preserve existing `LogKeeperHelper` / `logKeeper.log` call sites. Migrate legacy logs from `vian_app_log.txt`.
+
+
 

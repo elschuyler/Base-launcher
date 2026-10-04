@@ -209,7 +209,7 @@ class AppShortcutsPopupWindow(
     }
 
     private fun setupQuickActionsBar() {
-        val canRename = (gridItem.type == ITEM_TYPE_ICON || gridItem.type == ITEM_TYPE_FOLDER) && !isOnAllAppsFragment
+        val canRename = (gridItem.type == ITEM_TYPE_ICON || gridItem.type == ITEM_TYPE_FOLDER)
         val canHide = gridItem.type == ITEM_TYPE_ICON && isOnAllAppsFragment
         val canResize = gridItem.type == ITEM_TYPE_WIDGET && gridItem.className != BUILT_IN_CLOCK_CLASS_NAME
         val canUninstall = gridItem.type == ITEM_TYPE_ICON &&
@@ -274,7 +274,7 @@ class AppShortcutsPopupWindow(
     }
 
     private fun setupFallbackActions() {
-        val canRename = (gridItem.type == ITEM_TYPE_ICON || gridItem.type == ITEM_TYPE_FOLDER) && !isOnAllAppsFragment
+        val canRename = (gridItem.type == ITEM_TYPE_ICON || gridItem.type == ITEM_TYPE_FOLDER)
         val canHide = gridItem.type == ITEM_TYPE_ICON && isOnAllAppsFragment
         val canResize = gridItem.type == ITEM_TYPE_WIDGET && gridItem.className != BUILT_IN_CLOCK_CLASS_NAME
         val canUninstall = gridItem.type == ITEM_TYPE_ICON &&

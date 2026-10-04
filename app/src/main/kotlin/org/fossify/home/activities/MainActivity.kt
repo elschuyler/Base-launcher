@@ -67,7 +67,16 @@ import org.fossify.home.R
 import org.fossify.home.databinding.ActivityMainBinding
 import org.fossify.home.databinding.AllAppsFragmentBinding
 import org.fossify.home.databinding.WidgetsFragmentBinding
+import android.graphics.drawable.BitmapDrawable
+import androidx.core.content.ContextCompat
+import org.fossify.home.adapters.ShortcutItem
+import org.fossify.home.dialogs.AddAppDialog
+import org.fossify.home.dialogs.AddShortcutDialog
+import org.fossify.home.dialogs.CreateFolderDialog
+import org.fossify.home.dialogs.EditItemDialog
 import org.fossify.home.dialogs.RenameItemDialog
+import org.fossify.home.helpers.CustomIconManager
+import androidx.activity.result.contract.ActivityResultContracts
 import org.fossify.home.extensions.config
 import org.fossify.home.extensions.getDrawableForPackageName
 import org.fossify.home.extensions.getLabel
@@ -132,6 +141,23 @@ class MainActivity : SimpleActivity(), FlingListener {
     private lateinit var mDetector: GestureDetectorCompat
     private val binding by viewBinding(ActivityMainBinding::inflate)
     val logKeeper by lazy { org.fossify.home.helpers.LogKeeperHelper(applicationContext) }
+
+    private var mIconPickerCallback: ((Bitmap?) -> Unit)? = null
+    private val mPickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val bitmap = CustomIconManager.loadAndDownsampleFromUri(this, uri)
+            mIconPickerCallback?.invoke(bitmap)
+        }
+    }
+
+    fun launchIconPicker(callback: (Bitmap?) -> Unit) {
+        mIconPickerCallback = callback
+        try {
+            mPickImageLauncher.launch("image/*")
+        } catch (e: Exception) {
+            toast(org.fossify.commons.R.string.unknown_error_occurred)
+        }
+    }
 
     companion object {
         private var mLastUpEvent = 0L
@@ -374,17 +400,50 @@ class MainActivity : SimpleActivity(), FlingListener {
                 if (resultCode == RESULT_OK && resultData != null) {
                     val launcherApps =
                         applicationContext.getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps
+                    var handled = false
                     if (launcherApps.hasShortcutHostPermission()) {
                         val item = launcherApps.getPinItemRequest(resultData)
-                        val shortcutInfo = item?.shortcutInfo ?: return
-                        if (item.accept()) {
+                        val shortcutInfo = item?.shortcutInfo
+                        if (item != null && shortcutInfo != null && item.accept()) {
                             val shortcutId = shortcutInfo.id
                             val label = shortcutInfo.getLabel()
                             val icon = launcherApps.getShortcutBadgedIconDrawable(
                                 shortcutInfo,
                                 resources.displayMetrics.densityDpi
+                            ) ?: launcherApps.getShortcutIconDrawable(
+                                shortcutInfo,
+                                resources.displayMetrics.densityDpi
                             )
-                            mActionOnAddShortcut?.invoke(shortcutId, label, icon)
+                            if (icon != null) {
+                                mActionOnAddShortcut?.invoke(shortcutId, label, icon)
+                                handled = true
+                            }
+                        }
+                    }
+
+                    if (!handled) {
+                        val shortcutIntent = resultData.getParcelableExtra<Intent>(Intent.EXTRA_SHORTCUT_INTENT)
+                        val label = resultData.getStringExtra(Intent.EXTRA_SHORTCUT_NAME) ?: ""
+                        var iconDrawable: Drawable? = null
+                        val bitmap = resultData.getParcelableExtra<Bitmap>(Intent.EXTRA_SHORTCUT_ICON)
+                        if (bitmap != null) {
+                            iconDrawable = BitmapDrawable(resources, bitmap)
+                        } else {
+                            val iconRes = resultData.getParcelableExtra<Intent.ShortcutIconResource>(Intent.EXTRA_SHORTCUT_ICON_RESOURCE)
+                            if (iconRes != null) {
+                                try {
+                                    val foreignResources = packageManager.getResourcesForApplication(iconRes.packageName)
+                                    val id = foreignResources.getIdentifier(iconRes.resourceName, null, null)
+                                    iconDrawable = foreignResources.getDrawable(id, null)
+                                } catch (_: Exception) {}
+                            }
+                        }
+                        if (iconDrawable == null) {
+                            iconDrawable = ContextCompat.getDrawable(this, R.drawable.ic_shortcut_default_vector)
+                        }
+                        if (iconDrawable != null && (shortcutIntent != null || label.isNotEmpty())) {
+                            val shortcutId = shortcutIntent?.toUri(0) ?: java.util.UUID.randomUUID().toString()
+                            mActionOnAddShortcut?.invoke(shortcutId, label, iconDrawable)
                         }
                     }
                 }
@@ -912,6 +971,40 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
     }
 
+    fun handleWidgetDrag(item: HomeScreenGridItem, event: MotionEvent, isUp: Boolean) {
+        val hasMoved = mTouchDownX != -1 && mTouchDownY != -1 &&
+                (abs(mTouchDownX - event.rawX) > mMoveGestureThreshold || abs(mTouchDownY - event.rawY) > mMoveGestureThreshold)
+
+        if (!isUp) {
+            if (mTouchDownX == -1 || mTouchDownY == -1) {
+                mTouchDownX = event.rawX.toInt()
+                mTouchDownY = event.rawY.toInt()
+            }
+
+            if (mOpenPopupMenu != null && hasMoved) {
+                mOpenPopupMenu?.dismiss()
+                mOpenPopupMenu = null
+            }
+
+            if (mLongPressedIcon == null && hasMoved) {
+                mLongPressedIcon = item
+                binding.homeScreenGrid.root.itemDraggingStarted(item)
+                hideFragment(binding.allAppsFragment)
+            }
+
+            if (mLongPressedIcon != null && hasMoved) {
+                binding.homeScreenGrid.root.draggedItemMoved(event.rawX.toInt(), event.rawY.toInt())
+            }
+        } else {
+            mTouchDownX = -1
+            mTouchDownY = -1
+            if (mLongPressedIcon != null) {
+                binding.homeScreenGrid.root.itemDraggingStopped()
+                mLongPressedIcon = null
+            }
+        }
+    }
+
     fun pinShortcutToHome(shortcutInfo: android.content.pm.ShortcutInfo) {
         val launcherApps =
             applicationContext.getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps
@@ -986,6 +1079,7 @@ class MainActivity : SimpleActivity(), FlingListener {
             menu.findItem(R.id.set_as_default).isVisible = !isDefaultLauncher()
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
+                    R.id.add_to_home -> showAddMenu(x, y)
                     R.id.widgets -> showWidgetsFragment()
                     R.id.wallpapers -> launchWallpapersIntent()
                     R.id.launcher_settings -> launchSettings()
@@ -995,6 +1089,171 @@ class MainActivity : SimpleActivity(), FlingListener {
             }
             show()
         }
+    }
+
+    private fun showAddMenu(x: Float, y: Float) {
+        binding.homeScreenPopupMenuAnchor.x = x
+        binding.homeScreenPopupMenuAnchor.y =
+            y - resources.getDimension(R.dimen.long_press_anchor_button_offset_y) * 2
+        val contextTheme = ContextThemeWrapper(this, getPopupMenuTheme())
+        PopupMenu(
+            contextTheme,
+            binding.homeScreenPopupMenuAnchor,
+            Gravity.TOP or Gravity.END
+        ).apply {
+            inflate(R.menu.menu_add_to_home)
+            setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.add_app -> showAddAppDialog(x, y)
+                    R.id.add_widget -> showWidgetsFragment()
+                    R.id.add_shortcut -> showAddShortcutDialog(x, y)
+                    R.id.add_folder -> showAddFolderDialog(x, y)
+                    R.id.add_page -> addNewPage()
+                }
+                true
+            }
+            show()
+        }
+    }
+
+    private fun getPlacementCell(x: Float, y: Float): Pair<Int, Rect> {
+        val targetCell = binding.homeScreenGrid.root.getTargetCell(x, y)
+            ?: binding.homeScreenGrid.root.findFirstEmptyCellOnCurrentPage()
+        return if (targetCell != null) {
+            Pair(
+                binding.homeScreenGrid.root.getCurrentPage(),
+                Rect(targetCell.x, targetCell.y, targetCell.x, targetCell.y)
+            )
+        } else {
+            findFirstEmptyCell()
+        }
+    }
+
+    private fun showAddAppDialog(x: Float, y: Float) {
+        val apps = getAllAppLaunchers()
+        AddAppDialog(this, apps) { selectedApp ->
+            val (page, rect) = getPlacementCell(x, y)
+            val gridItem = HomeScreenGridItem(
+                id = null,
+                left = rect.left,
+                top = rect.top,
+                right = rect.right,
+                bottom = rect.bottom,
+                page = page,
+                packageName = selectedApp.packageName,
+                activityName = selectedApp.activityName,
+                title = selectedApp.title,
+                type = ITEM_TYPE_ICON,
+                className = "",
+                widgetId = -1,
+                shortcutId = "",
+                icon = selectedApp.drawable?.toBitmap(),
+                docked = false,
+                parentId = null,
+                drawable = selectedApp.drawable
+            )
+
+            ensureBackgroundThread {
+                binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
+                runOnUiThread {
+                    if (page != binding.homeScreenGrid.root.getCurrentPage()) {
+                        binding.homeScreenGrid.root.skipToPage(page)
+                    }
+                    toast(getString(R.string.app_added_to_home, selectedApp.title))
+                }
+            }
+        }
+    }
+
+    private fun showAddShortcutDialog(x: Float, y: Float) {
+        val intent = Intent(Intent.ACTION_CREATE_SHORTCUT, null)
+        val resolveInfos = packageManager.queryIntentActivities(intent, PackageManager.PERMISSION_GRANTED)
+        if (resolveInfos.isEmpty()) {
+            toast(R.string.no_shortcuts_available)
+            return
+        }
+
+        val shortcutItems = resolveInfos.map { info ->
+            val appTitle = info.activityInfo.applicationInfo.loadLabel(packageManager).toString()
+            val shortcutTitle = info.loadLabel(packageManager).toString()
+            val icon = info.loadIcon(packageManager)
+            ShortcutItem(shortcutTitle, appTitle, icon, info.activityInfo)
+        }
+
+        AddShortcutDialog(this, shortcutItems) { selectedShortcut ->
+            handleShorcutCreation(selectedShortcut.activityInfo) { shortcutId, label, icon ->
+                val (page, rect) = getPlacementCell(x, y)
+                val gridItem = HomeScreenGridItem(
+                    id = null,
+                    left = rect.left,
+                    top = rect.top,
+                    right = rect.right,
+                    bottom = rect.bottom,
+                    page = page,
+                    packageName = selectedShortcut.activityInfo.packageName,
+                    activityName = "",
+                    title = label,
+                    type = ITEM_TYPE_SHORTCUT,
+                    className = "",
+                    widgetId = -1,
+                    shortcutId = shortcutId,
+                    icon = icon.toBitmap(),
+                    docked = false,
+                    parentId = null,
+                    drawable = icon
+                )
+
+                ensureBackgroundThread {
+                    binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
+                    runOnUiThread {
+                        if (page != binding.homeScreenGrid.root.getCurrentPage()) {
+                            binding.homeScreenGrid.root.skipToPage(page)
+                        }
+                        toast(R.string.shortcut_pinned)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showAddFolderDialog(x: Float, y: Float) {
+        CreateFolderDialog(this) { folderName ->
+            val (page, rect) = getPlacementCell(x, y)
+            val gridItem = HomeScreenGridItem(
+                id = null,
+                left = rect.left,
+                top = rect.top,
+                right = rect.right,
+                bottom = rect.bottom,
+                page = page,
+                packageName = "",
+                activityName = "",
+                title = folderName,
+                type = ITEM_TYPE_FOLDER,
+                className = "",
+                widgetId = -1,
+                shortcutId = "",
+                icon = null,
+                docked = false,
+                parentId = null,
+                drawable = null
+            )
+
+            ensureBackgroundThread {
+                binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
+                runOnUiThread {
+                    if (page != binding.homeScreenGrid.root.getCurrentPage()) {
+                        binding.homeScreenGrid.root.skipToPage(page)
+                    }
+                    toast(R.string.folder_created)
+                }
+            }
+        }
+    }
+
+    private fun addNewPage() {
+        binding.homeScreenGrid.root.addNewPage()
+        toast(R.string.page_added)
     }
 
     private fun resetFragmentTouches() {
@@ -1025,8 +1284,9 @@ class MainActivity : SimpleActivity(), FlingListener {
     }
 
     private fun renameItem(homeScreenGridItem: HomeScreenGridItem) {
-        RenameItemDialog(this, homeScreenGridItem) {
+        EditItemDialog(this, homeScreenGridItem) {
             binding.homeScreenGrid.root.fetchGridItems()
+            refreshLaunchers()
         }
     }
 
@@ -1245,6 +1505,12 @@ class MainActivity : SimpleActivity(), FlingListener {
             it.getIconIdentifier()
         }
 
+        val existingColors = try {
+            launchersDB.getAppLaunchers().associate { it.getLauncherIdentifier() to it.thumbnailColor }
+        } catch (e: Exception) {
+            emptyMap()
+        }
+
         val allApps = ArrayList<AppLauncher>()
         val intent = Intent(Intent.ACTION_MAIN, null)
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
@@ -1260,21 +1526,38 @@ class MainActivity : SimpleActivity(), FlingListener {
             }
 
             val activityName = info.activityInfo.name
-            if (hiddenIcons.contains("$packageName/$activityName")) {
+            val identifier = "$packageName/$activityName"
+            if (hiddenIcons.contains(identifier)) {
                 continue
             }
 
             val label = info.loadLabel(packageManager).toString()
-            val drawable = info.loadIcon(packageManager)
-                ?: getDrawableForPackageName(packageName)
-                ?: continue
+            var drawable = IconCache.getDrawable(identifier)
+            if (drawable == null) {
+                drawable = try {
+                    info.loadIcon(packageManager)
+                } catch (e: Exception) {
+                    null
+                } ?: getDrawableForPackageName(packageName)
+                if (drawable != null) {
+                    IconCache.putDrawable(identifier, drawable)
+                }
+            }
+            if (drawable == null) {
+                continue
+            }
 
-            val bitmap = drawable.toBitmap(
-                width = max(drawable.intrinsicWidth, 1),
-                height = max(drawable.intrinsicHeight, 1),
-                config = Bitmap.Config.ARGB_8888
-            )
-            val placeholderColor = calculateAverageColor(bitmap)
+            val placeholderColor = existingColors[identifier] ?: try {
+                val bitmap = drawable.toBitmap(
+                    width = max(drawable.intrinsicWidth, 1),
+                    height = max(drawable.intrinsicHeight, 1),
+                    config = Bitmap.Config.ARGB_8888
+                )
+                calculateAverageColor(bitmap)
+            } catch (e: Exception) {
+                0
+            }
+
             val appInstallTime = try {
                 packageManager.getPackageInfo(packageName, 0).firstInstallTime
             } catch (e: Exception) {
@@ -1288,7 +1571,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                     activityName = activityName,
                     order = 0,
                     thumbnailColor = placeholderColor,
-                    drawable = bitmap.toDrawable(resources)
+                    drawable = drawable
                 ).apply {
                     installTime = appInstallTime
                 }
@@ -1593,11 +1876,6 @@ class MainActivity : SimpleActivity(), FlingListener {
             return
         }
         isCrashHandlerInstalled = true
-
-        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            logKeeper.logCrash(throwable)
-            defaultHandler?.uncaughtException(thread, throwable)
-        }
+        org.fossify.home.helpers.LogCatcher.init(applicationContext)
     }
 }

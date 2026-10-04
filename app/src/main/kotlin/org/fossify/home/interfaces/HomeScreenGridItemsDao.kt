@@ -23,6 +23,12 @@ interface HomeScreenGridItemsDao {
     @Query("UPDATE home_screen_grid_items SET title = :title WHERE id = :id")
     fun updateItemTitle(title: String, id: Long): Int
 
+    @Query("UPDATE home_screen_grid_items SET icon = :icon WHERE id = :id")
+    fun updateItemIcon(icon: android.graphics.Bitmap?, id: Long): Int
+
+    @Query("UPDATE home_screen_grid_items SET icon = :icon WHERE package_name = :packageName")
+    fun updateAppIcon(icon: android.graphics.Bitmap?, packageName: String): Int
+
     @Query("UPDATE home_screen_grid_items SET `left` = :left, `top` = :top, `right` = :right, `bottom` = :bottom, `page` = :page, `docked` = :docked , `parent_id` = :parentId WHERE id = :id")
     fun updateItemPosition(left: Int, top: Int, right: Int, bottom: Int, page: Int, docked: Boolean, parentId: Long?, id: Long)
 

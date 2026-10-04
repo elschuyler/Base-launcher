@@ -56,6 +56,41 @@
     <string name="select_apps_to_lock">Select apps to lock</string>
     <string name="sort_by_name">Sort by name</string>
     <string name="sort_by_time">Sort by time</string>
+    <string name="add">Add</string>
+    <string name="add_to_home">Add to home</string>
+    <string name="app">App</string>
+    <string name="widget">Widget</string>
+    <string name="shortcut">Shortcut</string>
+    <string name="folder">Folder</string>
+    <string name="page">Page</string>
+    <string name="select_app">Select app</string>
+    <string name="select_shortcut">Select shortcut</string>
+    <string name="create_folder">Create folder</string>
+    <string name="folder_name">Folder name</string>
+    <string name="page_added">Page added</string>
+    <string name="folder_created">Folder created</string>
+    <string name="app_added_to_home">\"%1$s\" added to home screen</string>
+    <string name="no_shortcuts_available">No shortcut providers available</string>
+    <string name="change_icon">Change icon</string>
+    <string name="choose_from_gallery">Choose from gallery</string>
+    <string name="choose_from_apps">Choose from installed apps</string>
+    <string name="reset_to_default_icon">Reset to default icon</string>
+    <string name="edit_item">Edit</string>
+    <string name="tap_to_change_icon">Tap icon to change</string>
+    <string name="search_apps">Search apps</string>
+    <string name="log_keeper">Log Keeper</string>
+    <string name="copy_logs">Copy logs</string>
+    <string name="download_logs">Download logs</string>
+    <string name="logs_copied">Logs copied to clipboard</string>
+    <string name="logs_dumped">Saved to Download/vian logs.txt</string>
+    <string name="log_filter_6h">6h</string>
+    <string name="log_filter_12h">12h</string>
+    <string name="log_filter_24h">24h</string>
+    <string name="log_filter_all">All</string>
+    <string name="no_logs_found">No logs found for this period</string>
+    <string name="log_keeper_disabled_hint">Logging is currently disabled. Toggle the switch above to enable.</string>
+    <string name="logging_enabled">Logging enabled</string>
+    <string name="logging_disabled">Logging disabled</string>
     <!--
         Haven't found some strings? There's more at
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res
