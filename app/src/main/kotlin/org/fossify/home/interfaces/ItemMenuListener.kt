@@ -12,6 +12,7 @@ interface ItemMenuListener {
     fun remove(gridItem: HomeScreenGridItem)
     fun uninstall(gridItem: HomeScreenGridItem)
     fun toggleLock(gridItem: HomeScreenGridItem)
+    fun openPopupWidget(gridItem: HomeScreenGridItem)
     fun onDismiss()
     fun beforeShow(menu: Menu)
 }
@@ -25,6 +26,7 @@ abstract class ItemMenuListenerAdapter : ItemMenuListener {
     override fun remove(gridItem: HomeScreenGridItem) = Unit
     override fun uninstall(gridItem: HomeScreenGridItem) = Unit
     override fun toggleLock(gridItem: HomeScreenGridItem) = Unit
+    override fun openPopupWidget(gridItem: HomeScreenGridItem) = Unit
     override fun onDismiss() = Unit
     override fun beforeShow(menu: Menu) = Unit
 }

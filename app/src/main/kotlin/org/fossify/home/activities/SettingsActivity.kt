@@ -50,6 +50,7 @@ class SettingsActivity : SimpleActivity() {
 
         setupCustomizeColors()
         setupUseEnglish()
+        setupGesturesAndActions()
         setupDoubleTapToLock()
         setupCloseAppDrawerOnOtherAppOpen()
         setupOpenKeyboardOnAppDrawer()
@@ -112,6 +113,14 @@ class SettingsActivity : SimpleActivity() {
             binding.settingsUseEnglish.toggle()
             config.useEnglish = binding.settingsUseEnglish.isChecked
             exitProcess(0)
+        }
+    }
+
+    private fun setupGesturesAndActions() {
+        binding.settingsGesturesAndActionsHolder.setOnClickListener {
+            Intent(this, GesturesActivity::class.java).apply {
+                startActivity(this)
+            }
         }
     }
 

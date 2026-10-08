@@ -58,6 +58,7 @@ import org.fossify.home.activities.MainActivity
 import org.fossify.home.databinding.HomeScreenGridBinding
 import org.fossify.home.extensions.config
 import org.fossify.home.extensions.getDrawableForPackageName
+import org.fossify.home.helpers.ItemGestureManager
 import org.fossify.home.extensions.homeScreenGridItemsDB
 import org.fossify.home.helpers.BUILT_IN_CLOCK_CLASS_NAME
 import org.fossify.home.helpers.ITEM_TYPE_FOLDER
@@ -332,6 +333,11 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         ensureBackgroundThread {
             if (item.id != null) {
                 context.homeScreenGridItemsDB.deleteById(item.id!!)
+                val linkedWidgetId = ItemGestureManager.unlinkWidget(context, item.id!!)
+                if (linkedWidgetId != -1) {
+                    appWidgetHost.deleteAppWidgetId(linkedWidgetId)
+                }
+                ItemGestureManager.removeConfig(context, item.id!!)
                 if (item.parentId != null) {
                     gridItems
                         .filter {

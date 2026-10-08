@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/edit_item_holder"
+    android:id="@+id/edit_item_scroll"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="@dimen/activity_margin">
+    android:clipToPadding="false"
+    android:overScrollMode="never"
+    android:paddingStart="@dimen/activity_margin"
+    android:paddingTop="12dp"
+    android:paddingEnd="@dimen/activity_margin"
+    android:paddingBottom="16dp">
 
     <LinearLayout
+        android:id="@+id/edit_item_holder"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
@@ -17,7 +23,7 @@
             android:id="@+id/edit_item_icon_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:layout_marginBottom="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
@@ -40,14 +46,13 @@
                 android:padding="5dp"
                 android:src="@drawable/ic_rename_vector"
                 app:tint="#FFFFFF" />
-
         </FrameLayout>
 
         <TextView
             android:id="@+id/edit_item_change_icon_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="12dp"
             android:text="@string/tap_to_change_icon"
             android:textColor="?android:attr/textColorSecondary"
             android:textSize="13sp" />
@@ -57,6 +62,7 @@
             android:id="@+id/edit_item_hint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             android:hint="@string/label">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -65,8 +71,322 @@
                 android:layout_height="wrap_content"
                 android:inputType="textCapWords"
                 android:textSize="@dimen/bigger_text_size" />
-
         </org.fossify.commons.views.MyTextInputLayout>
 
+        <!-- Linked Popup Widget Card -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="6dp"
+            android:text="@string/linked_popup_widget_title"
+            android:textColor="#A2E070"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="#1F2A1A"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:strokeColor="#25FFFFFF"
+            app:strokeWidth="0.6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="12dp">
+
+                <ImageView
+                    android:id="@+id/item_edit_widget_icon"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/item_log_card_background"
+                    android:contentDescription="@null"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_popup_widget_glyph"
+                    app:tint="#A2E070" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/item_edit_widget_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/no_popup_widget_linked"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/item_edit_widget_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Tap to link on-demand shutter"
+                        android:textColor="#A0B098"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/item_edit_btn_link_widget"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/item_log_card_background"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingStart="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="6dp"
+                    android:text="@string/link_widget"
+                    android:textColor="#A2E070"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/item_edit_btn_unlink_widget"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="6dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/unlink_widget"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_unlink_vector"
+                    android:visibility="gone"
+                    app:tint="#F08888" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Item Gestures Card -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="6dp"
+            android:text="@string/item_gestures_title"
+            android:textColor="#A2E070"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="#1F2A1A"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:strokeColor="#25FFFFFF"
+            app:strokeWidth="0.6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Double Tap Row -->
+                <LinearLayout
+                    android:id="@+id/item_gesture_double_tap_holder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/gesture_double_tap"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/item_gesture_double_tap_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/item_log_card_background"
+                        android:paddingStart="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="4dp"
+                        android:text="@string/action_none"
+                        android:textColor="#D5E0C8"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.6dp"
+                    android:background="#15FFFFFF" />
+
+                <!-- Swipe Up Row -->
+                <LinearLayout
+                    android:id="@+id/item_gesture_swipe_up_holder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/gesture_swipe_up"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/item_gesture_swipe_up_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/item_log_card_background"
+                        android:paddingStart="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="4dp"
+                        android:text="@string/action_none"
+                        android:textColor="#D5E0C8"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.6dp"
+                    android:background="#15FFFFFF" />
+
+                <!-- Swipe Down Row -->
+                <LinearLayout
+                    android:id="@+id/item_gesture_swipe_down_holder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/gesture_swipe_down"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/item_gesture_swipe_down_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/item_log_card_background"
+                        android:paddingStart="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="4dp"
+                        android:text="@string/action_none"
+                        android:textColor="#D5E0C8"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.6dp"
+                    android:background="#15FFFFFF" />
+
+                <!-- Swipe Left Row -->
+                <LinearLayout
+                    android:id="@+id/item_gesture_swipe_left_holder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/gesture_swipe_left"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/item_gesture_swipe_left_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/item_log_card_background"
+                        android:paddingStart="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="4dp"
+                        android:text="@string/action_none"
+                        android:textColor="#D5E0C8"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.6dp"
+                    android:background="#15FFFFFF" />
+
+                <!-- Swipe Right Row -->
+                <LinearLayout
+                    android:id="@+id/item_gesture_swipe_right_holder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/gesture_swipe_right"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/item_gesture_swipe_right_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/item_log_card_background"
+                        android:paddingStart="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="4dp"
+                        android:text="@string/action_none"
+                        android:textColor="#D5E0C8"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
-</FrameLayout>
+</androidx.core.widget.NestedScrollView>

@@ -110,6 +110,60 @@
     - Time filter pills: `6h`, `12h`, `24h`, and `All` tabs with dynamic filtering.
     - Log cards: Rounded card layout displaying monospace timestamp (`HH:mm:ss.SSS`), component/tag, bold log message, and expandable stack trace.
   - **Backward-Compatible Migration**: Integrate with existing `settingsViewAppLogsHolder` in `SettingsActivity.kt` and preserve existing `LogKeeperHelper` / `logKeeper.log` call sites. Migrate legacy logs from `vian_app_log.txt`.
+- [Feature: 5 Item Gestures & Curated System Actions (Phase 1)]
+  - **Zero-Latency Touch Discrimination**: Preserves instant 0ms tap launch on `ACTION_UP` and long-press context menu/drag. Intercepts `MotionEvent.ACTION_DOWN` on `HomeScreenGrid` items to route item-specific gestures.
+  - **5 Item Gestures**: Supports `Double Tap`, `Swipe Up`, `Swipe Down`, `Swipe Left`, and `Swipe Right` on home screen items.
+  - **Horizontal Pass-Through**: Gated horizontal swipe detection — if an item does not have an explicit `Swipe Left` or `Swipe Right` action assigned, horizontal flings pass seamlessly through to `HomeScreenGridPager` for smooth home screen page sliding.
+  - **Curated System & Launcher Actions (`LauncherActionHandler`)**:
+    - `ACTION_LOCK_SCREEN`: Locks device via `DevicePolicyManager.lockNow()`.
+    - `ACTION_MUTE_VOLUME`: Toggles media stream mute via `AudioManager.adjustStreamVolume()`.
+    - `ACTION_MUTE_RINGTONE`: Toggles ringer mode between Normal and Vibrate (or Silent with safe DND access check).
+    - `ACTION_NOTIFICATIONS`: Expands notification shade via `StatusBarManager` reflection.
+    - `ACTION_QUICK_SETTINGS`: Expands quick settings panel via `StatusBarManager` reflection.
+    - `ACTION_APP_DRAWER`: Opens all apps drawer fragment.
+    - `ACTION_FOLDER_POPUP`: Opens animated floating folder popup overlay (`HomeScreenGrid.openFolder()`).
+    - `ACTION_APP_SHORTCUTS`: Opens dynamic app shortcuts popup.
+    - `ACTION_LAUNCH_APP`: Launches assigned target application.
+  - **Isolated Memory-Cached Persistence (`ItemGestureManager`)**: Thread-safe in-memory cache backed by private JSON storage (`item_gestures.json`), eliminating Room schema migration risks while providing instant 0ms lookup.
+  - **Folder Double-Tap Default**: Automatically maps folder double-tap to `ACTION_FOLDER_POPUP`.
+  - **Universal LogCatcher Instrumentation**: Logs action executions and failures directly to `LogCatcher` without PII.
+- [Feature: On-Demand Popup Widgets (Phase 2 - Option C: Dual-Mode)]
+  - **Floating Modal Host (`PopupWidgetDialog`)**: Implemented floating Material 3 modal card container (`dialog_popup_widget.xml`) hosting `MyAppWidgetHostView` with clean backdrop, rounded corners (24dp), elevation, header bar with app/widget icon, title, configure action button, unlink/change action button, and close (`✕`) button.
+  - **Shared Host & Lifecycle Safeguards**: Reuses master `MyAppWidgetHost` (`WIDGET_HOST_ID = 100`) via `baseContext` to prevent RemoteViews theming collisions. Detaches view hierarchy immediately upon dismissal (`dialog.setOnDismissListener` and `onDetachedFromWindow`), ensuring 0MB residual View overhead while preserving the allocated `appWidgetId` in `ItemGestureManager` so users never face repetitive configuration prompts.
+  - **Widget Selector Dialog (`SelectPopupWidgetDialog`)**: Modal picker (`dialog_select_popup_widget.xml`, `item_select_popup_widget.xml`) featuring search filtering, app-specific widget grouping, cell dimension indicators (`4 × 2`), and preview rendering with asynchronous background loading.
+  - **Binding & Configuration Pipeline**: Integrated full Android `AppWidgetManager.bindAppWidgetIdIfAllowed` and `startAppWidgetConfigureActivityForResult` with fallback allocation cancellation.
+  - **Context Menu Integration**: Added "Popup Widget" button (`ic_widget_vector`) to both the quick actions bar and fallback actions menu in `AppShortcutsPopupWindow`.
+  - **Item Removal Cleanup**: Wired `HomeScreenGrid.removeItemFromHomeScreen` to automatically release allocated widget IDs from `appWidgetHost` and clear associated gesture configurations when home screen items are deleted.
+- [Feature: Add to Home M3 Bottom Sheet & Element Bridge (Phase 3)]
+  - **Sidebar App Coordinator Bridge (`AddElementBridge`)**: Decoupled the launcher home screen placement engine from the UI presentation layer via a clean `Delegate` interface. Allows seamless future delegation to the target Sidebar App's external multi-page Add Element Activity with a single delegate line, while providing a first-class native standalone implementation today.
+  - **M3 Add to Home Bottom Sheet (`AddToHomeBottomSheet`)**: Replaced legacy nested `PopupMenu` with a Material 3 rounded bottom sheet (`dialog_add_to_home_bottom_sheet.xml`) featuring drag handle, title, subtitle, and 5 interactive category cards with ripple indications:
+    1. 📱 **Applications**: Directly triggers `AddAppDialog`, placing the chosen app into the target cell `(x, y)` without manual dragging.
+    2. 🧩 **Desktop Widgets**: Directly slides up the native `WidgetsFragment` drawer for multi-cell desktop widget placement.
+    3. 🪟 **Popup Widgets**: Launches `SelectPopupWidgetDialog` and configures a standalone 1-slot popup widget launcher icon on the target grid cell.
+    4. ⚡ **Shortcuts**: Directly opens `AddShortcutDialog` for pinning deep-link actions.
+    5. 📁 **Folders**: Prompts `CreateFolderDialog` to place a newly named folder ready to receive apps.
+    *(Explicitly removed legacy "Add Page" menu item)*.
+  - **Home Screen & Gesture Action Routing**: Added `ACTION_ADD_TO_HOME`, `ACTION_ADD_APP`, and `ACTION_ADD_WIDGET` to `LauncherActionHandler` for home gesture assignment. Main long-press menu routes empty space directly to `AddElementBridge.open(x, y)` while preserving direct top-level access to Desktop Widgets.
+  - **Standalone Popup Widget Click Support**: Enhanced `MainActivity.performItemClick` to automatically summon `openPopupWidget` when tapping a standalone popup widget icon on the home screen grid.
+- [Feature: Full Gestures & Actions Settings Page & Per-Item UI (Phase 4)]
+  - **Full Gestures Settings Screen (`GesturesActivity` & `activity_gestures.xml`)**:
+    - Created dedicated "Gestures & Actions" settings page accessible from Settings (`SettingsActivity`).
+    - Configured global empty home screen gesture handlers: Double Tap, Swipe Down, Swipe Up, and Pinch In (via `ScaleGestureDetector`).
+    - Configured Folder Behavior section featuring Folder Cover Mode toggle (`folderCoverMode`) with real-time preference persistence.
+    - Configured Feedback & Permissions section featuring Haptic Feedback toggle (`gestureHaptics`) and Device Admin permission status badge with direct shortcut to grant Device Admin for instant screen lock.
+    - Standardized Material 3 typography, dynamic primary color styling via `getProperPrimaryColor()`, and `MyAppBarLayout` integration.
+  - **Per-Item Gestures & Widget Customization (`EditItemDialog` & `dialog_edit_item.xml`)**:
+    - Integrated "Linked Popup Widget" card displaying linked widget status, title, link widget picker, and unlink action.
+    - Integrated "Item Gestures" card for granular per-item overrides across all 5 gestures: Double Tap, Swipe Up, Swipe Down, Swipe Left, and Swipe Right.
+    - Upgraded `ItemGestureConfig` to support per-gesture target package assignments (`getTargetPackage`, `setTargetPackage`), allowing multiple launch app gestures per item.
+    - Real-time badge display showing action name and target app title (`LauncherActionHandler.getActionLabel`).
+  - **Folder Cover Mode & Touch Interaction Polish**:
+    - When Folder Cover Mode is active: single tap launches first child application; swipe up or double tap opens folder popup overlay.
+    - Universal haptic feedback feedback triggers on gesture activations when enabled.
+  - **Security Sanitization**:
+    - Purged ephemeral keystores and APK binaries post-compilation in accordance with Security Scan Protocol.
+
+
 
 
 

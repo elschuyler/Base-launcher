@@ -217,6 +217,7 @@ class AppShortcutsPopupWindow(
             gridItem.packageName != activity.packageName
         val canRemove = !isOnAllAppsFragment
         val canLock = gridItem.type == ITEM_TYPE_ICON
+        val canPopupWidget = gridItem.type == ITEM_TYPE_ICON
 
         binding.popupActionRemoveBtn.beVisibleIf(canRemove)
         binding.popupActionRenameBtn.beVisibleIf(canRename)
@@ -224,6 +225,15 @@ class AppShortcutsPopupWindow(
         binding.popupActionUninstallBtn.beVisibleIf(canUninstall)
         binding.popupActionResizeBtn.beVisibleIf(canResize)
         binding.popupActionLockBtn.beVisibleIf(canLock)
+        binding.popupActionWidgetBtn.beVisibleIf(canPopupWidget)
+
+        if (canPopupWidget) {
+            binding.popupActionWidgetBtn.setOnClickListener {
+                listener.onAnyClick()
+                listener.openPopupWidget(gridItem)
+                dismiss()
+            }
+        }
 
         if (canLock) {
             val isLocked = AppLockManager.isAppLocked(gridItem.packageName)
@@ -282,6 +292,7 @@ class AppShortcutsPopupWindow(
             gridItem.packageName != activity.packageName
         val canRemove = !isOnAllAppsFragment
         val canLock = gridItem.type == ITEM_TYPE_ICON
+        val canPopupWidget = gridItem.type == ITEM_TYPE_ICON
 
         binding.fallbackActionRemove.beVisibleIf(canRemove)
         binding.fallbackActionRename.beVisibleIf(canRename)
@@ -289,6 +300,15 @@ class AppShortcutsPopupWindow(
         binding.fallbackActionUninstall.beVisibleIf(canUninstall)
         binding.fallbackActionResize.beVisibleIf(canResize)
         binding.fallbackActionLock.beVisibleIf(canLock)
+        binding.fallbackActionWidget.beVisibleIf(canPopupWidget)
+
+        if (canPopupWidget) {
+            binding.fallbackActionWidget.setOnClickListener {
+                listener.onAnyClick()
+                listener.openPopupWidget(gridItem)
+                dismiss()
+            }
+        }
 
         if (canLock) {
             val isLocked = AppLockManager.isAppLocked(gridItem.packageName)

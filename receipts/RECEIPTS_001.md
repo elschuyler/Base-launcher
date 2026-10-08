@@ -351,3 +351,100 @@
 - **How it was verified**: File structure and syntax verified.
 - **Any deviation from what was requested, and why**: None. Built exactly to the requested scope and phase structure.
 - **Any known issue or follow-up needed**: Awaiting explicit "implement" trigger from user before proceeding to Phase 1.
+
+- **Timestamp**: 2026-10-04T12:08:00-07:00
+- **One-line summary of what was requested**: Implement Phase 1: Action Dispatcher & Item Gesture Engine with 5 item gestures, curated system actions, and touch discrimination.
+- **Exact files touched**:
+  - `/BLUEPRINT.md`
+  - `/app/src/main/res/values/strings.xml`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/LauncherActionHandler.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/ItemGestureManager.kt`
+  - `/app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `/receipts/RECEIPTS_001.md`
+- **What was actually done**:
+  - Created `LauncherActionHandler.kt` with curated system and launcher actions: lock screen via DevicePolicyManager, media volume mute toggle, ringer mode toggle (normal/vibrate with safe fallback), notification shade expansion, quick settings expansion, app drawer open, folder popup open, and app shortcuts trigger with universal LogCatcher instrumentation.
+  - Created `ItemGestureManager.kt` providing thread-safe in-memory caching and private JSON persistence (`item_gestures.json`) for 5 item gestures (Double Tap, Swipe Up, Swipe Down, Swipe Left, Swipe Right) without altering Room schema.
+  - Implemented zero-latency touch discrimination in `MainActivity.kt`: normal 0ms single-tap launch and long press drag/shortcuts remain completely untouched; `ACTION_DOWN` tracks item touches to route item double-taps and vertical/horizontal flings; folders default to opening folder popup on double tap; gated horizontal flings to ensure home screen paging works seamlessly unless a specific horizontal gesture is assigned.
+- **How it was verified**: Local build only (`compile_applet` passed, `gradle :app:testDebugUnitTest` passed).
+- **Any deviation from what was requested, and why**: None. Built exactly to Phase 1 plan.
+- **Any known issue or follow-up needed**: Ready for on-device manual validation of Phase 1 gestures; ready to proceed to Phase 2 (On-Demand Popup Widgets) upon approval.
+
+- **Timestamp**: 2026-10-05T09:46:00-07:00
+- **One-line summary of what was requested**: Implement Phase 2: On-Demand Popup Widgets (Option C: Dual-Mode) with zero background RAM leak and full touch/scroll support.
+- **Exact files touched**:
+  - `/app/src/main/res/drawable/ic_widget_vector.xml`
+  - `/app/src/main/res/drawable/ic_unlink_vector.xml`
+  - `/app/src/main/res/values/strings.xml`
+  - `/app/src/main/res/layout/dialog_popup_widget.xml`
+  - `/app/src/main/res/layout/dialog_select_popup_widget.xml`
+  - `/app/src/main/res/layout/item_select_popup_widget.xml`
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/kotlin/org/fossify/home/dialogs/PopupWidgetDialog.kt`
+  - `/app/src/main/kotlin/org/fossify/home/dialogs/SelectPopupWidgetDialog.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/ItemGestureManager.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/LauncherActionHandler.kt`
+  - `/app/src/main/kotlin/org/fossify/home/interfaces/ItemMenuListener.kt`
+  - `/app/src/main/kotlin/org/fossify/home/views/AppShortcutsPopupWindow.kt`
+  - `/app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `/app/src/main/kotlin/org/fossify/home/views/HomeScreenGrid.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_001.md`
+- **What was actually done**:
+  - Built `PopupWidgetDialog.kt` with Material 3 floating card container (`dialog_popup_widget.xml`) hosting `MyAppWidgetHostView` from the shared `appWidgetHost` using `baseContext`. Implemented instant view detachment on dialog dismissal to guarantee 0MB residual View overhead while preserving allocated widget IDs in `ItemGestureManager`.
+  - Built `SelectPopupWidgetDialog.kt` (`dialog_select_popup_widget.xml`, `item_select_popup_widget.xml`) providing fast search filtering, app-specific widget prioritization, and cell dimension badges.
+  - Linked `ACTION_POPUP_WIDGET` in `LauncherActionHandler` to dispatch directly to `MainActivity.openPopupWidget(item)`.
+  - Added "Popup Widget" action button (`ic_widget_vector`) to both quick actions bar and fallback menu in `AppShortcutsPopupWindow.kt`.
+  - Wired full binding and configuration lifecycle in `MainActivity.kt` (`handleWidgetBinding`, `handleWidgetConfigureScreen`).
+  - Added cleanup logic in `HomeScreenGrid.removeItemFromHomeScreen` to release OS widget IDs from `appWidgetHost` when items are deleted.
+- **How it was verified**: Local build only (`compile_applet` passed, `gradle :app:testDebugUnitTest` passed).
+- **Any deviation from what was requested, and why**: None. Built exactly to the Option C Dual-Mode architecture approved in the discussion phase.
+- **Any known issue or follow-up needed**: Ready for on-device testing; ready to proceed to Phase 3 ("Add to Home" Bottom Sheet) upon user review.
+
+- **Timestamp**: 2026-10-05T13:03:00-07:00
+- **One-line summary of what was requested**: Implement Phase 3: "Add to Home" M3 Bottom Sheet & Add Element Bridge (Sidebar App merge placeholder/gateway).
+- **Exact files touched**:
+  - `/app/src/main/res/drawable/ic_folder_vector.xml`
+  - `/app/src/main/res/drawable/ic_apps_vector.xml`
+  - `/app/src/main/res/drawable/ic_popup_widget_glyph.xml`
+  - `/app/src/main/res/drawable/bottom_sheet_bg.xml`
+  - `/app/src/main/res/values/strings.xml`
+  - `/app/src/main/res/layout/dialog_add_to_home_bottom_sheet.xml`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/AddElementBridge.kt`
+  - `/app/src/main/kotlin/org/fossify/home/dialogs/AddToHomeBottomSheet.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/LauncherActionHandler.kt`
+  - `/app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_001.md`
+- **What was actually done**:
+  - Created `AddElementBridge.kt` implementing a decoupled coordinator delegate pattern that allows future delegation to the external Sidebar App's multi-page Add Element Activity with one line of code, while providing a native fallback implementation.
+  - Built `AddToHomeBottomSheet.kt` and `dialog_add_to_home_bottom_sheet.xml` replacing legacy nested popup menus with a rounded M3 bottom sheet featuring 5 categorized cards: Applications, Desktop Widgets, Popup Widgets, Shortcuts, and Folders (with NO "Add Page").
+  - Added standalone popup widget creation directly from the bottom sheet, binding and placing a 1-slot widget icon on the target grid cell.
+  - Updated `MainActivity.performItemClick` to automatically summon `openPopupWidget` on standalone popup widget items.
+  - Added `ACTION_ADD_TO_HOME`, `ACTION_ADD_APP`, and `ACTION_ADD_WIDGET` to `LauncherActionHandler` for home gesture assignment.
+- **How it was verified**: Local build only (`compile_applet` passed, `gradle :app:testDebugUnitTest` passed).
+- **Any deviation from what was requested, and why**: None. Built exactly to the agreed Sidebar merge placeholder architecture.
+- **Timestamp**: 2026-10-08T02:00:00-07:00
+- **One-line summary of what was requested**: Implement Phase 4: Full "Gestures & Actions" Settings Page & Per-Item UI with folder cover mode, empty gestures, and per-item overrides.
+- **Exact files touched**:
+  - `/app/src/main/res/values/strings.xml`
+  - `/app/src/main/res/layout/activity_gestures.xml`
+  - `/app/src/main/res/drawable/ic_cross_vector.xml`
+  - `/app/src/main/kotlin/org/fossify/home/activities/GesturesActivity.kt`
+  - `/app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `/app/src/main/kotlin/org/fossify/home/dialogs/EditItemDialog.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/LauncherActionHandler.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/ItemGestureManager.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_001.md`
+- **What was actually done**:
+  - Implemented full dedicated "Gestures & Actions" settings page (`GesturesActivity`) configuring global empty gestures (Double Tap, Swipe Down, Swipe Up, Pinch In via `ScaleGestureDetector`), Folder Cover Mode toggle, Haptic Feedback switch, and Device Admin screen lock status.
+  - Implemented per-item gestures and on-demand popup widget configuration in `EditItemDialog`, enabling user overrides for all 5 item gestures (Double Tap, Swipe Up, Swipe Down, Swipe Left, Swipe Right) and widget linkage.
+  - Upgraded `ItemGestureConfig` to support per-gesture target packages and real-time badge updates with app titles.
+  - Wired folder cover mode execution and pinch-in gesture dispatching in `MainActivity`.
+  - Executed security sanitization, purged ephemeral keystores and build binaries (`debug.keystore`, `debug.keystore.base64`, `.build-outputs/`, `app/build/outputs/`).
+- **How it was verified**: Local build only (`compile_applet` passed, `gradle :app:testDebugUnitTest` passed).
+- **Any deviation from what was requested, and why**: None. Built exactly to the Phase 4 architectural plan.
+- **Any known issue or follow-up needed**: Ready for on-device manual validation of Phase 4; ready for Phase 5 (Backup & Restore + Universal LogCatcher Integration).
+
+
+

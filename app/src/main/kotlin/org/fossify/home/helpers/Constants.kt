@@ -24,6 +24,12 @@ const val APP_LOCK_USE_BIOMETRICS = "app_lock_use_biometrics"
 const val APP_LOCK_PROTECT_HIDDEN_APPS = "app_lock_protect_hidden_apps"
 const val DRAWER_SORT_BY = "drawer_sort_by"
 const val DRAWER_SORT_ORDER = "drawer_sort_order"
+const val GESTURE_DOUBLE_TAP_ACTION = "gesture_double_tap_action"
+const val GESTURE_SWIPE_DOWN_ACTION = "gesture_swipe_down_action"
+const val GESTURE_SWIPE_UP_ACTION = "gesture_swipe_up_action"
+const val GESTURE_PINCH_IN_ACTION = "gesture_pinch_in_action"
+const val FOLDER_COVER_MODE = "folder_cover_mode"
+const val GESTURE_HAPTICS = "gesture_haptics"
 
 const val DRAWER_SORT_BY_NAME = 1
 const val DRAWER_SORT_BY_TIME = 2
@@ -56,6 +62,7 @@ const val ITEM_TYPE_ICON = 0
 const val ITEM_TYPE_WIDGET = 1
 const val ITEM_TYPE_SHORTCUT = 2
 const val ITEM_TYPE_FOLDER = 3
+const val ITEM_TYPE_POPUP_WIDGET = 4
 
 const val WIDGET_HOST_ID = 12345
 const val MAX_CLICK_DURATION = 150

@@ -32,6 +32,7 @@ import android.view.GestureDetector
 import android.view.Gravity
 import android.view.Menu
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.animation.DecelerateInterpolator
 import android.widget.PopupWindow
@@ -74,8 +75,13 @@ import org.fossify.home.dialogs.AddAppDialog
 import org.fossify.home.dialogs.AddShortcutDialog
 import org.fossify.home.dialogs.CreateFolderDialog
 import org.fossify.home.dialogs.EditItemDialog
+import org.fossify.home.dialogs.PopupWidgetDialog
 import org.fossify.home.dialogs.RenameItemDialog
+import org.fossify.home.dialogs.SelectPopupWidgetDialog
+import org.fossify.home.helpers.AddElementBridge
 import org.fossify.home.helpers.CustomIconManager
+import org.fossify.home.helpers.ItemGestureManager
+import org.fossify.home.helpers.LauncherActionHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import org.fossify.home.extensions.config
 import org.fossify.home.extensions.getDrawableForPackageName
@@ -127,6 +133,7 @@ class MainActivity : SimpleActivity(), FlingListener {
     private var mIgnoreXMoveEvents = false
     private var mIgnoreYMoveEvents = false
     private var mLongPressedIcon: HomeScreenGridItem? = null
+    var mTouchDownItem: HomeScreenGridItem? = null
     private var mOpenPopupMenu: PopupWindow? = null
     private var mLastTouchCoords = Pair(-1f, -1f)
     private var mActionOnCanBindWidget: ((granted: Boolean) -> Unit)? = null
@@ -139,6 +146,8 @@ class MainActivity : SimpleActivity(), FlingListener {
     private var wallpaperSupportsDarkText: Boolean? = null
 
     private lateinit var mDetector: GestureDetectorCompat
+    private lateinit var mScaleDetector: ScaleGestureDetector
+    private var mPinchHandled = false
     private val binding by viewBinding(ActivityMainBinding::inflate)
     val logKeeper by lazy { org.fossify.home.helpers.LogKeeperHelper(applicationContext) }
 
@@ -184,6 +193,22 @@ class MainActivity : SimpleActivity(), FlingListener {
         )
 
         mDetector = GestureDetectorCompat(this, MyGestureListener(this))
+        mScaleDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                if (!mPinchHandled && detector.scaleFactor < 0.82f) {
+                    val action = config.gesturePinchInAction
+                    if (action.isNotEmpty() && action != LauncherActionHandler.ACTION_NONE) {
+                        mPinchHandled = true
+                        if (config.gestureHaptics) {
+                            binding.mainHolder.performHapticFeedback()
+                        }
+                        LauncherActionHandler.executeAction(this@MainActivity, action)
+                        return true
+                    }
+                }
+                return false
+            }
+        })
 
         mScreenHeight = realScreenSize.y
         mAllAppsFragmentY = mScreenHeight
@@ -468,14 +493,18 @@ class MainActivity : SimpleActivity(), FlingListener {
 
         try {
             mDetector.onTouchEvent(event)
+            mScaleDetector.onTouchEvent(event)
         } catch (e: Exception) {
             logKeeper.log("MainActivity", "GestureDetector.onTouchEvent failed", e)
         }
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                mPinchHandled = false
                 mTouchDownX = event.x.toInt()
                 mTouchDownY = event.y.toInt()
+                val (viewX, viewY) = binding.homeScreenGrid.root.intoViewSpaceCoords(event.x, event.y)
+                mTouchDownItem = binding.homeScreenGrid.root.isClickingGridItem(viewX.toInt(), viewY.toInt())
                 mAllAppsFragmentY = binding.allAppsFragment.root.y.toInt()
                 mWidgetsFragmentY = binding.widgetsFragment.root.y.toInt()
                 mIgnoreUpEvent = false
@@ -486,6 +515,8 @@ class MainActivity : SimpleActivity(), FlingListener {
                 val hasFingerMoved = if (mTouchDownX == -1 || mTouchDownY == -1) {
                     mTouchDownX = event.x.toInt()
                     mTouchDownY = event.y.toInt()
+                    val (viewX, viewY) = binding.homeScreenGrid.root.intoViewSpaceCoords(event.x, event.y)
+                    mTouchDownItem = binding.homeScreenGrid.root.isClickingGridItem(viewX.toInt(), viewY.toInt())
                     false
                 } else {
                     hasFingerMoved(event)
@@ -520,8 +551,11 @@ class MainActivity : SimpleActivity(), FlingListener {
                             )
                         }
                     } else if (abs(diffX) > abs(diffY) && !mIgnoreXMoveEvents) {
-                        mIgnoreYMoveEvents = true
-                        binding.homeScreenGrid.root.setSwipeMovement(diffX)
+                        val hasHorizontalGesture = mTouchDownItem != null && ItemGestureManager.hasHorizontalGesture(this, mTouchDownItem!!)
+                        if (!hasHorizontalGesture) {
+                            mIgnoreYMoveEvents = true
+                            binding.homeScreenGrid.root.setSwipeMovement(diffX)
+                        }
                     }
                 }
 
@@ -530,8 +564,10 @@ class MainActivity : SimpleActivity(), FlingListener {
 
             MotionEvent.ACTION_CANCEL,
             MotionEvent.ACTION_UP -> {
+                mPinchHandled = false
                 mTouchDownX = -1
                 mTouchDownY = -1
+                mTouchDownItem = null
                 mIgnoreMoveEvents = false
                 mLongPressedIcon = null
                 mLastTouchCoords = Pair(-1f, -1f)
@@ -829,21 +865,98 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
     }
 
-    fun homeScreenDoubleTapped(eventX: Float, eventY: Float) {
+    fun homeScreenDoubleTapped(eventX: Float, eventY: Float): Boolean {
         val (x, y) = binding.homeScreenGrid.root.intoViewSpaceCoords(eventX, eventY)
         val clickedGridItem = binding.homeScreenGrid.root.isClickingGridItem(x.toInt(), y.toInt())
         if (clickedGridItem != null) {
-            return
+            val action = ItemGestureManager.getGestureAction(this, clickedGridItem, ItemGestureManager.GESTURE_DOUBLE_TAP)
+            if (action != LauncherActionHandler.ACTION_NONE) {
+                if (config.gestureHaptics) {
+                    binding.mainHolder.performHapticFeedback()
+                }
+                val targetPkg = ItemGestureManager.getTargetPackage(this, clickedGridItem, ItemGestureManager.GESTURE_DOUBLE_TAP)
+                return LauncherActionHandler.executeAction(this, action, clickedGridItem, targetPkg)
+            }
+            return false
         }
 
-        val devicePolicyManager =
-            getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        val isLockDeviceAdminActive = devicePolicyManager.isAdminActive(
-            ComponentName(this, LockDeviceAdminReceiver::class.java)
-        )
-        if (isLockDeviceAdminActive) {
-            devicePolicyManager.lockNow()
+        val emptyDoubleTapAction = config.gestureDoubleTapAction
+        if (emptyDoubleTapAction != LauncherActionHandler.ACTION_NONE) {
+            if (config.gestureHaptics) {
+                binding.mainHolder.performHapticFeedback()
+            }
+            return LauncherActionHandler.executeAction(this, emptyDoubleTapAction)
         }
+        return false
+    }
+
+    fun openAppDrawer() {
+        showFragment(binding.allAppsFragment)
+    }
+
+    fun openFolderPopup(folder: HomeScreenGridItem) {
+        binding.homeScreenGrid.root.openFolder(folder)
+    }
+
+    fun showItemShortcuts(item: HomeScreenGridItem) {
+        val rect = binding.homeScreenGrid.root.getClickableRect(item)
+        val centerX = (rect.left + rect.right) / 2f
+        performItemLongClick(centerX, item)
+    }
+
+    fun handleItemFlingUp(item: HomeScreenGridItem): Boolean {
+        val action = ItemGestureManager.getGestureAction(this, item, ItemGestureManager.GESTURE_SWIPE_UP)
+        if (action != LauncherActionHandler.ACTION_NONE) {
+            if (config.gestureHaptics) {
+                binding.mainHolder.performHapticFeedback()
+            }
+            val targetPkg = ItemGestureManager.getTargetPackage(this, item, ItemGestureManager.GESTURE_SWIPE_UP)
+            return LauncherActionHandler.executeAction(this, action, item, targetPkg)
+        }
+        if (config.folderCoverMode && item.type == ITEM_TYPE_FOLDER) {
+            if (config.gestureHaptics) {
+                binding.mainHolder.performHapticFeedback()
+            }
+            openFolder(item)
+            return true
+        }
+        return false
+    }
+
+    fun handleItemFlingDown(item: HomeScreenGridItem): Boolean {
+        val action = ItemGestureManager.getGestureAction(this, item, ItemGestureManager.GESTURE_SWIPE_DOWN)
+        if (action != LauncherActionHandler.ACTION_NONE) {
+            if (config.gestureHaptics) {
+                binding.mainHolder.performHapticFeedback()
+            }
+            val targetPkg = ItemGestureManager.getTargetPackage(this, item, ItemGestureManager.GESTURE_SWIPE_DOWN)
+            return LauncherActionHandler.executeAction(this, action, item, targetPkg)
+        }
+        return false
+    }
+
+    fun handleItemFlingLeft(item: HomeScreenGridItem): Boolean {
+        val action = ItemGestureManager.getGestureAction(this, item, ItemGestureManager.GESTURE_SWIPE_LEFT)
+        if (action != LauncherActionHandler.ACTION_NONE) {
+            if (config.gestureHaptics) {
+                binding.mainHolder.performHapticFeedback()
+            }
+            val targetPkg = ItemGestureManager.getTargetPackage(this, item, ItemGestureManager.GESTURE_SWIPE_LEFT)
+            return LauncherActionHandler.executeAction(this, action, item, targetPkg)
+        }
+        return false
+    }
+
+    fun handleItemFlingRight(item: HomeScreenGridItem): Boolean {
+        val action = ItemGestureManager.getGestureAction(this, item, ItemGestureManager.GESTURE_SWIPE_RIGHT)
+        if (action != LauncherActionHandler.ACTION_NONE) {
+            if (config.gestureHaptics) {
+                binding.mainHolder.performHapticFeedback()
+            }
+            val targetPkg = ItemGestureManager.getTargetPackage(this, item, ItemGestureManager.GESTURE_SWIPE_RIGHT)
+            return LauncherActionHandler.executeAction(this, action, item, targetPkg)
+        }
+        return false
     }
 
     fun closeAppDrawer(delayed: Boolean = false) {
@@ -888,8 +1001,31 @@ class MainActivity : SimpleActivity(), FlingListener {
 
     private fun performItemClick(clickedGridItem: HomeScreenGridItem) {
         when (clickedGridItem.type) {
-            ITEM_TYPE_ICON -> launchApp(clickedGridItem.packageName, clickedGridItem.activityName, clickedGridItem.title)
-            ITEM_TYPE_FOLDER -> openFolder(clickedGridItem)
+            ITEM_TYPE_ICON -> {
+                val itemId = clickedGridItem.id
+                if (itemId != null && ItemGestureManager.getLinkedWidget(this, itemId) != null && clickedGridItem.activityName.isEmpty()) {
+                    openPopupWidget(clickedGridItem)
+                } else {
+                    launchApp(clickedGridItem.packageName, clickedGridItem.activityName, clickedGridItem.title)
+                }
+            }
+            ITEM_TYPE_FOLDER -> {
+                if (config.folderCoverMode && clickedGridItem.id != null) {
+                    ensureBackgroundThread {
+                        val children = homeScreenGridItemsDB.getFolderItems(clickedGridItem.id!!)
+                        val firstChild = children.firstOrNull()
+                        runOnUiThread {
+                            if (firstChild != null) {
+                                performItemClick(firstChild)
+                            } else {
+                                openFolder(clickedGridItem)
+                            }
+                        }
+                    }
+                } else {
+                    openFolder(clickedGridItem)
+                }
+            }
             ITEM_TYPE_SHORTCUT -> {
                 val id = clickedGridItem.shortcutId
                 val packageName = clickedGridItem.packageName
@@ -918,6 +1054,111 @@ class MainActivity : SimpleActivity(), FlingListener {
 
     private fun openFolder(folder: HomeScreenGridItem) {
         binding.homeScreenGrid.root.openFolder(folder)
+    }
+
+    fun openPopupWidget(item: HomeScreenGridItem) {
+        val itemId = item.id ?: return
+        val linked = ItemGestureManager.getLinkedWidget(this, itemId)
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+
+        if (linked != null) {
+            val (widgetId, _) = linked
+            val providerInfo = appWidgetManager.getAppWidgetInfo(widgetId)
+            if (providerInfo != null) {
+                showPopupWidgetDialog(item, widgetId, providerInfo)
+            } else {
+                ItemGestureManager.unlinkWidget(this, itemId)
+                toast(R.string.widget_unlinked)
+                showSelectPopupWidgetDialog(item)
+            }
+        } else {
+            showSelectPopupWidgetDialog(item)
+        }
+    }
+
+    fun showSelectPopupWidgetDialog(item: HomeScreenGridItem) {
+        SelectPopupWidgetDialog(this, item) { selectedProvider ->
+            bindAndLinkPopupWidget(item, selectedProvider)
+        }.show()
+    }
+
+    fun bindAndLinkPopupWidget(item: HomeScreenGridItem, providerInfo: AppWidgetProviderInfo) {
+        val itemId = item.id ?: return
+        val appWidgetHost = binding.homeScreenGrid.root.appWidgetHost
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val newWidgetId = appWidgetHost.allocateAppWidgetId()
+
+        handleWidgetBinding(appWidgetManager, newWidgetId, providerInfo) { canBind ->
+            if (canBind) {
+                if (providerInfo.configure != null) {
+                    handleWidgetConfigureScreen(appWidgetHost, newWidgetId) { configured ->
+                        if (configured) {
+                            finalizePopupWidgetLink(item, itemId, newWidgetId, providerInfo)
+                        } else {
+                            appWidgetHost.deleteAppWidgetId(newWidgetId)
+                        }
+                    }
+                } else {
+                    finalizePopupWidgetLink(item, itemId, newWidgetId, providerInfo)
+                }
+            } else {
+                appWidgetHost.deleteAppWidgetId(newWidgetId)
+            }
+        }
+    }
+
+    private fun finalizePopupWidgetLink(
+        item: HomeScreenGridItem,
+        itemId: Long,
+        widgetId: Int,
+        providerInfo: AppWidgetProviderInfo
+    ) {
+        val oldWidgetId = ItemGestureManager.unlinkWidget(this, itemId)
+        if (oldWidgetId != -1 && oldWidgetId != widgetId) {
+            binding.homeScreenGrid.root.appWidgetHost.deleteAppWidgetId(oldWidgetId)
+        }
+
+        ItemGestureManager.setLinkedWidget(
+            this,
+            itemId,
+            widgetId,
+            providerInfo.provider.className
+        )
+        toast(R.string.widget_linked)
+        showPopupWidgetDialog(item, widgetId, providerInfo)
+    }
+
+    private fun showPopupWidgetDialog(
+        item: HomeScreenGridItem,
+        widgetId: Int,
+        providerInfo: AppWidgetProviderInfo
+    ) {
+        PopupWidgetDialog(
+            activity = this,
+            appWidgetHost = binding.homeScreenGrid.root.appWidgetHost,
+            targetItem = item,
+            widgetId = widgetId,
+            providerInfo = providerInfo,
+            onReconfigure = {
+                handleWidgetConfigureScreen(binding.homeScreenGrid.root.appWidgetHost, widgetId) { success ->
+                    if (success) {
+                        showPopupWidgetDialog(item, widgetId, providerInfo)
+                    }
+                }
+            },
+            onChangeWidget = {
+                showSelectPopupWidgetDialog(item)
+            }
+        ).show()
+    }
+
+    fun unlinkPopupWidget(item: HomeScreenGridItem) {
+        val itemId = item.id ?: return
+        val oldWidgetId = ItemGestureManager.unlinkWidget(this, itemId)
+        if (oldWidgetId != -1) {
+            binding.homeScreenGrid.root.appWidgetHost.deleteAppWidgetId(oldWidgetId)
+            toast(R.string.widget_unlinked)
+        }
     }
 
     private fun performItemLongClick(x: Float, clickedGridItem: HomeScreenGridItem) {
@@ -1079,7 +1320,7 @@ class MainActivity : SimpleActivity(), FlingListener {
             menu.findItem(R.id.set_as_default).isVisible = !isDefaultLauncher()
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
-                    R.id.add_to_home -> showAddMenu(x, y)
+                    R.id.add_to_home -> AddElementBridge.open(this@MainActivity, x, y)
                     R.id.widgets -> showWidgetsFragment()
                     R.id.wallpapers -> launchWallpapersIntent()
                     R.id.launcher_settings -> launchSettings()
@@ -1091,34 +1332,13 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
     }
 
-    private fun showAddMenu(x: Float, y: Float) {
-        binding.homeScreenPopupMenuAnchor.x = x
-        binding.homeScreenPopupMenuAnchor.y =
-            y - resources.getDimension(R.dimen.long_press_anchor_button_offset_y) * 2
-        val contextTheme = ContextThemeWrapper(this, getPopupMenuTheme())
-        PopupMenu(
-            contextTheme,
-            binding.homeScreenPopupMenuAnchor,
-            Gravity.TOP or Gravity.END
-        ).apply {
-            inflate(R.menu.menu_add_to_home)
-            setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    R.id.add_app -> showAddAppDialog(x, y)
-                    R.id.add_widget -> showWidgetsFragment()
-                    R.id.add_shortcut -> showAddShortcutDialog(x, y)
-                    R.id.add_folder -> showAddFolderDialog(x, y)
-                    R.id.add_page -> addNewPage()
-                }
-                true
-            }
-            show()
+    fun getPlacementCell(x: Float? = null, y: Float? = null): Pair<Int, Rect> {
+        val targetCell = if (x != null && y != null) {
+            binding.homeScreenGrid.root.getTargetCell(x, y)
+                ?: binding.homeScreenGrid.root.findFirstEmptyCellOnCurrentPage()
+        } else {
+            binding.homeScreenGrid.root.findFirstEmptyCellOnCurrentPage()
         }
-    }
-
-    private fun getPlacementCell(x: Float, y: Float): Pair<Int, Rect> {
-        val targetCell = binding.homeScreenGrid.root.getTargetCell(x, y)
-            ?: binding.homeScreenGrid.root.findFirstEmptyCellOnCurrentPage()
         return if (targetCell != null) {
             Pair(
                 binding.homeScreenGrid.root.getCurrentPage(),
@@ -1129,7 +1349,7 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
     }
 
-    private fun showAddAppDialog(x: Float, y: Float) {
+    fun showAddAppDialog(x: Float? = null, y: Float? = null) {
         val apps = getAllAppLaunchers()
         AddAppDialog(this, apps) { selectedApp ->
             val (page, rect) = getPlacementCell(x, y)
@@ -1165,7 +1385,7 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
     }
 
-    private fun showAddShortcutDialog(x: Float, y: Float) {
+    fun showAddShortcutDialog(x: Float? = null, y: Float? = null) {
         val intent = Intent(Intent.ACTION_CREATE_SHORTCUT, null)
         val resolveInfos = packageManager.queryIntentActivities(intent, PackageManager.PERMISSION_GRANTED)
         if (resolveInfos.isEmpty()) {
@@ -1216,7 +1436,7 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
     }
 
-    private fun showAddFolderDialog(x: Float, y: Float) {
+    fun showAddFolderDialog(x: Float? = null, y: Float? = null) {
         CreateFolderDialog(this) { folderName ->
             val (page, rect) = getPlacementCell(x, y)
             val gridItem = HomeScreenGridItem(
@@ -1251,9 +1471,101 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
     }
 
-    private fun addNewPage() {
-        binding.homeScreenGrid.root.addNewPage()
-        toast(R.string.page_added)
+    fun showAddStandalonePopupWidgetDialog(x: Float? = null, y: Float? = null) {
+        SelectPopupWidgetDialog(this, HomeScreenGridItem()) { selectedProvider ->
+            placeStandalonePopupWidget(x, y, selectedProvider)
+        }.show()
+    }
+
+    private fun placeStandalonePopupWidget(
+        x: Float? = null,
+        y: Float? = null,
+        providerInfo: AppWidgetProviderInfo
+    ) {
+        val appWidgetHost = binding.homeScreenGrid.root.appWidgetHost
+        val appWidgetManager = AppWidgetManager.getInstance(this)
+        val newWidgetId = appWidgetHost.allocateAppWidgetId()
+
+        handleWidgetBinding(appWidgetManager, newWidgetId, providerInfo) { canBind ->
+            if (canBind) {
+                if (providerInfo.configure != null) {
+                    handleWidgetConfigureScreen(appWidgetHost, newWidgetId) { configured ->
+                        if (configured) {
+                            finalizeStandalonePopupWidgetPlacement(x, y, newWidgetId, providerInfo)
+                        } else {
+                            appWidgetHost.deleteAppWidgetId(newWidgetId)
+                        }
+                    }
+                } else {
+                    finalizeStandalonePopupWidgetPlacement(x, y, newWidgetId, providerInfo)
+                }
+            } else {
+                appWidgetHost.deleteAppWidgetId(newWidgetId)
+            }
+        }
+    }
+
+    private fun finalizeStandalonePopupWidgetPlacement(
+        x: Float?,
+        y: Float?,
+        widgetId: Int,
+        providerInfo: AppWidgetProviderInfo
+    ) {
+        val (page, rect) = getPlacementCell(x, y)
+        val packageManager = packageManager
+        val pkg = providerInfo.provider.packageName
+        val label = providerInfo.loadLabel(packageManager).ifEmpty {
+            try {
+                packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString()
+            } catch (e: Exception) {
+                pkg
+            }
+        }
+
+        val preview = try {
+            providerInfo.loadPreviewImage(this, resources.displayMetrics.densityDpi)
+                ?: packageManager.getApplicationIcon(pkg)
+        } catch (e: Exception) {
+            ContextCompat.getDrawable(this, R.drawable.ic_widget_vector)
+        }
+
+        val gridItem = HomeScreenGridItem(
+            id = null,
+            left = rect.left,
+            top = rect.top,
+            right = rect.right,
+            bottom = rect.bottom,
+            page = page,
+            packageName = pkg,
+            activityName = "",
+            title = label,
+            type = ITEM_TYPE_ICON,
+            className = providerInfo.provider.className,
+            widgetId = widgetId,
+            shortcutId = "",
+            icon = preview?.toBitmap(),
+            docked = false,
+            parentId = null,
+            drawable = preview
+        )
+
+        ensureBackgroundThread {
+            binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
+            if (gridItem.id != null) {
+                ItemGestureManager.setLinkedWidget(
+                    this,
+                    gridItem.id!!,
+                    widgetId,
+                    providerInfo.provider.className
+                )
+            }
+            runOnUiThread {
+                if (page != binding.homeScreenGrid.root.getCurrentPage()) {
+                    binding.homeScreenGrid.root.skipToPage(page)
+                }
+                toast(R.string.popup_widget_added_to_home)
+            }
+        }
     }
 
     private fun resetFragmentTouches() {
@@ -1268,7 +1580,7 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
     }
 
-    private fun showWidgetsFragment() {
+    fun showWidgetsFragment() {
         showFragment(binding.widgetsFragment)
     }
 
@@ -1384,6 +1696,10 @@ class MainActivity : SimpleActivity(), FlingListener {
             }
         }
 
+        override fun openPopupWidget(gridItem: HomeScreenGridItem) {
+            this@MainActivity.openPopupWidget(gridItem)
+        }
+
         override fun onDismiss() {
             mOpenPopupMenu = null
             resetFragmentTouches()
@@ -1411,8 +1727,8 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
 
         override fun onDoubleTap(event: MotionEvent): Boolean {
-            (flingListener as MainActivity).homeScreenDoubleTapped(event.x, event.y)
-            return super.onDoubleTap(event)
+            val handled = (flingListener as MainActivity).homeScreenDoubleTapped(event.x, event.y)
+            return if (handled) true else super.onDoubleTap(event)
         }
 
         override fun onFling(
@@ -1426,16 +1742,31 @@ class MainActivity : SimpleActivity(), FlingListener {
                 return true
             }
 
+            val mainActivity = flingListener as MainActivity
+            val downItem = mainActivity.mTouchDownItem
+
             if (abs(velocityY) > abs(velocityX)) {
                 if (velocityY > 0) {
+                    if (downItem != null && mainActivity.handleItemFlingDown(downItem)) {
+                        return true
+                    }
                     flingListener.onFlingDown()
                 } else {
+                    if (downItem != null && mainActivity.handleItemFlingUp(downItem)) {
+                        return true
+                    }
                     flingListener.onFlingUp()
                 }
             } else if (abs(velocityX) > abs(velocityY)) {
                 if (velocityX > 0) {
+                    if (downItem != null && mainActivity.handleItemFlingRight(downItem)) {
+                        return true
+                    }
                     flingListener.onFlingRight()
                 } else {
+                    if (downItem != null && mainActivity.handleItemFlingLeft(downItem)) {
+                        return true
+                    }
                     flingListener.onFlingLeft()
                 }
             }
@@ -1455,7 +1786,15 @@ class MainActivity : SimpleActivity(), FlingListener {
 
         if (!isWidgetsFragmentExpanded()) {
             mIgnoreUpEvent = true
-            showFragment(binding.allAppsFragment)
+            val action = config.gestureSwipeUpAction
+            if (action.isNotEmpty() && action != LauncherActionHandler.ACTION_NONE) {
+                if (config.gestureHaptics) {
+                    binding.mainHolder.performHapticFeedback()
+                }
+                LauncherActionHandler.executeAction(this, action)
+            } else {
+                showFragment(binding.allAppsFragment)
+            }
         }
     }
 
@@ -1471,12 +1810,20 @@ class MainActivity : SimpleActivity(), FlingListener {
         } else if (isWidgetsFragmentExpanded()) {
             hideFragment(binding.widgetsFragment)
         } else {
-            try {
-                Class.forName("android.app.StatusBarManager")
-                    .getMethod("expandNotificationsPanel")
-                    .invoke(getSystemService("statusbar"))
-            } catch (e: Exception) {
-                logKeeper.log("MainActivity", "expandNotificationsPanel reflection call failed", e)
+            val action = config.gestureSwipeDownAction
+            if (action.isNotEmpty() && action != LauncherActionHandler.ACTION_NONE) {
+                if (config.gestureHaptics) {
+                    binding.mainHolder.performHapticFeedback()
+                }
+                LauncherActionHandler.executeAction(this, action)
+            } else {
+                try {
+                    Class.forName("android.app.StatusBarManager")
+                        .getMethod("expandNotificationsPanel")
+                        .invoke(getSystemService("statusbar"))
+                } catch (e: Exception) {
+                    logKeeper.log("MainActivity", "expandNotificationsPanel reflection call failed", e)
+                }
             }
         }
     }

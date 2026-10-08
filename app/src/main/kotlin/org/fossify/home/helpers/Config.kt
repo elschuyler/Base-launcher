@@ -81,4 +81,28 @@ class Config(context: Context) : BaseConfig(context) {
     var drawerSortOrder: Int
         get() = prefs.getInt(DRAWER_SORT_ORDER, DRAWER_SORT_ASCENDING)
         set(drawerSortOrder) = prefs.edit().putInt(DRAWER_SORT_ORDER, drawerSortOrder).apply()
+
+    var gestureDoubleTapAction: String
+        get() = prefs.getString(GESTURE_DOUBLE_TAP_ACTION, LauncherActionHandler.ACTION_LOCK_SCREEN) ?: LauncherActionHandler.ACTION_LOCK_SCREEN
+        set(value) = prefs.edit().putString(GESTURE_DOUBLE_TAP_ACTION, value).apply()
+
+    var gestureSwipeDownAction: String
+        get() = prefs.getString(GESTURE_SWIPE_DOWN_ACTION, LauncherActionHandler.ACTION_NOTIFICATIONS) ?: LauncherActionHandler.ACTION_NOTIFICATIONS
+        set(value) = prefs.edit().putString(GESTURE_SWIPE_DOWN_ACTION, value).apply()
+
+    var gestureSwipeUpAction: String
+        get() = prefs.getString(GESTURE_SWIPE_UP_ACTION, LauncherActionHandler.ACTION_APP_DRAWER) ?: LauncherActionHandler.ACTION_APP_DRAWER
+        set(value) = prefs.edit().putString(GESTURE_SWIPE_UP_ACTION, value).apply()
+
+    var gesturePinchInAction: String
+        get() = prefs.getString(GESTURE_PINCH_IN_ACTION, LauncherActionHandler.ACTION_ADD_TO_HOME) ?: LauncherActionHandler.ACTION_ADD_TO_HOME
+        set(value) = prefs.edit().putString(GESTURE_PINCH_IN_ACTION, value).apply()
+
+    var folderCoverMode: Boolean
+        get() = prefs.getBoolean(FOLDER_COVER_MODE, false)
+        set(value) = prefs.edit().putBoolean(FOLDER_COVER_MODE, value).apply()
+
+    var gestureHaptics: Boolean
+        get() = prefs.getBoolean(GESTURE_HAPTICS, true)
+        set(value) = prefs.edit().putBoolean(GESTURE_HAPTICS, value).apply()
 }

@@ -70,6 +70,13 @@
         </activity>
 
         <activity
+            android:name=".activities.GesturesActivity"
+            android:configChanges="orientation"
+            android:exported="false"
+            android:label="@string/gestures_and_actions"
+            android:parentActivityName=".activities.SettingsActivity" />
+
+        <activity
             android:name="org.fossify.commons.activities.AboutActivity"
             android:exported="false"
             android:label="@string/about"
