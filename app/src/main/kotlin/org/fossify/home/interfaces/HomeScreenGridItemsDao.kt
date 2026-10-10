@@ -59,6 +59,9 @@ interface HomeScreenGridItemsDao {
     @Query("UPDATE home_screen_grid_items SET `page` = `page` + :shiftBy WHERE `page` > :shiftFrom")
     fun shiftPage(shiftFrom: Int, shiftBy: Int)
 
+    @Query("DELETE FROM home_screen_grid_items")
+    fun deleteAllItems()
+
     @Transaction
     fun deleteByPackageName(packageName: String) {
         deleteItemByPackageName(packageName)

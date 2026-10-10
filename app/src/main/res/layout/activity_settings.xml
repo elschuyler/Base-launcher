@@ -452,6 +452,65 @@
                     android:text="@string/protect_hidden_apps" />
 
             </RelativeLayout>
+
+            <include
+                android:id="@+id/settings_backup_restore_divider"
+                layout="@layout/divider" />
+
+            <TextView
+                android:id="@+id/settings_backup_restore_label"
+                style="@style/SettingsSectionLabelStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/backup_and_restore" />
+
+            <RelativeLayout
+                android:id="@+id/settings_backup_holder"
+                style="@style/SettingsHolderTextViewStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/ripple_background">
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_backup_title"
+                    style="@style/SettingsTextLabelStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/backup_settings_and_layout" />
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_backup_desc"
+                    style="@style/SettingsTextValueStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/settings_backup_title"
+                    android:text="@string/backup_settings_desc" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/settings_restore_holder"
+                style="@style/SettingsHolderTextViewStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/ripple_background">
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_restore_title"
+                    style="@style/SettingsTextLabelStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/restore_settings_and_layout" />
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_restore_desc"
+                    style="@style/SettingsTextValueStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/settings_restore_title"
+                    android:text="@string/restore_settings_desc" />
+
+            </RelativeLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

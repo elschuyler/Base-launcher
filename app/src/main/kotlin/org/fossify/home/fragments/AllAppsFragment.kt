@@ -199,6 +199,7 @@ class AllAppsFragment(
             if (getAdapter() == null) {
                 LaunchersAdapter(activity!!, this) {
                     val launcher = it as AppLauncher
+                    org.fossify.home.helpers.LogCatcher.log("AllApps", "Launching app: ${launcher.packageName}")
                     activity?.launchApp(launcher.packageName, launcher.activityName, launcher.title)
                     if (activity?.config?.closeAppDrawer == true) {
                         activity?.closeAppDrawer(delayed = true)
@@ -257,14 +258,12 @@ class AllAppsFragment(
         binding.drawerBtnPlayStore.applyColorFilter(textColor)
         binding.drawerBtnMenu.applyColorFilter(textColor)
 
-        binding.drawerBtnSearch.beVisibleIf(context.config.showSearchBar)
+        binding.drawerBtnSearch.beVisible()
         binding.drawerBtnSearch.setOnClickListener {
             openSearchMode()
         }
         binding.drawerTitle.setOnClickListener {
-            if (context.config.showSearchBar) {
-                openSearchMode()
-            }
+            openSearchMode()
         }
 
         binding.drawerBtnPlayStore.setOnClickListener {

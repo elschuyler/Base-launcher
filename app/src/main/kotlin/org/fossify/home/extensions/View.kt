@@ -1,16 +1,13 @@
 package org.fossify.home.extensions
 
-import android.graphics.drawable.LayerDrawable
-import android.view.RoundedCorner.POSITION_TOP_LEFT
-import android.view.RoundedCorner.POSITION_TOP_RIGHT
+import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.toDrawable
-import org.fossify.commons.R
-import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.getProperBackgroundColor
-import org.fossify.commons.helpers.isSPlus
+import org.fossify.home.R
 
 fun View.animateScale(
     from: Float,
@@ -28,20 +25,16 @@ fun View.animateScale(
 
 fun View.setupDrawerBackground() {
     val backgroundColor = context.getProperBackgroundColor()
-    background = backgroundColor.toDrawable()
+    // Semi-transparent background scrim (~82% alpha) to match modern drawer style
+    val translucentBg = ColorUtils.setAlphaComponent(backgroundColor, 210)
+    val bgDrawable = ResourcesCompat.getDrawable(
+        context.resources, R.drawable.bottom_sheet_bg, context.theme
+    )?.mutate()
 
-    val insets = rootWindowInsets
-    if (isSPlus() && insets != null) {
-        val topRightCorner = insets.getRoundedCorner(POSITION_TOP_RIGHT)?.radius ?: 0
-        val topLeftCorner = insets.getRoundedCorner(POSITION_TOP_LEFT)?.radius ?: 0
-        if (topRightCorner > 0 && topLeftCorner > 0) {
-            background = ResourcesCompat.getDrawable(
-                context.resources, R.drawable.bottom_sheet_bg, context.theme
-            ).apply {
-                (this as LayerDrawable)
-                    .findDrawableByLayerId(R.id.bottom_sheet_background)
-                    .applyColorFilter(backgroundColor)
-            }
-        }
+    if (bgDrawable is GradientDrawable) {
+        bgDrawable.setColor(translucentBg)
+        background = bgDrawable
+    } else {
+        background = translucentBg.toDrawable()
     }
 }

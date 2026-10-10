@@ -290,6 +290,22 @@ object LogCatcher {
         val prefix = if (isCrash) "CRASH DUMP:\n" else if (isAutoDump) "AUTO 2MB FLUSH:\n" else ""
         val contentToSave = "$prefix$rawContent\n"
 
+        // Emergency local crash persistence: write synchronously to internal storage to survive OOM / killed process
+        if (isCrash) {
+            try {
+                val emergencyCrashFile = File(context.filesDir, "crash_dump_latest.txt")
+                FileOutputStream(emergencyCrashFile, false).use { fos ->
+                    fos.write(contentToSave.toByteArray(Charsets.UTF_8))
+                    fos.flush()
+                    try {
+                        fos.fd.sync()
+                    } catch (ignored: Exception) {
+                    }
+                }
+            } catch (ignored: Exception) {
+            }
+        }
+
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // Android 10+ Scoped Storage via MediaStore.Downloads (Zero permissions required)
@@ -304,7 +320,8 @@ object LogCatcher {
                     ?: resolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
 
                 if (uri != null) {
-                    resolver.openOutputStream(uri, "wa")?.use { outputStream ->
+                    // Use standard "w" mode rather than "wa" for robust compatibility across all Android 10-15 OEM ROMs
+                    resolver.openOutputStream(uri, "w")?.use { outputStream ->
                         outputStream.write(contentToSave.toByteArray(Charsets.UTF_8))
                         outputStream.flush()
                     }

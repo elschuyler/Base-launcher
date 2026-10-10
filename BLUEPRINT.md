@@ -161,9 +161,50 @@
     - When Folder Cover Mode is active: single tap launches first child application; swipe up or double tap opens folder popup overlay.
     - Universal haptic feedback feedback triggers on gesture activations when enabled.
   - **Security Sanitization**:
-    - Purged ephemeral keystores and APK binaries post-compilation in accordance with Security Scan Protocol.
-
-
-
-
-
+- [Feature: Unified Backup & Restore + Universal LogCatcher Integration (Phase 5)]
+  - **Universal LogCatcher Hardening & Crash Drop**:
+    - Hardened `LogCatcher.dumpLogsToDownloadFolder`: upgraded MediaStore mode on Android 10+ from unstable `"wa"` to standard `"w"` for guaranteed cross-OEM compatibility (Samsung OneUI, Xiaomi MIUI, Pixel).
+    - Added synchronous direct file crash dump (`crash_dump_latest.txt`) with `fos.fd.sync()` ensuring zero-data-loss crash reporting before OS process termination.
+    - Systematically instrumented `LogCatcher` calls across `MainActivity`, `HomeScreenGrid`, `AllAppsFragment`, `BackupHelper`, and `AppLockManager` with structured component tags (no PII, no credentials).
+  - **Unified Backup & Restore Engine (`BackupHelper.kt`)**:
+    - Created single atomic JSON backup format (`schema_version: 1`) encapsulating:
+      1. Complete home screen grid layout (`HomeScreenGridItem` table across all pages, docked items, and folders).
+      2. Granular gesture mappings and linked popup widget configurations from `ItemGestureManager` (`item_gestures.json`).
+      3. Global launcher preferences from `Config` (grid dimensions, drawer settings, gestures, app lock configs).
+      4. Security & privacy lists (`HiddenIcon` and `LockedApp` tables).
+      5. Custom application icons from `filesDir/custom_icons/` encoded cleanly as Base64 PNGs.
+    - Built two-pass folder parent ID re-mapper on restore, ensuring robust relational integrity even when auto-generated primary keys change.
+    - Added `deleteAllItems()` and `deleteAllHiddenIcons()` Room DAO operations wrapped inside atomic database transactions (`runInTransaction`).
+  - **Settings UI Integration (`SettingsActivity` & `activity_settings.xml`)**:
+    - Added dedicated "Backup & Restore" section with Material 3 styling and dynamic primary accents.
+    - Integrated Storage Access Framework contracts (`ActivityResultContracts.CreateDocument` and `ActivityResultContracts.OpenDocument`) for zero-permission file operations.
+    - Added confirmation dialog before restore to prevent accidental overwrites, followed by instant UI refresh and cache clearing.
+- [Bugfixes & UX Polish (Post-Phase 5)]
+  - **Thread-Safety & Room DB Access**:
+    - Dispatched `getAllAppLaunchers()` onto worker thread via `ensureBackgroundThread` in `MainActivity.showAddAppDialog` and `SelectActionDialog.pickAppToLaunch`, eliminating main-thread Room `IllegalStateException`.
+    - Added UI-thread lifecycle guards (`!isFinishing && !isDestroyed`) before presenting `AddAppDialog`.
+    - Wrapped post-rename icon launcher refresh in `ensureBackgroundThread`.
+  - **Shortcut Creation Hardening (`SecurityException` Defense)**:
+    - Pre-filtered `queryIntentActivities` results in `MainActivity.showAddShortcutDialog` to strictly exclude unexported activities (`it.activityInfo.exported`).
+    - Wrapped `startActivityForResult(REQUEST_CREATE_SHORTCUT)` in defensive `try-catch` inside `handleShorcutCreation`, displaying a clear toast (`cannot_create_shortcut`) and logging to `LogCatcher` on permission denials.
+  - **Home Screen Long-Press Menu Consolidation**:
+    - Removed redundant `R.id.widgets` entry from `menu_home_screen.xml` and handler in `MainActivity.kt`, standardizing all element additions (Desktop Multi-cell Widgets, Popup Shutters, Applications, Shortcuts, Folders) through the unified "Add" (`AddToHomeBottomSheet`) portal.
+  - **LogKeeper Edge-to-Edge Status Bar Inset Handling**:
+    - Configured `padTopSystem = listOf(binding.logViewerTopBar)` in `LogViewerActivity.setupEdgeToEdge`, ensuring the top bar (Back button, title, and controls) is properly offset beneath the Android status bar and display cutout.
+- [Phase: App Drawer Modernization, Squarish Bubble Folders, Folder Popup (+) Action, and Unified Widget Long-Press Drag]
+  - **App Drawer Styling & Semi-Transparent Scrim**:
+    - Overhauled drawer top bar in `all_apps_fragment.xml` with bold "All apps" typography and prominent search icon action.
+    - Updated `View.setupDrawerBackground()` to render a modern semi-transparent dark/dynamic background scrim (~82% alpha) preserving wallpaper translucency.
+  - **Squarish Bubble Folder on Home Screen**:
+    - Replaced hardcoded circular folder icon clipping with a translucent squircle geometry (rounded rect with 26% corner radius) and subtle bubble border outline (`HomeScreenGrid.generateDrawable`).
+    - Nested folder preview thumbnails with proportional spacing and inner padding.
+  - **Folder Popup Overhaul (Label-Free + Top-Bar (+) Button)**:
+    - Suppressed item labels within the open folder popup (`item.parentId != null`), centering app icons cleanly within each popup cell.
+    - Added a dedicated top-bar `(+)` action button in the folder popup beside the folder title to open the app-only selector.
+    - Implemented background-threaded app picker to add application launchers to the open folder without thread-blocking Room exceptions.
+  - **Unified Home Screen Widget Long-Press & Drag**:
+    - Fixed widget drag initialization in `MyAppWidgetHostView`, `HomeScreenGrid.kt`, and `MainActivity.handleWidgetDrag`: hold displays resize frame while touch movement simultaneously moves the widget across grid coordinates.
+    - Preserved multi-cell bounds and shadow in `HomeScreenGrid.addWidget()`, updating Room DB on worker thread and re-displaying the resize frame around the updated location upon drop.
+    - Fixed `BuiltInClockWidgetView` vanishing bug by rendering in both `dispatchDraw` and `onDraw`, bypassing framework `updateAppWidgetSize` dummy ID reset, and ensuring widgets are dynamically restored in `HomeScreenGrid.onDraw` even when `isFirstDraw` is false.
+  - **Verification & Build Status**:
+    - Successfully compiled via `compile_applet` and validated against full unit test suite (`gradle :app:testDebugUnitTest`). Ephemeral build keystore purged.

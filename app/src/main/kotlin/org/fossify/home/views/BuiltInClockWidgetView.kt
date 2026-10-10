@@ -121,6 +121,15 @@ class BuiltInClockWidgetView(context: Context) : MyAppWidgetHostView(context) {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        drawClockContent(canvas)
+    }
+
+    override fun dispatchDraw(canvas: Canvas) {
+        super.dispatchDraw(canvas)
+        drawClockContent(canvas)
+    }
+
+    private fun drawClockContent(canvas: Canvas) {
         if (width <= 0 || height <= 0) return
 
         val centerX = width / 2f

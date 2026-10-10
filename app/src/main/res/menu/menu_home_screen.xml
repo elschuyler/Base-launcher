@@ -4,9 +4,6 @@
         android:id="@+id/add_to_home"
         android:title="@string/add" />
     <item
-        android:id="@+id/widgets"
-        android:title="@string/widgets" />
-    <item
         android:id="@+id/wallpapers"
         android:title="@string/wallpapers" />
     <item

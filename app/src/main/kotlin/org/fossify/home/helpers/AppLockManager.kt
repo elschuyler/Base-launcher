@@ -135,17 +135,19 @@ object AppLockManager {
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
+                    LogCatcher.log("AppLock", "Authentication succeeded for $packageName")
                     recordUnlock(packageName)
                     onSuccess()
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    // User canceled or authentication failed
+                    LogCatcher.log("AppLock", "Authentication error ($errorCode) for $packageName")
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
+                    LogCatcher.log("AppLock", "Authentication failed for $packageName")
                 }
             }
         )

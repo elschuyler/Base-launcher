@@ -33,6 +33,7 @@
     <string name="dock_column_count">Dock column count</string>
     <string name="pin_to_home">Pin to home screen</string>
     <string name="shortcut_pinned">Shortcut pinned to home screen</string>
+    <string name="cannot_create_shortcut">Cannot create shortcut from this application</string>
     <string name="set_as_default_to_enable_shortcuts">Set Vian as default launcher to enable app shortcuts</string>
     <string name="set_default">Set default</string>
     <string name="unlock_app_title">Unlock %1$s</string>
@@ -160,6 +161,18 @@
     <string name="device_admin_inactive">Device admin required for screen lock</string>
     <string name="folder_behavior">Folder behavior</string>
     <string name="feedback_and_permissions">Feedback &amp; permissions</string>
+    <string name="backup_and_restore">Backup &amp; restore</string>
+    <string name="backup_settings_and_layout">Backup settings &amp; layout</string>
+    <string name="backup_settings_desc">Export home screen, gestures, and settings to a JSON file</string>
+    <string name="restore_settings_and_layout">Restore settings &amp; layout</string>
+    <string name="restore_settings_desc">Import previously saved backup file</string>
+    <string name="backup_created_successfully">Backup created successfully</string>
+    <string name="backup_failed">Failed to create backup</string>
+    <string name="backup_restored_successfully">Backup restored successfully</string>
+    <string name="restore_failed">Failed to restore backup</string>
+    <string name="restore_confirm_title">Restore backup?</string>
+    <string name="restore_confirm_message">This will replace your current home screen layout, gestures, and launcher settings with the backup. Continue?</string>
+    <string name="restoring">Restoring…</string>
     <!--
         Haven't found some strings? There's more at
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res

@@ -82,6 +82,7 @@ import org.fossify.home.helpers.AddElementBridge
 import org.fossify.home.helpers.CustomIconManager
 import org.fossify.home.helpers.ItemGestureManager
 import org.fossify.home.helpers.LauncherActionHandler
+import org.fossify.home.helpers.LogCatcher
 import androidx.activity.result.contract.ActivityResultContracts
 import org.fossify.home.extensions.config
 import org.fossify.home.extensions.getDrawableForPackageName
@@ -854,8 +855,21 @@ class MainActivity : SimpleActivity(), FlingListener {
     }
 
     fun homeScreenClicked(eventX: Float, eventY: Float) {
-        binding.homeScreenGrid.root.hideResizeLines()
         val (x, y) = binding.homeScreenGrid.root.intoViewSpaceCoords(eventX, eventY)
+        val openFolderItem = binding.homeScreenGrid.root.getCurrentlyOpenFolderItem()
+        if (openFolderItem != null) {
+            if (binding.homeScreenGrid.root.isClickingFolderAddButton(x, y)) {
+                showAddAppToFolderDialog(openFolderItem)
+                return
+            }
+            if (binding.homeScreenGrid.root.isClickingFolderHeader(x, y)) {
+                RenameItemDialog(this, openFolderItem) {
+                    binding.homeScreenGrid.root.redrawGrid()
+                }
+                return
+            }
+        }
+        binding.homeScreenGrid.root.hideResizeLines()
         val clickedGridItem = binding.homeScreenGrid.root.isClickingGridItem(x.toInt(), y.toInt())
         if (clickedGridItem != null) {
             performItemClick(clickedGridItem)
@@ -1058,6 +1072,7 @@ class MainActivity : SimpleActivity(), FlingListener {
 
     fun openPopupWidget(item: HomeScreenGridItem) {
         val itemId = item.id ?: return
+        org.fossify.home.helpers.LogCatcher.log("PopupWidget", "Opening popup widget for item $itemId (${item.title})")
         val linked = ItemGestureManager.getLinkedWidget(this, itemId)
         val appWidgetManager = AppWidgetManager.getInstance(this)
 
@@ -1177,7 +1192,9 @@ class MainActivity : SimpleActivity(), FlingListener {
         gridItem: HomeScreenGridItem,
         isOnAllAppsFragment: Boolean,
     ) {
-        binding.homeScreenGrid.root.hideResizeLines()
+        if (gridItem.type != ITEM_TYPE_WIDGET) {
+            binding.homeScreenGrid.root.hideResizeLines()
+        }
         mLongPressedIcon = gridItem
         val clickableRect = if (isOnAllAppsFragment || gridItem.type == ITEM_TYPE_WIDGET) {
             val iconSize = (realScreenSize.x / config.drawerColumnCount).toInt()
@@ -1213,6 +1230,7 @@ class MainActivity : SimpleActivity(), FlingListener {
     }
 
     fun handleWidgetDrag(item: HomeScreenGridItem, event: MotionEvent, isUp: Boolean) {
+        val (viewX, viewY) = binding.homeScreenGrid.root.intoViewSpaceCoords(event.rawX, event.rawY)
         val hasMoved = mTouchDownX != -1 && mTouchDownY != -1 &&
                 (abs(mTouchDownX - event.rawX) > mMoveGestureThreshold || abs(mTouchDownY - event.rawY) > mMoveGestureThreshold)
 
@@ -1227,14 +1245,14 @@ class MainActivity : SimpleActivity(), FlingListener {
                 mOpenPopupMenu = null
             }
 
-            if (mLongPressedIcon == null && hasMoved) {
-                mLongPressedIcon = item
-                binding.homeScreenGrid.root.itemDraggingStarted(item)
-                hideFragment(binding.allAppsFragment)
-            }
-
-            if (mLongPressedIcon != null && hasMoved) {
-                binding.homeScreenGrid.root.draggedItemMoved(event.rawX.toInt(), event.rawY.toInt())
+            if (hasMoved) {
+                if (mLongPressedIcon == null) {
+                    mLongPressedIcon = item
+                    binding.homeScreenGrid.root.hideResizeLines()
+                    binding.homeScreenGrid.root.itemDraggingStarted(item)
+                    hideFragment(binding.allAppsFragment)
+                }
+                binding.homeScreenGrid.root.draggedItemMoved(viewX.toInt(), viewY.toInt())
             }
         } else {
             mTouchDownX = -1
@@ -1242,6 +1260,10 @@ class MainActivity : SimpleActivity(), FlingListener {
             if (mLongPressedIcon != null) {
                 binding.homeScreenGrid.root.itemDraggingStopped()
                 mLongPressedIcon = null
+                val placedItem = binding.homeScreenGrid.root.getGridItem(item.id) ?: item
+                if (placedItem.className != BUILT_IN_CLOCK_CLASS_NAME) {
+                    binding.homeScreenGrid.root.widgetLongPressed(placedItem)
+                }
             }
         }
     }
@@ -1321,7 +1343,6 @@ class MainActivity : SimpleActivity(), FlingListener {
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.add_to_home -> AddElementBridge.open(this@MainActivity, x, y)
-                    R.id.widgets -> showWidgetsFragment()
                     R.id.wallpapers -> launchWallpapersIntent()
                     R.id.launcher_settings -> launchSettings()
                     R.id.set_as_default -> launchSetAsDefaultIntent()
@@ -1350,35 +1371,53 @@ class MainActivity : SimpleActivity(), FlingListener {
     }
 
     fun showAddAppDialog(x: Float? = null, y: Float? = null) {
-        val apps = getAllAppLaunchers()
-        AddAppDialog(this, apps) { selectedApp ->
-            val (page, rect) = getPlacementCell(x, y)
-            val gridItem = HomeScreenGridItem(
-                id = null,
-                left = rect.left,
-                top = rect.top,
-                right = rect.right,
-                bottom = rect.bottom,
-                page = page,
-                packageName = selectedApp.packageName,
-                activityName = selectedApp.activityName,
-                title = selectedApp.title,
-                type = ITEM_TYPE_ICON,
-                className = "",
-                widgetId = -1,
-                shortcutId = "",
-                icon = selectedApp.drawable?.toBitmap(),
-                docked = false,
-                parentId = null,
-                drawable = selectedApp.drawable
-            )
+        ensureBackgroundThread {
+            val apps = getAllAppLaunchers()
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                AddAppDialog(this, apps) { selectedApp ->
+                    val (page, rect) = getPlacementCell(x, y)
+                    val gridItem = HomeScreenGridItem(
+                        id = null,
+                        left = rect.left,
+                        top = rect.top,
+                        right = rect.right,
+                        bottom = rect.bottom,
+                        page = page,
+                        packageName = selectedApp.packageName,
+                        activityName = selectedApp.activityName,
+                        title = selectedApp.title,
+                        type = ITEM_TYPE_ICON,
+                        className = "",
+                        widgetId = -1,
+                        shortcutId = "",
+                        icon = selectedApp.drawable?.toBitmap(),
+                        docked = false,
+                        parentId = null,
+                        drawable = selectedApp.drawable
+                    )
 
-            ensureBackgroundThread {
-                binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
-                runOnUiThread {
-                    if (page != binding.homeScreenGrid.root.getCurrentPage()) {
-                        binding.homeScreenGrid.root.skipToPage(page)
+                    ensureBackgroundThread {
+                        binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
+                        runOnUiThread {
+                            if (page != binding.homeScreenGrid.root.getCurrentPage()) {
+                                binding.homeScreenGrid.root.skipToPage(page)
+                            }
+                            toast(getString(R.string.app_added_to_home, selectedApp.title))
+                        }
                     }
+                }
+            }
+        }
+    }
+
+    fun showAddAppToFolderDialog(folderItem: HomeScreenGridItem) {
+        ensureBackgroundThread {
+            val apps = getAllAppLaunchers()
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                AddAppDialog(this, apps) { selectedApp ->
+                    binding.homeScreenGrid.root.addAppToFolder(folderItem, selectedApp)
                     toast(getString(R.string.app_added_to_home, selectedApp.title))
                 }
             }
@@ -1388,6 +1427,7 @@ class MainActivity : SimpleActivity(), FlingListener {
     fun showAddShortcutDialog(x: Float? = null, y: Float? = null) {
         val intent = Intent(Intent.ACTION_CREATE_SHORTCUT, null)
         val resolveInfos = packageManager.queryIntentActivities(intent, PackageManager.PERMISSION_GRANTED)
+            .filter { it.activityInfo != null && it.activityInfo.exported }
         if (resolveInfos.isEmpty()) {
             toast(R.string.no_shortcuts_available)
             return
@@ -1598,7 +1638,9 @@ class MainActivity : SimpleActivity(), FlingListener {
     private fun renameItem(homeScreenGridItem: HomeScreenGridItem) {
         EditItemDialog(this, homeScreenGridItem) {
             binding.homeScreenGrid.root.fetchGridItems()
-            refreshLaunchers()
+            ensureBackgroundThread {
+                refreshLaunchers()
+            }
         }
     }
 
@@ -2174,9 +2216,14 @@ class MainActivity : SimpleActivity(), FlingListener {
     ) {
         mActionOnAddShortcut = callback
         val componentName = ComponentName(activityInfo.packageName, activityInfo.name)
-        Intent(Intent.ACTION_CREATE_SHORTCUT).apply {
-            component = componentName
-            startActivityForResult(this, REQUEST_CREATE_SHORTCUT)
+        try {
+            Intent(Intent.ACTION_CREATE_SHORTCUT).apply {
+                component = componentName
+                startActivityForResult(this, REQUEST_CREATE_SHORTCUT)
+            }
+        } catch (e: Exception) {
+            toast(R.string.cannot_create_shortcut)
+            LogCatcher.log("MainActivity", "Failed to launch shortcut creation for $componentName: ${e.message}")
         }
     }
 

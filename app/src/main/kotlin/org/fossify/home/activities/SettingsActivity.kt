@@ -5,13 +5,17 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
+import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.dialogs.RadioGroupDialog
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.launchMoreAppsFromUsIntent
+import org.fossify.commons.extensions.toast
 import org.fossify.commons.extensions.updateTextColors
 import org.fossify.commons.extensions.viewBinding
 import org.fossify.commons.helpers.NavigationIcon
+import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.helpers.isTiramisuPlus
 import org.fossify.commons.models.FAQItem
 import org.fossify.commons.models.RadioItem
@@ -23,17 +27,78 @@ import org.fossify.home.helpers.APP_LOCK_TIMEOUT_1_MIN
 import org.fossify.home.helpers.APP_LOCK_TIMEOUT_5_MIN
 import org.fossify.home.helpers.APP_LOCK_TIMEOUT_IMMEDIATELY
 import org.fossify.home.helpers.APP_LOCK_TIMEOUT_SCREEN_OFF
+import org.fossify.home.helpers.BackupHelper
 import org.fossify.home.helpers.MAX_COLUMN_COUNT
 import org.fossify.home.helpers.MAX_ROW_COUNT
 import org.fossify.home.helpers.MIN_COLUMN_COUNT
 import org.fossify.home.helpers.MIN_ROW_COUNT
 import org.fossify.home.receivers.LockDeviceAdminReceiver
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.system.exitProcess
 
 class SettingsActivity : SimpleActivity() {
 
     private val binding by viewBinding(ActivitySettingsBinding::inflate)
+
+    private val createBackupLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) {
+            ensureBackgroundThread {
+                try {
+                    val success = contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        BackupHelper.exportBackup(this, outputStream)
+                    } ?: false
+
+                    runOnUiThread {
+                        if (success) {
+                            toast(R.string.backup_created_successfully)
+                        } else {
+                            toast(R.string.backup_failed)
+                        }
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        toast(R.string.backup_failed)
+                    }
+                }
+            }
+        }
+    }
+
+    private val restoreBackupLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            ConfirmationDialog(
+                activity = this,
+                message = "",
+                messageId = R.string.restore_confirm_message,
+                positive = org.fossify.commons.R.string.yes,
+                negative = org.fossify.commons.R.string.no
+            ) {
+                toast(R.string.restoring)
+                ensureBackgroundThread {
+                    try {
+                        val success = contentResolver.openInputStream(uri)?.use { inputStream ->
+                            BackupHelper.importBackup(this, inputStream)
+                        } ?: false
+
+                        runOnUiThread {
+                            if (success) {
+                                toast(R.string.backup_restored_successfully)
+                                recreate()
+                            } else {
+                                toast(R.string.restore_failed)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        runOnUiThread {
+                            toast(R.string.restore_failed)
+                        }
+                    }
+                }
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
@@ -65,6 +130,7 @@ class SettingsActivity : SimpleActivity() {
         setupManageHiddenIcons()
         setupAppLock()
         setupViewAppLogs()
+        setupBackupAndRestore()
         updateTextColors(binding.settingsHolder)
 
         arrayOf(
@@ -72,7 +138,8 @@ class SettingsActivity : SimpleActivity() {
             binding.settingsGeneralSettingsLabel,
             binding.settingsDrawerSettingsLabel,
             binding.settingsHomeScreenLabel,
-            binding.settingsAppLockLabel
+            binding.settingsAppLockLabel,
+            binding.settingsBackupRestoreLabel
         ).forEach {
             it.setTextColor(getProperPrimaryColor())
         }
@@ -378,6 +445,17 @@ class SettingsActivity : SimpleActivity() {
         // aid only — safe to remove once the log keeper is trusted.
         binding.settingsViewAppLogsHolder.setOnLongClickListener {
             throw TestCrashException("Test crash triggered from Settings (long press on View app logs)")
+        }
+    }
+
+    private fun setupBackupAndRestore() {
+        binding.settingsBackupHolder.setOnClickListener {
+            val dateStr = SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())
+            createBackupLauncher.launch("vian_launcher_backup_$dateStr.json")
+        }
+
+        binding.settingsRestoreHolder.setOnClickListener {
+            restoreBackupLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
         }
     }
 

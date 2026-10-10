@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.fossify.commons.extensions.beVisibleIf
+import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.home.R
 import org.fossify.home.activities.MainActivity
 import org.fossify.home.databinding.DialogSelectActionBinding
@@ -181,18 +182,23 @@ class SelectActionDialog(
     }
 
     private fun pickAppToLaunch() {
-        val apps = if (activity is MainActivity) {
-            activity.getAllAppLaunchers()
-        } else {
-            activity.launchersDB.getAppLaunchers()
-        }
+        ensureBackgroundThread {
+            val apps = if (activity is MainActivity) {
+                activity.getAllAppLaunchers()
+            } else {
+                activity.launchersDB.getAppLaunchers()
+            }
 
-        AddAppDialog(activity, apps) { selectedApp ->
-            onActionSelected(
-                LauncherActionHandler.ACTION_LAUNCH_APP,
-                selectedApp.packageName,
-                selectedApp.title
-            )
+            activity.runOnUiThread {
+                if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+                AddAppDialog(activity, apps) { selectedApp ->
+                    onActionSelected(
+                        LauncherActionHandler.ACTION_LAUNCH_APP,
+                        selectedApp.packageName,
+                        selectedApp.title
+                    )
+                }
+            }
         }
     }
 

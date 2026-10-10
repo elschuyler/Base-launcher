@@ -33,7 +33,10 @@ class LogViewerActivity : SimpleActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
-        setupEdgeToEdge(padBottomSystem = listOf(binding.logViewerRecycler))
+        setupEdgeToEdge(
+            padTopSystem = listOf(binding.logViewerTopBar),
+            padBottomSystem = listOf(binding.logViewerRecycler)
+        )
         setupTopBarActions()
         setupTimeFilterTabs()
         setupRecyclerView()

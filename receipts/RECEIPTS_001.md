@@ -446,5 +446,35 @@
 - **Any deviation from what was requested, and why**: None. Built exactly to the Phase 4 architectural plan.
 - **Any known issue or follow-up needed**: Ready for on-device manual validation of Phase 4; ready for Phase 5 (Backup & Restore + Universal LogCatcher Integration).
 
+### Entry 014
+- **Timestamp**: 2026-10-08T13:10:00-07:00
+- **One-line summary of what was requested**: Implement Phase 5: Unified Backup & Restore + Universal LogCatcher Integration with hardened crash drop.
+- **Exact files touched**:
+  - `/BLUEPRINT.md`
+  - `/app/src/main/res/values/strings.xml`
+  - `/app/src/main/res/layout/activity_settings.xml`
+  - `/app/src/main/kotlin/org/fossify/home/interfaces/HomeScreenGridItemsDao.kt`
+  - `/app/src/main/kotlin/org/fossify/home/interfaces/HiddenIconsDao.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/LogCatcher.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/BackupHelper.kt`
+  - `/app/src/main/kotlin/org/fossify/home/activities/SettingsActivity.kt`
+  - `/app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/AppLockManager.kt`
+  - `/app/src/main/kotlin/org/fossify/home/views/HomeScreenGrid.kt`
+  - `/app/src/main/kotlin/org/fossify/home/fragments/AllAppsFragment.kt`
+  - `/receipts/RECEIPTS_001.md`
+- **What was actually done**:
+  - Built `BackupHelper.kt` with unified JSON export & import covering home screen grid items, item gestures & popup widgets, launcher configuration, hidden/locked apps, and custom icons.
+  - Implemented two-pass folder parent ID re-mapper on restore, ensuring relational integrity when database primary keys change.
+  - Added `deleteAllItems()` and `deleteAllHiddenIcons()` Room DAO operations.
+  - Hardened `LogCatcher` crash drop: switched MediaStore Android 10+ mode to `"w"` for universal OEM compatibility; added synchronous emergency crash write to `crash_dump_latest.txt` with `fos.fd.sync()`.
+  - Universally instrumented `LogCatcher` calls across `MainActivity`, `AppLockManager`, `HomeScreenGrid`, `AllAppsFragment`, and `BackupHelper` (adhering to Mandate 17 with zero PII or credentials).
+  - Integrated "Backup & Restore" section into `SettingsActivity` and `activity_settings.xml` with SAF document creation and opening contracts and confirmation dialog.
+  - Purged ephemeral keystores and build binaries per Security Scan Protocol.
+- **How it was verified**: Local build only (`compile_applet` passed, `gradle :app:testDebugUnitTest` passed).
+- **Any deviation from what was requested, and why**: None. Built exactly to the agreed Phase 5 architecture.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+
 
 

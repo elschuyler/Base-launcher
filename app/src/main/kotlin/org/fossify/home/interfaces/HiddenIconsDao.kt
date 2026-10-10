@@ -13,4 +13,7 @@ interface HiddenIconsDao {
 
     @Delete
     fun removeHiddenIcons(icons: List<HiddenIcon>)
+
+    @Query("DELETE FROM hidden_icons")
+    fun deleteAllHiddenIcons()
 }
