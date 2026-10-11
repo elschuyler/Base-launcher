@@ -1208,7 +1208,6 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         widgetView.longPressListener = { x, y ->
             val activity = context as? MainActivity
             if (activity?.isAllAppsFragmentExpanded() == false) {
-                widgetLongPressed(item)
                 activity.showHomeIconMenu(x, widgetView.y, item, false)
                 performHapticFeedback()
             }

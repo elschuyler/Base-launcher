@@ -67,7 +67,9 @@ class LaunchersAdapter(
     }
 
     private fun calculateIconWidth() {
-        iconPadding = 0
+        val currentColumnCount = activity.config.drawerColumnCount
+        val iconWidth = activity.realScreenSize.x / currentColumnCount
+        iconPadding = (iconWidth * 0.12f).toInt()
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -86,7 +88,7 @@ class LaunchersAdapter(
                 binding.launcherLabel.text = launcher.title
                 binding.launcherLabel.setTextColor(textColor)
                 binding.launcherLabel.beVisibleIf(activity.config.showDrawerAppLabels)
-                binding.launcherIcon.setPadding(0, 0, 0, 0)
+                binding.launcherIcon.setPadding(iconPadding, iconPadding, iconPadding, iconPadding)
 
                 val key = launcher.getLauncherIdentifier()
                 val cachedDrawable = launcher.drawable ?: IconCache.getDrawable(key)

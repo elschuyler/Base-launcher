@@ -24,17 +24,6 @@ fun View.animateScale(
     }
 
 fun View.setupDrawerBackground() {
-    val backgroundColor = context.getProperBackgroundColor()
-    // Semi-transparent background scrim (~82% alpha) to match modern drawer style
-    val translucentBg = ColorUtils.setAlphaComponent(backgroundColor, 210)
-    val bgDrawable = ResourcesCompat.getDrawable(
-        context.resources, R.drawable.bottom_sheet_bg, context.theme
-    )?.mutate()
-
-    if (bgDrawable is GradientDrawable) {
-        bgDrawable.setColor(translucentBg)
-        background = bgDrawable
-    } else {
-        background = translucentBg.toDrawable()
-    }
+    // Drawer has no background scrim; only wallpaper is visible behind the drawer
+    background = null
 }

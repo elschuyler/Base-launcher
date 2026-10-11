@@ -208,3 +208,33 @@
     - Fixed `BuiltInClockWidgetView` vanishing bug by rendering in both `dispatchDraw` and `onDraw`, bypassing framework `updateAppWidgetSize` dummy ID reset, and ensuring widgets are dynamically restored in `HomeScreenGrid.onDraw` even when `isFirstDraw` is false.
   - **Verification & Build Status**:
     - Successfully compiled via `compile_applet` and validated against full unit test suite (`gradle :app:testDebugUnitTest`). Ephemeral build keystore purged.
+- [Phase: Drawer Wallpaper-Only View, Icon Proportion Alignment, and Standard Launcher Widget UX]
+  - **Drawer Wallpaper Scrim & Homescreen Fade**:
+    - Configured `View.setupDrawerBackground()` to keep drawer background transparent (`background = null`), removing solid/dark scrim.
+    - Added reactive homescreen alpha fade in `MainActivity.kt`: as drawer slides up, `homeScreenGrid.root.alpha` smoothly transitions from 1.0 to 0.0, guaranteeing that in the drawer ONLY the system wallpaper is visible and the homescreen is completely hidden.
+  - **Drawer Icon Sizing & Padding**:
+    - Adjusted `launcher_icon_size` to standard 50dp in `dimens.xml`.
+    - Restored dynamic `iconPadding` (12% of column width) in `LaunchersAdapter.kt` to create elegant, uniform spacing and padding around drawer icons matching the screenshot.
+  - **Standard Launcher Widget Long-Press, Move & Resize UX**:
+    - Aligned widget long-press in `HomeScreenGrid.kt` with standard app icons: long-pressing displays the popup menu with options (Remove, Resize).
+    - Dragging after long-press immediately dismisses the popup menu and initiates grid dragging across cells, dropping cleanly into destination cells on release without disruptive auto-resize frames.
+    - Selecting "Resize" from the popup menu activates `MyAppWidgetResizeFrame` with interactive handle dots on all 4 sides.
+    - Fortified `MyAppWidgetResizeFrame` to defensively handle all widget types (including built-in clocks) without null pointer returns, and fixed `onDraw` frame rendering for widgets placed at `(0, 0)`.
+- [Phase: Long-Press Menu Modernization, Item Gestures, Biometric App Lock & Dedicated AppLock Settings]
+  - **Standardized Item Long-Press Context Menu (`AppShortcutsPopupWindow`)**:
+    - Homescreen app icons & folders: custom icon / edit action, dedicated gestures action (homescreen only), and lock/unlock toggle.
+    - Shortcuts and widgets on homescreen: custom icon and gestures suppressed; widgets support remove & resize; shortcuts support remove.
+    - App drawer items: custom icon / edit action (Option B global custom icon), lock/unlock toggle, hide, uninstall. Gestures strictly suppressed in drawer.
+    - Removed popup widget action from icon long-press popup menu.
+  - **Biometric Security Defense**:
+    - Strictly enforce biometric / device PIN verification before unlocking any locked app from the launcher menu (`toggleLock`), preventing unauthorized unlocks.
+    - Locked items gate single-tap launches behind biometric or phone PIN / pattern unlock prompt.
+  - **Dedicated Item Gestures Configuration (`ItemGesturesDialog`)**:
+    - Dedicated modal dialog to configure per-item Double Tap, Swipe Up, Swipe Down, Swipe Left, and Swipe Right gestures on the home screen.
+  - **Dedicated App Lock Settings Page (`AppLockActivity`)**:
+    - Decoupled app lock configuration from main `SettingsActivity` into a dedicated `AppLockActivity`.
+    - Gated access behind biometric prompt when app lock is active.
+    - Features master enable switch, timeout selector, protect hidden apps switch, and full locked apps manager list with add/remove actions.
+    - Clean entry row in `SettingsActivity` displaying real-time lock status and locked app count.
+
+

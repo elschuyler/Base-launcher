@@ -209,28 +209,32 @@ class AppShortcutsPopupWindow(
     }
 
     private fun setupQuickActionsBar() {
-        val canRename = (gridItem.type == ITEM_TYPE_ICON || gridItem.type == ITEM_TYPE_FOLDER)
-        val canHide = gridItem.type == ITEM_TYPE_ICON && isOnAllAppsFragment
-        val canResize = gridItem.type == ITEM_TYPE_WIDGET && gridItem.className != BUILT_IN_CLOCK_CLASS_NAME
-        val canUninstall = gridItem.type == ITEM_TYPE_ICON &&
+        val isIcon = gridItem.type == ITEM_TYPE_ICON
+        val isFolder = gridItem.type == ITEM_TYPE_FOLDER
+        val isWidget = gridItem.type == ITEM_TYPE_WIDGET
+
+        val canRename = isIcon || isFolder
+        val canGestures = !isOnAllAppsFragment && (isIcon || isFolder)
+        val canHide = isIcon && isOnAllAppsFragment
+        val canResize = isWidget && gridItem.className != BUILT_IN_CLOCK_CLASS_NAME
+        val canUninstall = isIcon &&
             activity.canAppBeUninstalled(gridItem.packageName) &&
             gridItem.packageName != activity.packageName
         val canRemove = !isOnAllAppsFragment
-        val canLock = gridItem.type == ITEM_TYPE_ICON
-        val canPopupWidget = gridItem.type == ITEM_TYPE_ICON
+        val canLock = isIcon
 
         binding.popupActionRemoveBtn.beVisibleIf(canRemove)
         binding.popupActionRenameBtn.beVisibleIf(canRename)
+        binding.popupActionGesturesBtn.beVisibleIf(canGestures)
         binding.popupActionHideBtn.beVisibleIf(canHide)
         binding.popupActionUninstallBtn.beVisibleIf(canUninstall)
         binding.popupActionResizeBtn.beVisibleIf(canResize)
         binding.popupActionLockBtn.beVisibleIf(canLock)
-        binding.popupActionWidgetBtn.beVisibleIf(canPopupWidget)
 
-        if (canPopupWidget) {
-            binding.popupActionWidgetBtn.setOnClickListener {
+        if (canGestures) {
+            binding.popupActionGesturesBtn.setOnClickListener {
                 listener.onAnyClick()
-                listener.openPopupWidget(gridItem)
+                listener.customizeGestures(gridItem)
                 dismiss()
             }
         }
@@ -284,28 +288,32 @@ class AppShortcutsPopupWindow(
     }
 
     private fun setupFallbackActions() {
-        val canRename = (gridItem.type == ITEM_TYPE_ICON || gridItem.type == ITEM_TYPE_FOLDER)
-        val canHide = gridItem.type == ITEM_TYPE_ICON && isOnAllAppsFragment
-        val canResize = gridItem.type == ITEM_TYPE_WIDGET && gridItem.className != BUILT_IN_CLOCK_CLASS_NAME
-        val canUninstall = gridItem.type == ITEM_TYPE_ICON &&
+        val isIcon = gridItem.type == ITEM_TYPE_ICON
+        val isFolder = gridItem.type == ITEM_TYPE_FOLDER
+        val isWidget = gridItem.type == ITEM_TYPE_WIDGET
+
+        val canRename = isIcon || isFolder
+        val canGestures = !isOnAllAppsFragment && (isIcon || isFolder)
+        val canHide = isIcon && isOnAllAppsFragment
+        val canResize = isWidget && gridItem.className != BUILT_IN_CLOCK_CLASS_NAME
+        val canUninstall = isIcon &&
             activity.canAppBeUninstalled(gridItem.packageName) &&
             gridItem.packageName != activity.packageName
         val canRemove = !isOnAllAppsFragment
-        val canLock = gridItem.type == ITEM_TYPE_ICON
-        val canPopupWidget = gridItem.type == ITEM_TYPE_ICON
+        val canLock = isIcon
 
         binding.fallbackActionRemove.beVisibleIf(canRemove)
         binding.fallbackActionRename.beVisibleIf(canRename)
+        binding.fallbackActionGestures.beVisibleIf(canGestures)
         binding.fallbackActionHide.beVisibleIf(canHide)
         binding.fallbackActionUninstall.beVisibleIf(canUninstall)
         binding.fallbackActionResize.beVisibleIf(canResize)
         binding.fallbackActionLock.beVisibleIf(canLock)
-        binding.fallbackActionWidget.beVisibleIf(canPopupWidget)
 
-        if (canPopupWidget) {
-            binding.fallbackActionWidget.setOnClickListener {
+        if (canGestures) {
+            binding.fallbackActionGestures.setOnClickListener {
                 listener.onAnyClick()
-                listener.openPopupWidget(gridItem)
+                listener.customizeGestures(gridItem)
                 dismiss()
             }
         }

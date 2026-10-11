@@ -23,10 +23,7 @@ import org.fossify.home.BuildConfig
 import org.fossify.home.R
 import org.fossify.home.databinding.ActivitySettingsBinding
 import org.fossify.home.extensions.config
-import org.fossify.home.helpers.APP_LOCK_TIMEOUT_1_MIN
-import org.fossify.home.helpers.APP_LOCK_TIMEOUT_5_MIN
-import org.fossify.home.helpers.APP_LOCK_TIMEOUT_IMMEDIATELY
-import org.fossify.home.helpers.APP_LOCK_TIMEOUT_SCREEN_OFF
+import org.fossify.home.extensions.lockedAppsDB
 import org.fossify.home.helpers.BackupHelper
 import org.fossify.home.helpers.MAX_COLUMN_COUNT
 import org.fossify.home.helpers.MAX_ROW_COUNT
@@ -138,7 +135,6 @@ class SettingsActivity : SimpleActivity() {
             binding.settingsGeneralSettingsLabel,
             binding.settingsDrawerSettingsLabel,
             binding.settingsHomeScreenLabel,
-            binding.settingsAppLockLabel,
             binding.settingsBackupRestoreLabel
         ).forEach {
             it.setTextColor(getProperPrimaryColor())
@@ -384,55 +380,23 @@ class SettingsActivity : SimpleActivity() {
 
     private fun setupAppLock() {
         val isEnabled = config.isAppLockEnabled
-        binding.settingsEnableAppLock.isChecked = isEnabled
-        binding.settingsAppLockTimeoutHolder.beVisibleIf(isEnabled)
-        binding.settingsProtectHiddenAppsHolder.beVisibleIf(isEnabled)
-
-        binding.settingsEnableAppLockHolder.setOnClickListener {
-            binding.settingsEnableAppLock.toggle()
-            config.isAppLockEnabled = binding.settingsEnableAppLock.isChecked
-            val enabled = config.isAppLockEnabled
-            binding.settingsAppLockTimeoutHolder.beVisibleIf(enabled)
-            binding.settingsProtectHiddenAppsHolder.beVisibleIf(enabled)
-        }
-
-        setupAppLockTimeout()
-
-        binding.settingsProtectHiddenApps.isChecked = config.appLockProtectHiddenApps
-        binding.settingsProtectHiddenAppsHolder.setOnClickListener {
-            binding.settingsProtectHiddenApps.toggle()
-            config.appLockProtectHiddenApps = binding.settingsProtectHiddenApps.isChecked
-        }
-    }
-
-    private fun setupAppLockTimeout() {
-        val currentTimeout = config.appLockTimeout
-        binding.settingsAppLockTimeout.text = getAppLockTimeoutText(currentTimeout)
-        binding.settingsAppLockTimeoutHolder.setOnClickListener {
-            val timeouts = listOf(
-                RadioItem(APP_LOCK_TIMEOUT_IMMEDIATELY, getString(R.string.timeout_immediately)),
-                RadioItem(APP_LOCK_TIMEOUT_1_MIN, getString(R.string.timeout_1_min)),
-                RadioItem(APP_LOCK_TIMEOUT_5_MIN, getString(R.string.timeout_5_min)),
-                RadioItem(APP_LOCK_TIMEOUT_SCREEN_OFF, getString(R.string.timeout_screen_off))
-            )
-
-            RadioGroupDialog(this, ArrayList(timeouts), currentTimeout) { selected ->
-                val newTimeout = selected as Int
-                if (currentTimeout != newTimeout) {
-                    config.appLockTimeout = newTimeout
-                    binding.settingsAppLockTimeout.text = getAppLockTimeoutText(newTimeout)
+        ensureBackgroundThread {
+            val lockedCount = lockedAppsDB.getAllLockedPackages().size
+            runOnUiThread {
+                binding.settingsAppLockDesc.text = if (isEnabled) {
+                    if (lockedCount > 0) {
+                        getString(R.string.app_lock_enabled_count, lockedCount)
+                    } else {
+                        getString(R.string.app_lock_status_enabled)
+                    }
+                } else {
+                    getString(R.string.app_lock_status_disabled)
                 }
             }
         }
-    }
 
-    private fun getAppLockTimeoutText(timeout: Int): String {
-        return when (timeout) {
-            APP_LOCK_TIMEOUT_IMMEDIATELY -> getString(R.string.timeout_immediately)
-            APP_LOCK_TIMEOUT_1_MIN -> getString(R.string.timeout_1_min)
-            APP_LOCK_TIMEOUT_5_MIN -> getString(R.string.timeout_5_min)
-            APP_LOCK_TIMEOUT_SCREEN_OFF -> getString(R.string.timeout_screen_off)
-            else -> getString(R.string.timeout_immediately)
+        binding.settingsAppLockHolder.setOnClickListener {
+            startActivity(Intent(this, AppLockActivity::class.java))
         }
     }
 

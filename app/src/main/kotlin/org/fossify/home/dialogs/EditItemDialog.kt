@@ -1,7 +1,6 @@
 package org.fossify.home.dialogs
 
 import android.app.Activity
-import android.appwidget.AppWidgetManager
 import android.graphics.Bitmap
 import androidx.appcompat.app.AlertDialog
 import org.fossify.commons.extensions.beGone
@@ -52,14 +51,13 @@ class EditItemDialog(
             showIconPickerOptions(binding)
         }
 
-        // Setup Gestures & Popup Widget configuration
+        // Setup Gestures configuration
         val gestureConfig = if (item.id != null) {
             ItemGestureManager.getOrCreateConfig(activity, item.id!!)
         } else {
             ItemGestureConfig()
         }
 
-        setupWidgetSection(binding, gestureConfig)
         setupGesturesSection(binding, gestureConfig)
 
         activity.getAlertDialogBuilder()
@@ -156,51 +154,6 @@ class EditItemDialog(
                     }
                 }
             }
-    }
-
-    private fun setupWidgetSection(binding: DialogEditItemBinding, gestureConfig: ItemGestureConfig) {
-        fun refreshWidgetUI() {
-            val linkedId = gestureConfig.linkedWidgetId
-            if (linkedId != -1) {
-                val providerInfo = AppWidgetManager.getInstance(activity).getAppWidgetInfo(linkedId)
-                val widgetTitle = providerInfo?.loadLabel(activity.packageManager) ?: "Widget #$linkedId"
-                binding.itemEditWidgetTitle.text = widgetTitle
-                binding.itemEditWidgetStatus.text = "Linked • Ready on gesture/popup"
-                binding.itemEditBtnLinkWidget.text = activity.getString(R.string.change_widget)
-                binding.itemEditBtnUnlinkWidget.beVisible()
-            } else {
-                binding.itemEditWidgetTitle.text = activity.getString(R.string.no_popup_widget_linked)
-                binding.itemEditWidgetStatus.text = "Tap to link on-demand shutter"
-                binding.itemEditBtnLinkWidget.text = activity.getString(R.string.link_widget)
-                binding.itemEditBtnUnlinkWidget.beGone()
-            }
-        }
-
-        refreshWidgetUI()
-
-        binding.itemEditBtnLinkWidget.setOnClickListener {
-            SelectPopupWidgetDialog(activity, item) { selectedInfo ->
-                if (activity is MainActivity && item.id != null) {
-                    activity.bindAndLinkPopupWidget(item, selectedInfo)
-                    gestureConfig.linkedWidgetId = ItemGestureManager.getLinkedWidget(activity, item.id!!)?.first ?: -1
-                    gestureConfig.linkedWidgetProvider = selectedInfo.provider.className
-                    refreshWidgetUI()
-                }
-            }.show()
-        }
-
-        binding.itemEditBtnUnlinkWidget.setOnClickListener {
-            if (item.id != null) {
-                if (activity is MainActivity) {
-                    activity.unlinkPopupWidget(item)
-                } else {
-                    ItemGestureManager.unlinkWidget(activity, item.id!!)
-                }
-                gestureConfig.linkedWidgetId = -1
-                gestureConfig.linkedWidgetProvider = ""
-                refreshWidgetUI()
-            }
-        }
     }
 
     private fun setupGesturesSection(binding: DialogEditItemBinding, gestureConfig: ItemGestureConfig) {

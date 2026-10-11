@@ -74,10 +74,18 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
         this.resizedItem = gridItem
         val providerInfo = gridItem.providerInfo ?: AppWidgetManager.getInstance(context)!!.installedProviders.firstOrNull {
             it.provider.className == gridItem.className
-        } ?: return
+        }
 
-        minResizeWidthCells = Math.min(context.config.homeColumnCount, context.getCellCount(providerInfo.minResizeWidth))
-        minResizeHeightCells = Math.min(context.config.homeRowCount, context.getCellCount(providerInfo.minResizeHeight))
+        minResizeWidthCells = if (providerInfo != null) {
+            Math.min(context.config.homeColumnCount, Math.max(1, context.getCellCount(providerInfo.minResizeWidth)))
+        } else {
+            1
+        }
+        minResizeHeightCells = if (providerInfo != null) {
+            Math.min(context.config.homeRowCount, Math.max(1, context.getCellCount(providerInfo.minResizeHeight)))
+        } else {
+            1
+        }
         redrawFrame()
 
         occupiedCells.clear()
@@ -356,7 +364,7 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (x != 0f || y != 0f) {
+        if (width > 0 && height > 0) {
             canvas.drawRect(lineDotRadius, lineDotRadius, width.toFloat() - lineDotRadius, height.toFloat() - lineDotRadius, resizeWidgetLinePaint)
 
             canvas.drawCircle(lineDotRadius, height / 2f, lineDotRadius, resizeWidgetLineDotPaint)

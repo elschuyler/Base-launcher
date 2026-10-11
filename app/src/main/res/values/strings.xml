@@ -173,6 +173,15 @@
     <string name="restore_confirm_title">Restore backup?</string>
     <string name="restore_confirm_message">This will replace your current home screen layout, gestures, and launcher settings with the backup. Continue?</string>
     <string name="restoring">Restoring…</string>
+    <string name="custom_icon">Custom icon</string>
+    <string name="gestures">Gestures</string>
+    <string name="app_lock_enabled_count">Enabled • %1$d locked apps</string>
+    <string name="lock_new_app">Lock an application</string>
+    <string name="app_lock_auth_settings_title">App Lock Security</string>
+    <string name="app_lock_auth_settings_subtitle">Verify your identity to configure App Lock</string>
+    <string name="unlock_app_confirm">Unlock %1$s?</string>
+    <string name="app_lock_status_enabled">Enabled</string>
+    <string name="app_lock_status_disabled">Disabled</string>
     <!--
         Haven't found some strings? There's more at
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res

@@ -75,6 +75,7 @@ import org.fossify.home.dialogs.AddAppDialog
 import org.fossify.home.dialogs.AddShortcutDialog
 import org.fossify.home.dialogs.CreateFolderDialog
 import org.fossify.home.dialogs.EditItemDialog
+import org.fossify.home.dialogs.ItemGesturesDialog
 import org.fossify.home.dialogs.PopupWidgetDialog
 import org.fossify.home.dialogs.RenameItemDialog
 import org.fossify.home.dialogs.SelectPopupWidgetDialog
@@ -547,9 +548,11 @@ class MainActivity : SimpleActivity(), FlingListener {
                             )
                         } else if (mLongPressedIcon == null) {
                             val newY = mAllAppsFragmentY - diffY
-                            binding.allAppsFragment.root.y = min(
+                            val clampedY = min(
                                 a = max(0f, newY), b = mScreenHeight.toFloat()
                             )
+                            binding.allAppsFragment.root.y = clampedY
+                            binding.homeScreenGrid.root.alpha = (clampedY / mScreenHeight.toFloat()).coerceIn(0f, 1f)
                         }
                     } else if (abs(diffX) > abs(diffY) && !mIgnoreXMoveEvents) {
                         val hasHorizontalGesture = mTouchDownItem != null && ItemGestureManager.hasHorizontalGesture(this, mTouchDownItem!!)
@@ -789,6 +792,13 @@ class MainActivity : SimpleActivity(), FlingListener {
         window.navigationBarColor = resources.getColor(R.color.semitransparent_navigation)
         binding.homeScreenGrid.root.fragmentExpanded()
         binding.homeScreenGrid.root.hideResizeLines()
+        if (fragment is AllAppsFragmentBinding) {
+            ObjectAnimator.ofFloat(binding.homeScreenGrid.root, "alpha", 0f).apply {
+                duration = animationDuration
+                interpolator = DecelerateInterpolator()
+                start()
+            }
+        }
 
         @SuppressLint("AccessibilityFocus")
         fragment.root.performAccessibilityAction(
@@ -820,6 +830,13 @@ class MainActivity : SimpleActivity(), FlingListener {
 
         window.navigationBarColor = Color.TRANSPARENT
         binding.homeScreenGrid.root.fragmentCollapsed()
+        if (fragment is AllAppsFragmentBinding) {
+            ObjectAnimator.ofFloat(binding.homeScreenGrid.root, "alpha", 1f).apply {
+                duration = animationDuration
+                interpolator = DecelerateInterpolator()
+                start()
+            }
+        }
         updateStatusBarIcons()
         if (fragment is WidgetsFragmentBinding) {
             clearWidgetsSearch()
@@ -977,6 +994,7 @@ class MainActivity : SimpleActivity(), FlingListener {
         if (isAllAppsFragmentExpanded()) {
             val close = {
                 binding.allAppsFragment.root.y = mScreenHeight.toFloat()
+                binding.homeScreenGrid.root.alpha = 1f
                 binding.allAppsFragment.allAppsGrid.scrollToPosition(0)
                 binding.allAppsFragment.root.touchDownY = -1
                 binding.allAppsFragment.root.closeSearchMode()
@@ -1260,10 +1278,6 @@ class MainActivity : SimpleActivity(), FlingListener {
             if (mLongPressedIcon != null) {
                 binding.homeScreenGrid.root.itemDraggingStopped()
                 mLongPressedIcon = null
-                val placedItem = binding.homeScreenGrid.root.getGridItem(item.id) ?: item
-                if (placedItem.className != BUILT_IN_CLOCK_CLASS_NAME) {
-                    binding.homeScreenGrid.root.widgetLongPressed(placedItem)
-                }
             }
         }
     }
@@ -1717,13 +1731,8 @@ class MainActivity : SimpleActivity(), FlingListener {
             val title = gridItem.title
             val isLocked = AppLockManager.isAppLocked(pkg)
             if (isLocked) {
-                if (!AppLockManager.canLaunchWithoutAuth(this@MainActivity, pkg)) {
-                    AppLockManager.authenticateAndLaunch(this@MainActivity, pkg, title) {
-                        AppLockManager.unlockApp(this@MainActivity, pkg) {
-                            toast(R.string.app_unlocked)
-                        }
-                    }
-                } else {
+                // Unlocking a locked app strictly requires entering biometric/PIN prompt first
+                AppLockManager.authenticateAndLaunch(this@MainActivity, pkg, title) {
                     AppLockManager.unlockApp(this@MainActivity, pkg) {
                         toast(R.string.app_unlocked)
                     }
@@ -1735,6 +1744,12 @@ class MainActivity : SimpleActivity(), FlingListener {
                 AppLockManager.lockApp(this@MainActivity, pkg, title) {
                     toast(R.string.app_locked)
                 }
+            }
+        }
+
+        override fun customizeGestures(gridItem: HomeScreenGridItem) {
+            ItemGesturesDialog(this@MainActivity, gridItem) {
+                binding.homeScreenGrid.root.fetchGridItems()
             }
         }
 
