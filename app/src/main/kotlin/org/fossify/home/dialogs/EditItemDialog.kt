@@ -112,13 +112,6 @@ class EditItemDialog(
                                 ItemGestureManager.setGestureAction(
                                     activity,
                                     item.id!!,
-                                    ItemGestureManager.GESTURE_DOUBLE_TAP,
-                                    gestureConfig.doubleTapAction,
-                                    gestureConfig.getTargetPackage(ItemGestureManager.GESTURE_DOUBLE_TAP)
-                                )
-                                ItemGestureManager.setGestureAction(
-                                    activity,
-                                    item.id!!,
                                     ItemGestureManager.GESTURE_SWIPE_UP,
                                     gestureConfig.swipeUpAction,
                                     gestureConfig.getTargetPackage(ItemGestureManager.GESTURE_SWIPE_UP)
@@ -160,7 +153,6 @@ class EditItemDialog(
         val isFolder = item.type == ITEM_TYPE_FOLDER
 
         fun refreshGestureBadges() {
-            binding.itemGestureDoubleTapBadge.text = LauncherActionHandler.getActionLabel(activity, gestureConfig.doubleTapAction, gestureConfig.getTargetPackage(ItemGestureManager.GESTURE_DOUBLE_TAP))
             binding.itemGestureSwipeUpBadge.text = LauncherActionHandler.getActionLabel(activity, gestureConfig.swipeUpAction, gestureConfig.getTargetPackage(ItemGestureManager.GESTURE_SWIPE_UP))
             binding.itemGestureSwipeDownBadge.text = LauncherActionHandler.getActionLabel(activity, gestureConfig.swipeDownAction, gestureConfig.getTargetPackage(ItemGestureManager.GESTURE_SWIPE_DOWN))
             binding.itemGestureSwipeLeftBadge.text = LauncherActionHandler.getActionLabel(activity, gestureConfig.swipeLeftAction, gestureConfig.getTargetPackage(ItemGestureManager.GESTURE_SWIPE_LEFT))
@@ -168,19 +160,6 @@ class EditItemDialog(
         }
 
         refreshGestureBadges()
-
-        binding.itemGestureDoubleTapHolder.setOnClickListener {
-            SelectActionDialog(
-                activity = activity,
-                gestureLabel = activity.getString(R.string.gesture_double_tap),
-                currentAction = gestureConfig.doubleTapAction,
-                isFolderItem = isFolder
-            ) { action, pkg, _ ->
-                gestureConfig.doubleTapAction = action
-                if (pkg.isNotEmpty()) gestureConfig.setTargetPackage(ItemGestureManager.GESTURE_DOUBLE_TAP, pkg)
-                refreshGestureBadges()
-            }.show()
-        }
 
         binding.itemGestureSwipeUpHolder.setOnClickListener {
             SelectActionDialog(

@@ -125,7 +125,6 @@ object ItemGestureManager {
     const val GESTURE_SWIPE_RIGHT = "swipe_right"
 
     val SUPPORTED_GESTURES = listOf(
-        GESTURE_DOUBLE_TAP,
         GESTURE_SWIPE_UP,
         GESTURE_SWIPE_DOWN,
         GESTURE_SWIPE_LEFT,

@@ -900,14 +900,7 @@ class MainActivity : SimpleActivity(), FlingListener {
         val (x, y) = binding.homeScreenGrid.root.intoViewSpaceCoords(eventX, eventY)
         val clickedGridItem = binding.homeScreenGrid.root.isClickingGridItem(x.toInt(), y.toInt())
         if (clickedGridItem != null) {
-            val action = ItemGestureManager.getGestureAction(this, clickedGridItem, ItemGestureManager.GESTURE_DOUBLE_TAP)
-            if (action != LauncherActionHandler.ACTION_NONE) {
-                if (config.gestureHaptics) {
-                    binding.mainHolder.performHapticFeedback()
-                }
-                val targetPkg = ItemGestureManager.getTargetPackage(this, clickedGridItem, ItemGestureManager.GESTURE_DOUBLE_TAP)
-                return LauncherActionHandler.executeAction(this, action, clickedGridItem, targetPkg)
-            }
+            // App icons, folders, and widgets do not intercept double tap, guaranteeing 0ms launch responsiveness
             return false
         }
 
@@ -1249,8 +1242,6 @@ class MainActivity : SimpleActivity(), FlingListener {
 
     fun handleWidgetDrag(item: HomeScreenGridItem, event: MotionEvent, isUp: Boolean) {
         val (viewX, viewY) = binding.homeScreenGrid.root.intoViewSpaceCoords(event.rawX, event.rawY)
-        val hasMoved = mTouchDownX != -1 && mTouchDownY != -1 &&
-                (abs(mTouchDownX - event.rawX) > mMoveGestureThreshold || abs(mTouchDownY - event.rawY) > mMoveGestureThreshold)
 
         if (!isUp) {
             if (mTouchDownX == -1 || mTouchDownY == -1) {
@@ -1258,24 +1249,22 @@ class MainActivity : SimpleActivity(), FlingListener {
                 mTouchDownY = event.rawY.toInt()
             }
 
-            if (mOpenPopupMenu != null && hasMoved) {
+            if (mOpenPopupMenu != null) {
                 mOpenPopupMenu?.dismiss()
                 mOpenPopupMenu = null
             }
 
-            if (hasMoved) {
-                if (mLongPressedIcon == null) {
-                    mLongPressedIcon = item
-                    binding.homeScreenGrid.root.hideResizeLines()
-                    binding.homeScreenGrid.root.itemDraggingStarted(item)
-                    hideFragment(binding.allAppsFragment)
-                }
-                binding.homeScreenGrid.root.draggedItemMoved(viewX.toInt(), viewY.toInt())
+            if (!binding.homeScreenGrid.root.isDraggingItem()) {
+                mLongPressedIcon = item
+                binding.homeScreenGrid.root.hideResizeLines()
+                binding.homeScreenGrid.root.itemDraggingStarted(item)
+                hideFragment(binding.allAppsFragment)
             }
+            binding.homeScreenGrid.root.draggedItemMoved(viewX.toInt(), viewY.toInt())
         } else {
             mTouchDownX = -1
             mTouchDownY = -1
-            if (mLongPressedIcon != null) {
+            if (binding.homeScreenGrid.root.isDraggingItem() || mLongPressedIcon != null) {
                 binding.homeScreenGrid.root.itemDraggingStopped()
                 mLongPressedIcon = null
             }

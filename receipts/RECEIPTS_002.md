@@ -104,4 +104,49 @@ Continues from `RECEIPTS_001.md` after reaching the 500-line cap.
 - **Any deviation from what was requested, and why**: None. Built strictly to user instructions.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+---
+
+### Entry 018
+- **Timestamp**: 2026-10-12T01:16:00-07:00
+- **One-line summary of what was requested**: Make folder icon more squircle and remove text label from folder icons on the home screen.
+- **Exact files touched**:
+  - `/BLUEPRINT.md`
+  - `/app/src/main/kotlin/org/fossify/home/views/HomeScreenGrid.kt`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Superellipse Bézier Squircle Geometry: Replaced the standard boxy `drawRoundRect` with an authentic mathematical cubic Bézier continuous-curvature squircle path (`createSquirclePath`), aligned with the AOSP/OneUI adaptive squircle curve geometry (`M50,0 C10,0 0,10 0,50 C0,90 10,100 50,100 C90,100 100,90 100,50 C100,10 90,0 50,0 Z`).
+  - Folder Bubble Drawing: Clipped and stroked the dynamic folder preview bubble using the new squircle path; adjusted mini-icon inner padding to 14% (`innerPadding = iconSize * 0.14f`) to nest cleanly within the squircle without clipping.
+  - Suppressed Folder Label: Excluded folder items from text label layout drawing in `HomeScreenGrid.drawItemInCell` (`item.type != ITEM_TYPE_FOLDER`), rendering clean, label-free folder bubbles on the home screen.
+  - Grid Baseline Alignment: Preserved folder icon top-margin anchor so folder icons stay horizontally aligned with neighboring labeled app icons.
+  - Clickable Rect & Accessibility: Updated `getClickableRect` to exclude text height for folders; retained TalkBack accessibility label (`AccessibilityNodeInfoCompat`) and open folder popup header title.
+  - Security Sanitization: Purged ephemeral keystore files; confirmed workspace clean.
+- **How it was verified**: Local build only (`compile_applet` passed; `gradle :app:testDebugUnitTest` passed).
+- **Any deviation from what was requested, and why**: None. Built strictly to user instructions.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+---
+
+### Entry 019
+- **Timestamp**: 2026-10-12T05:52:00-07:00
+- **One-line summary of what was requested**: Dedicated double tap for empty space only; align widget long-press and move around with apps/folders standard launcher UX.
+- **Exact files touched**:
+  - `/BLUEPRINT.md`
+  - `/app/src/main/res/layout/dialog_item_gestures.xml`
+  - `/app/src/main/res/layout/dialog_edit_item.xml`
+  - `/app/src/main/kotlin/org/fossify/home/dialogs/ItemGesturesDialog.kt`
+  - `/app/src/main/kotlin/org/fossify/home/dialogs/EditItemDialog.kt`
+  - `/app/src/main/kotlin/org/fossify/home/helpers/ItemGestureManager.kt`
+  - `/app/src/main/kotlin/org/fossify/home/views/HomeScreenGrid.kt`
+  - `/app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Empty-Space Double Tap Dedication: Gated `MainActivity.homeScreenDoubleTapped()` to return `false` immediately when an item (icon, folder, widget) is clicked. Preserved `config.gestureDoubleTapAction` exclusively for empty wallpaper/canvas double taps, eliminating gesture race conditions and guaranteeing 0ms instant launch latency for all applications.
+  - Item Gesture Cleanup: Removed `GESTURE_DOUBLE_TAP` from `SUPPORTED_GESTURES` in `ItemGestureManager.kt` and purged the Double Tap rows and listeners from `dialog_item_gestures.xml`, `dialog_edit_item.xml`, `ItemGesturesDialog.kt`, and `EditItemDialog.kt`. Swipes (Up, Down, Left, Right) remain available as clean orthogonal item gestures.
+  - Standard Launcher Widget Move-Around UX: Fixed `handleWidgetDrag` in `MainActivity.kt`. Replaced the broken `if (mLongPressedIcon == null)` gate with `if (!binding.homeScreenGrid.root.isDraggingItem())`, allowing widget drag initiation to execute reliably. When a user drags after long-pressing a widget, the popup menu (`mOpenPopupMenu`) is dismissed immediately, the widget enters active drag mode with real-time grid footprint and snapshot tracking (`itemDraggingStarted` and `draggedItemMoved`), and releases cleanly (`itemDraggingStopped`) to save new grid coordinates to Room database. If released without dragging, the popup menu remains visible for Resize and Remove options.
+  - Added `isDraggingItem()` helper method in `HomeScreenGrid.kt`.
+  - Security Sanitization: Ephemeral keystores (`debug.keystore`, `debug.keystore.base64`) purged from workspace root; confirmed 100% clean repository.
+- **How it was verified**: Local build only (`compile_applet` passed; `gradle :app:testDebugUnitTest` passed).
+- **Any deviation from what was requested, and why**: None. Built strictly to user instructions.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
 

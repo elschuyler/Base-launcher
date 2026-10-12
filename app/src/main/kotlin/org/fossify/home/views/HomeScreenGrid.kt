@@ -1780,7 +1780,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 cell.top - iconMargin
             } + sideMargins.top
         }
-        val additionalHeight = if (!item.docked && context.config.showHomeAppLabels) {
+        val additionalHeight = if (!item.docked && context.config.showHomeAppLabels && item.type != ITEM_TYPE_FOLDER) {
             // multiply line count by line height to get label height
             // we multiply all line heights by 2 so all widgets get the same clickable area and 2 is the max line count
             (2 * (textPaint.fontMetrics.bottom - textPaint.fontMetrics.top)).toInt()
@@ -2079,6 +2079,8 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
 
     fun getCurrentIconSize(): Int = iconSize
 
+    fun isDraggingItem(): Boolean = draggedItem != null
+
 
     fun setSwipeMovement(diffX: Float) {
         if (draggedItem == null) {
@@ -2206,7 +2208,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                     drawableY + iconSize
                 )
 
-                if (item.parentId == null && item.id != draggedItem?.id && item.title.isNotEmpty() && context.config.showHomeAppLabels) {
+                if (item.parentId == null && item.id != draggedItem?.id && item.title.isNotEmpty() && context.config.showHomeAppLabels && item.type != ITEM_TYPE_FOLDER) {
                     val textX = cell.left.toFloat() + labelSideMargin
                     val textY = cell.top.toFloat() + iconSize + iconMargin + labelSideMargin
                     val textPaintToUse = textPaint
@@ -2250,6 +2252,37 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
 
     private fun HomeScreenGridItem.isSingleCellType() =
         (type == ITEM_TYPE_ICON || type == ITEM_TYPE_SHORTCUT || type == ITEM_TYPE_FOLDER)
+
+    private fun createSquirclePath(left: Float, top: Float, right: Float, bottom: Float): Path {
+        val path = Path()
+        val width = right - left
+        val height = bottom - top
+        val c = 0.10f
+
+        path.moveTo(left + width * 0.5f, top)
+        path.cubicTo(
+            left + width * c, top,
+            left, top + height * c,
+            left, top + height * 0.5f
+        )
+        path.cubicTo(
+            left, bottom - height * c,
+            left + width * c, bottom,
+            left + width * 0.5f, bottom
+        )
+        path.cubicTo(
+            right - width * c, bottom,
+            right, bottom - height * c,
+            right, top + height * 0.5f
+        )
+        path.cubicTo(
+            right, top + height * c,
+            right - width * c, top,
+            left + width * 0.5f, top
+        )
+        path.close()
+        return path
+    }
 
     private fun HomeScreenGridItem.toFolder(animateOpening: Boolean = false) =
         HomeScreenFolder(this, animateOpening)
@@ -2305,12 +2338,8 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             val bitmap = createBitmap(iconSize, iconSize)
             val canvas = Canvas(bitmap)
 
-            val cornerRadius = iconSize * 0.26f
             val inset = 2f
-            val squircleRect = RectF(inset, inset, iconSize.toFloat() - inset, iconSize.toFloat() - inset)
-            val squirclePath = Path().apply {
-                addRoundRect(squircleRect, cornerRadius, cornerRadius, Path.Direction.CCW)
-            }
+            val squirclePath = createSquirclePath(inset, inset, iconSize.toFloat() - inset, iconSize.toFloat() - inset)
             canvas.clipPath(squirclePath)
 
             // Translucent squircle bubble background
@@ -2318,7 +2347,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 color = context.getProperBackgroundColor().adjustAlpha(0.60f)
                 style = Paint.Style.FILL
             }
-            canvas.drawRoundRect(squircleRect, cornerRadius, cornerRadius, translucentBgPaint)
+            canvas.drawPath(squirclePath, translucentBgPaint)
 
             // Subtle bubble border outline
             val bubbleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -2326,13 +2355,13 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 style = Paint.Style.STROKE
                 strokeWidth = 1.5f * resources.displayMetrics.density
             }
-            canvas.drawRoundRect(squircleRect, cornerRadius, cornerRadius, bubbleBorderPaint)
+            canvas.drawPath(squirclePath, bubbleBorderPaint)
 
             if (itemsCount == 0) {
                 return bitmap.toDrawable(resources)
             }
 
-            val innerPadding = iconSize * 0.12f
+            val innerPadding = iconSize * 0.14f
             val contentSize = iconSize - 2 * innerPadding
             val folderColumnCount = ceil(sqrt(itemsCount.toDouble())).roundToInt()
             val folderRowCount = ceil(itemsCount.toFloat() / folderColumnCount).roundToInt()

@@ -45,11 +45,6 @@ class ItemGesturesDialog(
         }
 
         fun refreshGestureBadges() {
-            binding.gestureDoubleTapBadge.text = LauncherActionHandler.getActionLabel(
-                activity,
-                gestureConfig.doubleTapAction,
-                gestureConfig.getTargetPackage(ItemGestureManager.GESTURE_DOUBLE_TAP)
-            )
             binding.gestureSwipeUpBadge.text = LauncherActionHandler.getActionLabel(
                 activity,
                 gestureConfig.swipeUpAction,
@@ -73,19 +68,6 @@ class ItemGesturesDialog(
         }
 
         refreshGestureBadges()
-
-        binding.gestureDoubleTapHolder.setOnClickListener {
-            SelectActionDialog(
-                activity = activity,
-                gestureLabel = activity.getString(R.string.gesture_double_tap),
-                currentAction = gestureConfig.doubleTapAction,
-                isFolderItem = isFolder
-            ) { action, pkg, _ ->
-                gestureConfig.doubleTapAction = action
-                if (pkg.isNotEmpty()) gestureConfig.setTargetPackage(ItemGestureManager.GESTURE_DOUBLE_TAP, pkg)
-                refreshGestureBadges()
-            }.show()
-        }
 
         binding.gestureSwipeUpHolder.setOnClickListener {
             SelectActionDialog(
@@ -156,13 +138,6 @@ class ItemGesturesDialog(
                     alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                         if (item.id != null) {
                             ensureBackgroundThread {
-                                ItemGestureManager.setGestureAction(
-                                    activity,
-                                    item.id!!,
-                                    ItemGestureManager.GESTURE_DOUBLE_TAP,
-                                    gestureConfig.doubleTapAction,
-                                    gestureConfig.getTargetPackage(ItemGestureManager.GESTURE_DOUBLE_TAP)
-                                )
                                 ItemGestureManager.setGestureAction(
                                     activity,
                                     item.id!!,

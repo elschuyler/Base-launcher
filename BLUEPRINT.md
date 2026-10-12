@@ -235,6 +235,26 @@
     - Decoupled app lock configuration from main `SettingsActivity` into a dedicated `AppLockActivity`.
     - Gated access behind biometric prompt when app lock is active.
     - Features master enable switch, timeout selector, protect hidden apps switch, and full locked apps manager list with add/remove actions.
-    - Clean entry row in `SettingsActivity` displaying real-time lock status and locked app count.
+- [Phase: Authentic Squircle Folder Icon & No-Label Folder Presentation]
+  - **Superellipse Bézier Squircle Folder Background**:
+    - Replaced standard boxed `drawRoundRect` with mathematical continuous-curvature Bézier squircle path matching AOSP/OneUI adaptive squircle curve geometry (`M50,0 C10,0 0,10 0,50 C0,90 10,100 50,100 C90,100 100,90 100,50 C100,10 90,0 50,0 Z`).
+    - Tuned squircle clip path, translucent background fill, and subtle outline border.
+    - Adjusted folder preview mini-icon padding (`innerPadding = iconSize * 0.14f`) to seamlessly nest inside the squircle curvature without edge clipping.
+  - **Suppressed Folder Icon Home Screen Label**:
+    - Gated text label layout rendering in `drawItemInCell` to exclude folder items (`item.type != ITEM_TYPE_FOLDER`), providing a clean, minimalist folder bubble on the home screen.
+    - Preserved folder icon top-margin baseline alignment so folders remain perfectly aligned horizontally with neighboring labeled app icons.
+    - Updated `getClickableRect` to reflect label-free bounds for folders.
+    - Preserved accessibility TalkBack label (`AccessibilityNodeInfoCompat`) and folder popup dialog header title so folder naming remains functional and accessible.
+- [Phase: Dedicated Empty-Space Double Tap & Standard Launcher Widget Drag UX]
+  - **Dedicated Empty-Space Double Tap**:
+    - Restricted `homeScreenDoubleTapped()` exclusively to empty home screen space, immediately returning `false` if an item, icon, folder, or widget is clicked.
+    - Deprecated item-level double-tap from `SUPPORTED_GESTURES` in `ItemGestureManager.kt`, `ItemGesturesDialog`, and `EditItemDialog`, guaranteeing 0ms zero-latency instant launch for all apps and eliminating gesture competition.
+    - Empty canvas double-tap executes `config.gestureDoubleTapAction` (e.g. Lock Screen) with 100% reliability and haptic feedback.
+  - **Standard Launcher Widget Long-Press and Move-Around UX**:
+    - Unified widget interaction with apps and folders: holding a widget triggers haptic feedback and displays the contextual popup menu (`AppShortcutsPopupWindow`).
+    - Dragging after long-press immediately dismisses the popup menu (`mOpenPopupMenu?.dismiss()`).
+    - Promoted widget dragging in `MainActivity.handleWidgetDrag`: eliminated the broken `mLongPressedIcon == null` guard by querying `!isDraggingItem()`, reliably invoking `itemDraggingStarted(item)`.
+    - Live Widget Drag & Drop: captures widget snapshot bitmap, hides the underlying view, and tracks `draggedItemMoved(viewX, viewY)` across grid cells and pages with cell footprint highlight.
+    - On touch release (`ACTION_UP`), calls `itemDraggingStopped()`, saving new cell coordinates and page to Room database and repositioning the widget view cleanly.
 
 
