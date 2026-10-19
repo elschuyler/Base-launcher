@@ -20,10 +20,10 @@
         android:id="@+id/popup_card"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:minWidth="220dp"
+        android:minWidth="180dp"
         app:cardBackgroundColor="#252D1F"
-        app:cardCornerRadius="22dp"
-        app:cardElevation="10dp"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="8dp"
         app:cardPreventCornerOverlap="false"
         app:strokeColor="#33FFFFFF"
         app:strokeWidth="0.8dp">
@@ -38,33 +38,33 @@
                 android:id="@+id/popup_header"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="18dp"
-                android:paddingTop="12dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="10dp">
+                android:paddingStart="14dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="6dp">
 
                 <TextView
                     android:id="@+id/popup_app_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="6dp"
                     android:layout_toStartOf="@id/popup_app_info_btn"
                     android:ellipsize="end"
                     android:singleLine="true"
                     android:textColor="#FFFFFF"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
 
                 <ImageView
                     android:id="@+id/popup_app_info_btn"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/app_info"
-                    android:padding="6dp"
+                    android:padding="5dp"
                     android:src="@drawable/ic_settings_gear_vector"
                     app:tint="#D5E0C8" />
             </RelativeLayout>
@@ -73,8 +73,8 @@
                 android:id="@+id/popup_header_divider"
                 android:layout_width="match_parent"
                 android:layout_height="0.6dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
                 android:background="#25FFFFFF" />
 
             <!-- Shortcuts Container -->
@@ -86,309 +86,102 @@
                 android:paddingTop="2dp"
                 android:paddingBottom="2dp" />
 
-            <!-- Fallback Actions List (shown when no shortcuts exist) -->
-            <LinearLayout
-                android:id="@+id/popup_fallback_actions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:visibility="gone">
-
-                <!-- Remove Row -->
-                <LinearLayout
-                    android:id="@+id/fallback_action_remove"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="14dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_cross_vector"
-                        app:tint="#D5E0C8" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/remove"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp" />
-                </LinearLayout>
-
-                <!-- Lock App Row -->
-                <LinearLayout
-                    android:id="@+id/fallback_action_lock"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <ImageView
-                        android:id="@+id/fallback_lock_icon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="14dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_lock_vector"
-                        app:tint="#D5E0C8" />
-
-                    <TextView
-                        android:id="@+id/fallback_lock_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/lock_app"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp" />
-                </LinearLayout>
-
-                <!-- Custom Icon / Edit Row -->
-                <LinearLayout
-                    android:id="@+id/fallback_action_rename"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="14dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_rename_vector"
-                        app:tint="#D5E0C8" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/custom_icon"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp" />
-                </LinearLayout>
-
-                <!-- Gestures Row (Homescreen only) -->
-                <LinearLayout
-                    android:id="@+id/fallback_action_gestures"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <ImageView
-                        android:id="@+id/fallback_gestures_icon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="14dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_touch_vector"
-                        app:tint="#D5E0C8" />
-
-                    <TextView
-                        android:id="@+id/fallback_gestures_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/gestures"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp" />
-                </LinearLayout>
-
-                <!-- Hide Row -->
-                <LinearLayout
-                    android:id="@+id/fallback_action_hide"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="14dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_hide_vector"
-                        app:tint="#D5E0C8" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/hide_icon"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp" />
-                </LinearLayout>
-
-                <!-- Resize Row (for widgets) -->
-                <LinearLayout
-                    android:id="@+id/fallback_action_resize"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="14dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_resize_vector"
-                        app:tint="#D5E0C8" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/resize"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp" />
-                </LinearLayout>
-
-                <!-- Uninstall Row -->
-                <LinearLayout
-                    android:id="@+id/fallback_action_uninstall"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-
-                    <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:layout_marginEnd="14dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_delete_vector"
-                        app:tint="#F08888" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/uninstall"
-                        android:textColor="#F08888"
-                        android:textSize="15sp" />
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- Bottom Horizontal Actions Bar (shown when shortcuts exist) -->
+            <!-- Horizontal Action Pill Bar -->
             <LinearLayout
                 android:id="@+id/popup_actions_bar"
                 android:layout_width="match_parent"
-                android:layout_height="46dp"
+                android:layout_height="40dp"
                 android:gravity="center"
                 android:orientation="horizontal"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp">
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
+
+                <ImageView
+                    android:id="@+id/popup_action_unarchive_btn"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/unarchive_app"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_download_vector"
+                    android:visibility="gone"
+                    app:tint="#A0DF88" />
 
                 <ImageView
                     android:id="@+id/popup_action_remove_btn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginHorizontal="4dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/remove"
-                    android:padding="8dp"
+                    android:padding="6dp"
                     android:src="@drawable/ic_cross_vector"
                     app:tint="#D5E0C8" />
 
                 <ImageView
                     android:id="@+id/popup_action_rename_btn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginHorizontal="4dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/custom_icon"
-                    android:padding="8dp"
+                    android:padding="6dp"
                     android:src="@drawable/ic_rename_vector"
                     app:tint="#D5E0C8" />
 
                 <ImageView
                     android:id="@+id/popup_action_gestures_btn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginHorizontal="4dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/gestures"
-                    android:padding="8dp"
+                    android:padding="6dp"
                     android:src="@drawable/ic_touch_vector"
                     app:tint="#D5E0C8" />
 
                 <ImageView
                     android:id="@+id/popup_action_hide_btn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginHorizontal="4dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/hide_icon"
-                    android:padding="8dp"
+                    android:padding="6dp"
                     android:src="@drawable/ic_hide_vector"
                     app:tint="#D5E0C8" />
 
                 <ImageView
                     android:id="@+id/popup_action_lock_btn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginHorizontal="4dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/lock_app"
-                    android:padding="8dp"
+                    android:padding="6dp"
                     android:src="@drawable/ic_lock_vector"
                     app:tint="#D5E0C8" />
 
                 <ImageView
                     android:id="@+id/popup_action_uninstall_btn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginHorizontal="4dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/uninstall"
-                    android:padding="8dp"
+                    android:padding="6dp"
                     android:src="@drawable/ic_delete_vector"
                     app:tint="#F08888" />
 
                 <ImageView
                     android:id="@+id/popup_action_resize_btn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginHorizontal="4dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="2dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/resize"
-                    android:padding="8dp"
+                    android:padding="6dp"
                     android:src="@drawable/ic_resize_vector"
                     app:tint="#D5E0C8" />
 

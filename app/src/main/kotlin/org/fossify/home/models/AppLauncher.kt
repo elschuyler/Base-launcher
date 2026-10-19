@@ -19,6 +19,7 @@ data class AppLauncher(
 ) : Comparable<AppLauncher> {
 
     @Ignore var installTime: Long = 0L
+    @Ignore var isArchived: Boolean = false
 
     constructor() : this(null, "", "", "", 0, 0, null)
 

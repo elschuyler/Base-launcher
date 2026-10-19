@@ -256,5 +256,37 @@
     - Promoted widget dragging in `MainActivity.handleWidgetDrag`: eliminated the broken `mLongPressedIcon == null` guard by querying `!isDraggingItem()`, reliably invoking `itemDraggingStarted(item)`.
     - Live Widget Drag & Drop: captures widget snapshot bitmap, hides the underlying view, and tracks `draggedItemMoved(viewX, viewY)` across grid cells and pages with cell footprint highlight.
     - On touch release (`ACTION_UP`), calls `itemDraggingStopped()`, saving new cell coordinates and page to Room database and repositioning the widget view cleanly.
-
+- [Phase: Compact Pill Bar Context Menu, Black App Drawer Background, Translucent White Folder Bubbles]
+  - **Split Compact Pill Bar Menu (Option B)**:
+    - Unified contextual long-press actions bar in `popup_app_shortcuts.xml` into a streamlined horizontal action pill bar (`popup_actions_bar`), cutting height from 46dp to 40dp with 2dp margins and 6dp padding for concise touch targets.
+    - Compacted MaterialCardView radius (`18dp`), elevation (`8dp`), minWidth (`180dp`), and header paddings (`14dp` start, `8dp` top, `6dp` bottom) for a sleek, lightweight footprint.
+    - Compacted dynamic shortcut rows (`item_popup_shortcut.xml`) to 40dp minHeight with tightened vertical padding (4dp) and 14sp labels.
+    - Routed fallback actions (when dynamic shortcuts are not present) directly to the compact horizontal pill bar rather than the vertical 44dp multi-row list in `AppShortcutsPopupWindow.kt`.
+  - **Pure Black App Drawer Background**:
+    - Replaced the transparent scrim in `View.setupDrawerBackground()` with `Color.BLACK`, rendering a clean, deep black background behind the All Apps drawer grid and fast scroller.
+  - **Translucent White Folder Squircle Background**:
+    - Updated `HomeScreenGrid.HomeScreenFolder.generateDrawable` to draw a modern translucent white plate (`ColorUtils.setAlphaComponent(Color.WHITE, 115)`) with a subtle white border (`ColorUtils.setAlphaComponent(Color.WHITE, 70)`).
+    - Empty folders and the space between mini-icons in populated folders now consistently render as translucent white squircles across all wallpapers.
+- [Phase: Performance & Memory Hardening, App Drawer Drag-to-Home UX]
+  - **Memory & Resource Hardening**:
+    - **Folder Drawable Frame Caching**: Cached dynamically generated folder squircle Bitmaps on `HomeScreenGridItem.drawable` in `HomeScreenGrid.kt`. Eliminates the severe bottleneck where `createBitmap()` was invoked on every single frame during swipe/drag animations (up to 480 allocations/sec on 120Hz displays). Added `invalidateFolderDrawables()` to invalidate caches only when folder items are added, removed, or reorganized.
+    - **Message Queue Flooding Fix**: Optimized `HomeScreenGrid.redrawGrid()` to directly call `invalidate()` and `binding.drawingArea.invalidate()` when executing on the main thread, avoiding redundant `post { ... }` message queue spam during high-frequency `ACTION_MOVE` touch gestures.
+    - **Byte-Bounded Icon Cache**: Sized `IconCache.kt` `LruCache` by memory in kilobytes (bounded to 1/8th of JVM max heap, 16MB–64MB) with accurate `sizeOf` calculations, preventing unbounded memory growth on `xxxhdpi` devices.
+  - **App Drawer Drag-to-Home Standard Launcher UX**:
+    - Implemented `onTouchEvent` in `AllAppsFragment.kt` to forward drag gestures to `MainActivity.onTouchEvent` when `ignoreTouches == true`.
+    - Long-pressing an app in the drawer and moving the finger past the drag threshold now automatically dismisses the popup menu, animates the app drawer down, and seamlessly initiates live drag-and-drop on the homescreen desktop grid.
+    - Dropping the icon on an empty cell inserts the app into that cell and page; dropping it onto an existing icon or folder merges it into a folder.
+- [Phase: Standard Launcher Archived Apps UX, Touch Safety & Security Sanitization]
+  - **Security Sanitization**:
+    - Purged committed `/debug.keystore` and `/debug.keystore.base64` artifacts from workspace root in compliance with the Credential Immunity Rule.
+  - **Touch Safety & Phantom Drag Elimination**:
+    - Cleared `mLongPressedIcon = null` inside `menuListener.onDismiss()` when dragging is not actively underway (`!binding.homeScreenGrid.root.isDraggingItem()`), eliminating phantom icon drag states on subsequent touch inputs after dismissing popup menus.
+  - **Dead Code Cleanup**:
+    - Purged dead 170-line `popup_fallback_actions` layout block from `popup_app_shortcuts.xml` and removed unused `setupFallbackActions()` method from `AppShortcutsPopupWindow.kt`.
+  - **Standard Launcher Archived Apps UX (Android 15 / API 35+)**:
+    - **Discovery & Querying**: Integrated `PackageManager.MATCH_ARCHIVED_PACKAGES` into `MainActivity.getAllAppLaunchers()` and package queries so archived applications are returned and displayed in the app drawer.
+    - **Detection Engine (`ArchivedAppsManager.kt`)**: Added lightweight detection checking `packageManager.getArchivedPackage(packageName)` on API 35+ with graceful backward-compatible fallbacks.
+    - **Visual Badging (`IconDecorator.kt`)**: Implemented standard launcher icon treatment for archived apps: base icon rendered with ~65% dimmed alpha, overlaid with a floating circular dark badge containing a vector download down-arrow (`ic_download_vector`) in the bottom-right corner. Cached under `"$identifier_archived"` in `IconCache` to ensure zero-overhead 60fps scrolling and grid rendering.
+    - **Tap-to-Restore Flow**: Updated `Activity.launchApp` to intercept taps on archived apps across home screen grid, dock, folders, and drawer, initiating system restoration via `PackageInstaller.requestUnarchive()` and displaying immediate feedback toast (`Restoring [App Title]…`) with fallback to store page.
+    - **Contextual Actions**: Added Restore / Download quick action button (`popup_action_unarchive_btn`) in `AppShortcutsPopupWindow` top pill bar, suppressed unavailable app shortcuts, enabled uninstallation of archived packages in `canAppBeUninstalled()`, and retained direct navigation to system App Info where the OS displays Archive/Unarchive, Uninstall, and Force Stop.
 

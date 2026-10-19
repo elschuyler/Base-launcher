@@ -42,6 +42,11 @@ import org.fossify.home.interfaces.ItemMenuListener
 import org.fossify.home.models.HomeScreenGridItem
 
 fun Activity.launchApp(packageName: String, activityName: String, appTitle: String = "") {
+    if (org.fossify.home.helpers.ArchivedAppsManager.isArchived(this, packageName)) {
+        org.fossify.home.helpers.ArchivedAppsManager.unarchive(this, packageName, appTitle)
+        return
+    }
+
     if (this is FragmentActivity && !AppLockManager.canLaunchWithoutAuth(this, packageName)) {
         val title = if (appTitle.isNotEmpty()) appTitle else {
             try {
@@ -90,7 +95,7 @@ fun Activity.canAppBeUninstalled(packageName: String): Boolean {
         val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
         (applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0
     } catch (ignored: Exception) {
-        false
+        org.fossify.home.helpers.ArchivedAppsManager.isArchived(this, packageName)
     }
 }
 

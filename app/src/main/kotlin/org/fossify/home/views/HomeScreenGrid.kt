@@ -19,6 +19,7 @@ import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -244,10 +245,17 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             gridItems = context.homeScreenGridItemsDB.getAllItems() as ArrayList<HomeScreenGridItem>
             gridItems.toImmutableList().forEach { item ->
                 if (item.type == ITEM_TYPE_ICON) {
-                    item.drawable = if (item.icon != null) {
+                    val isArchived = org.fossify.home.helpers.ArchivedAppsManager.isArchived(context, item.packageName)
+                    item.isArchived = isArchived
+                    val rawDrawable = if (item.icon != null) {
                         item.icon?.toDrawable(context.resources)
                     } else {
                         context.getDrawableForPackageName(item.packageName)
+                    }
+                    item.drawable = if (rawDrawable != null && isArchived) {
+                        org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(context, rawDrawable)
+                    } else {
+                        rawDrawable
                     }
                 } else if (item.type == ITEM_TYPE_FOLDER) {
                     item.drawable = if (item.icon != null) {
@@ -341,6 +349,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 }
                 ItemGestureManager.removeConfig(context, item.id!!)
                 if (item.parentId != null) {
+                    invalidateFolderDrawables(item.parentId)
                     gridItems
                         .filter {
                             it.parentId == item.parentId && it.left > item.left && it.id != item.id
@@ -811,6 +820,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                         }
                         (context as? MainActivity)?.runOnUiThread {
                             gridItems.add(parentItem)
+                            invalidateFolderDrawables()
                             addAppIconOrShortcut(draggedHomeGridItem, xIndex!!, yIndex!!, newId)
                         }
                     }
@@ -839,6 +849,9 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         newParentId: Long? = null,
         toFolderEnd: Boolean = true,
     ) {
+        if (newParentId != null) {
+            invalidateFolderDrawables(newParentId)
+        }
         if (newParentId != null && newParentId != draggedHomeGridItem?.parentId) {
             gridItems.firstOrNull { it.id == newParentId }?.also {
                 if (it.toFolder().getItems().count() >= HomeScreenGridItem.FOLDER_MAX_CAPACITY) {
@@ -1318,10 +1331,16 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
     }
 
     fun redrawGrid() {
-        post {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
             setWillNotDraw(false)
             invalidate()
             binding.drawingArea.invalidate()
+        } else {
+            post {
+                setWillNotDraw(false)
+                invalidate()
+                binding.drawingArea.invalidate()
+            }
         }
     }
 
@@ -2103,6 +2122,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
     }
 
     fun closeFolder(redraw: Boolean = false) {
+        invalidateFolderDrawables()
         currentlyOpenFolder?.animateClosing {
             currentlyOpenFolder = null
             if (redraw) {
@@ -2168,6 +2188,14 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         }
     }
 
+    fun invalidateFolderDrawables(folderId: Long? = null) {
+        if (folderId != null) {
+            gridItems.firstOrNull { it.id == folderId && it.type == ITEM_TYPE_FOLDER }?.drawable = null
+        } else {
+            gridItems.filter { it.type == ITEM_TYPE_FOLDER }.forEach { it.drawable = null }
+        }
+    }
+
     private fun Canvas.drawItemInCell(item: HomeScreenGridItem, cell: Rect) {
         if (item.id != draggedItem?.id) {
             val drawableX = cell.left + (cell.width() - iconSize) / 2
@@ -2176,7 +2204,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 if (item.icon != null) {
                     item.icon?.toDrawable(context.resources)
                 } else {
-                    item.toFolder().generateDrawable()
+                    item.drawable ?: item.toFolder().generateDrawable().also { item.drawable = it }
                 }
             } else {
                 if (item.icon != null) {
@@ -2342,16 +2370,16 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             val squirclePath = createSquirclePath(inset, inset, iconSize.toFloat() - inset, iconSize.toFloat() - inset)
             canvas.clipPath(squirclePath)
 
-            // Translucent squircle bubble background
+            // Translucent white squircle bubble background
             val translucentBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = context.getProperBackgroundColor().adjustAlpha(0.60f)
+                color = ColorUtils.setAlphaComponent(Color.WHITE, 115)
                 style = Paint.Style.FILL
             }
             canvas.drawPath(squirclePath, translucentBgPaint)
 
-            // Subtle bubble border outline
+            // Subtle white bubble border outline
             val bubbleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = ColorUtils.setAlphaComponent(context.getProperTextColor(), 55)
+                color = ColorUtils.setAlphaComponent(Color.WHITE, 70)
                 style = Paint.Style.STROKE
                 strokeWidth = 1.5f * resources.displayMetrics.density
             }

@@ -32,7 +32,8 @@ data class HomeScreenGridItem(
     @Ignore var providerInfo: AppWidgetProviderInfo? = null,    // used at widgets
     @Ignore var activityInfo: ActivityInfo? = null,             // used at shortcuts
     @Ignore var widthCells: Int = 1,
-    @Ignore var heightCells: Int = 1
+    @Ignore var heightCells: Int = 1,
+    @Ignore var isArchived: Boolean = false
 ) {
     companion object {
         const val FOLDER_MAX_CAPACITY = 16

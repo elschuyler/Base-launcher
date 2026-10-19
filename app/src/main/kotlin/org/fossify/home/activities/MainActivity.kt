@@ -21,6 +21,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -515,13 +516,14 @@ class MainActivity : SimpleActivity(), FlingListener {
             MotionEvent.ACTION_MOVE -> {
                 // if the initial gesture was handled by some other view, fix the Down values
                 val hasFingerMoved = if (mTouchDownX == -1 || mTouchDownY == -1) {
-                    mTouchDownX = event.x.toInt()
-                    mTouchDownY = event.y.toInt()
-                    val (viewX, viewY) = binding.homeScreenGrid.root.intoViewSpaceCoords(event.x, event.y)
+                    val (viewX, viewY) = binding.homeScreenGrid.root.intoViewSpaceCoords(event.rawX, event.rawY)
+                    mTouchDownX = viewX.toInt()
+                    mTouchDownY = viewY.toInt()
                     mTouchDownItem = binding.homeScreenGrid.root.isClickingGridItem(viewX.toInt(), viewY.toInt())
                     false
                 } else {
-                    hasFingerMoved(event)
+                    val (viewX, viewY) = binding.homeScreenGrid.root.intoViewSpaceCoords(event.rawX, event.rawY)
+                    (abs(mTouchDownX - viewX.toInt()) > mMoveGestureThreshold || abs(mTouchDownY - viewY.toInt()) > mMoveGestureThreshold)
                 }
 
                 if (mLongPressedIcon != null && (mOpenPopupMenu != null) && hasFingerMoved) {
@@ -532,7 +534,8 @@ class MainActivity : SimpleActivity(), FlingListener {
                 }
 
                 if (mLongPressedIcon != null && hasFingerMoved) {
-                    binding.homeScreenGrid.root.draggedItemMoved(event.x.toInt(), event.y.toInt())
+                    val (viewX, viewY) = binding.homeScreenGrid.root.intoViewSpaceCoords(event.rawX, event.rawY)
+                    binding.homeScreenGrid.root.draggedItemMoved(viewX.toInt(), viewY.toInt())
                 }
 
                 if (hasFingerMoved && !mIgnoreMoveEvents) {
@@ -1748,6 +1751,9 @@ class MainActivity : SimpleActivity(), FlingListener {
 
         override fun onDismiss() {
             mOpenPopupMenu = null
+            if (!binding.homeScreenGrid.root.isDraggingItem()) {
+                mLongPressedIcon = null
+            }
             resetFragmentTouches()
         }
 
@@ -1910,7 +1916,16 @@ class MainActivity : SimpleActivity(), FlingListener {
 
         val simpleLauncher = applicationContext.packageName
         val microG = "com.google.android.gms"
-        val list = packageManager.queryIntentActivities(intent, PackageManager.PERMISSION_GRANTED)
+        val flags = if (Build.VERSION.SDK_INT >= 35) {
+            PackageManager.MATCH_ARCHIVED_PACKAGES
+        } else {
+            0L
+        }
+        val list = if (Build.VERSION.SDK_INT >= 33) {
+            packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(flags))
+        } else {
+            packageManager.queryIntentActivities(intent, PackageManager.PERMISSION_GRANTED)
+        }
         for (info in list) {
             val componentInfo = info.activityInfo.applicationInfo
             val packageName = componentInfo.packageName
@@ -1924,8 +1939,19 @@ class MainActivity : SimpleActivity(), FlingListener {
                 continue
             }
 
+            val isArchived = if (Build.VERSION.SDK_INT >= 35) {
+                try {
+                    info.activityInfo.isArchived || packageManager.getArchivedPackage(packageName) != null
+                } catch (e: Throwable) {
+                    false
+                }
+            } else {
+                false
+            }
+
             val label = info.loadLabel(packageManager).toString()
-            var drawable = IconCache.getDrawable(identifier)
+            val iconCacheKey = if (isArchived) "${identifier}_archived" else identifier
+            var drawable = IconCache.getDrawable(iconCacheKey)
             if (drawable == null) {
                 drawable = try {
                     info.loadIcon(packageManager)
@@ -1933,7 +1959,10 @@ class MainActivity : SimpleActivity(), FlingListener {
                     null
                 } ?: getDrawableForPackageName(packageName)
                 if (drawable != null) {
-                    IconCache.putDrawable(identifier, drawable)
+                    if (isArchived) {
+                        drawable = org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(this@MainActivity, drawable)
+                    }
+                    IconCache.putDrawable(iconCacheKey, drawable)
                 }
             }
             if (drawable == null) {
@@ -1967,6 +1996,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                     drawable = drawable
                 ).apply {
                     installTime = appInstallTime
+                    this.isArchived = isArchived
                 }
             )
         }

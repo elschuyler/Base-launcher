@@ -106,12 +106,17 @@ class LaunchersAdapter(
                     binding.launcherIcon.tag = key
 
                     ensureBackgroundThread {
-                        val loadedDrawable = activity.getDrawableForPackageName(launcher.packageName)
+                        val rawDrawable = activity.getDrawableForPackageName(launcher.packageName)
                             ?: try {
                                 activity.packageManager.getApplicationIcon(launcher.packageName)
                             } catch (e: Exception) {
                                 null
                             }
+                        val loadedDrawable = if (rawDrawable != null && launcher.isArchived) {
+                            org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(activity, rawDrawable)
+                        } else {
+                            rawDrawable
+                        }
                         if (loadedDrawable != null) {
                             IconCache.putDrawable(key, loadedDrawable)
                             launcher.drawable = loadedDrawable

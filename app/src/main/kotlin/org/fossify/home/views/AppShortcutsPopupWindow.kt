@@ -82,10 +82,11 @@ class AppShortcutsPopupWindow(
         }
 
         // Check shortcuts availability via LauncherApps
+        val isArchived = org.fossify.home.helpers.ArchivedAppsManager.isArchived(activity, gridItem.packageName)
         val launcherApps = activity.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
         val hasHostPermission = launcherApps?.hasShortcutHostPermission() == true
 
-        val shortcuts: List<ShortcutInfo>? = if (hasHostPermission && gridItem.type == ITEM_TYPE_ICON && gridItem.packageName.isNotEmpty()) {
+        val shortcuts: List<ShortcutInfo>? = if (!isArchived && hasHostPermission && gridItem.type == ITEM_TYPE_ICON && gridItem.packageName.isNotEmpty()) {
             try {
                 val query = LauncherApps.ShortcutQuery().setQueryFlags(
                     LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
@@ -104,20 +105,17 @@ class AppShortcutsPopupWindow(
 
         if (hasShortcuts && launcherApps != null) {
             setupShortcutsList(shortcuts!!, launcherApps)
-            setupQuickActionsBar()
+            setupQuickActionsBar(isArchived)
             binding.popupShortcutsContainer.beVisible()
             binding.popupActionsBar.beVisible()
-            binding.popupFallbackActions.beGone()
             binding.popupDefaultLauncherPrompt.beGone()
         } else {
             binding.popupShortcutsContainer.beGone()
-            binding.popupActionsBar.beGone()
-            binding.popupFallbackActions.beVisible()
-
-            setupFallbackActions()
+            setupQuickActionsBar(isArchived)
+            binding.popupActionsBar.beVisible()
 
             // If launcher does not have host permission and this is an app icon, inform the user
-            if (!hasHostPermission && gridItem.type == ITEM_TYPE_ICON) {
+            if (!hasHostPermission && gridItem.type == ITEM_TYPE_ICON && !isArchived) {
                 binding.popupDefaultLauncherPrompt.beVisible()
                 binding.popupBtnSetDefault.setOnClickListener {
                     dismiss()
@@ -208,21 +206,23 @@ class AppShortcutsPopupWindow(
         }
     }
 
-    private fun setupQuickActionsBar() {
+    private fun setupQuickActionsBar(isArchived: Boolean = false) {
         val isIcon = gridItem.type == ITEM_TYPE_ICON
         val isFolder = gridItem.type == ITEM_TYPE_FOLDER
         val isWidget = gridItem.type == ITEM_TYPE_WIDGET
 
-        val canRename = isIcon || isFolder
-        val canGestures = !isOnAllAppsFragment && (isIcon || isFolder)
-        val canHide = isIcon && isOnAllAppsFragment
+        val canUnarchive = isArchived && isIcon
+        val canRename = (isIcon || isFolder) && !isArchived
+        val canGestures = !isOnAllAppsFragment && (isIcon || isFolder) && !isArchived
+        val canHide = isIcon && isOnAllAppsFragment && !isArchived
         val canResize = isWidget && gridItem.className != BUILT_IN_CLOCK_CLASS_NAME
         val canUninstall = isIcon &&
             activity.canAppBeUninstalled(gridItem.packageName) &&
             gridItem.packageName != activity.packageName
         val canRemove = !isOnAllAppsFragment
-        val canLock = isIcon
+        val canLock = isIcon && !isArchived
 
+        binding.popupActionUnarchiveBtn.beVisibleIf(canUnarchive)
         binding.popupActionRemoveBtn.beVisibleIf(canRemove)
         binding.popupActionRenameBtn.beVisibleIf(canRename)
         binding.popupActionGesturesBtn.beVisibleIf(canGestures)
@@ -230,6 +230,14 @@ class AppShortcutsPopupWindow(
         binding.popupActionUninstallBtn.beVisibleIf(canUninstall)
         binding.popupActionResizeBtn.beVisibleIf(canResize)
         binding.popupActionLockBtn.beVisibleIf(canLock)
+
+        if (canUnarchive) {
+            binding.popupActionUnarchiveBtn.setOnClickListener {
+                listener.onAnyClick()
+                org.fossify.home.helpers.ArchivedAppsManager.unarchive(activity, gridItem.packageName, gridItem.title)
+                dismiss()
+            }
+        }
 
         if (canGestures) {
             binding.popupActionGesturesBtn.setOnClickListener {
@@ -281,85 +289,6 @@ class AppShortcutsPopupWindow(
         }
 
         binding.popupActionResizeBtn.setOnClickListener {
-            listener.onAnyClick()
-            listener.resize(gridItem)
-            dismiss()
-        }
-    }
-
-    private fun setupFallbackActions() {
-        val isIcon = gridItem.type == ITEM_TYPE_ICON
-        val isFolder = gridItem.type == ITEM_TYPE_FOLDER
-        val isWidget = gridItem.type == ITEM_TYPE_WIDGET
-
-        val canRename = isIcon || isFolder
-        val canGestures = !isOnAllAppsFragment && (isIcon || isFolder)
-        val canHide = isIcon && isOnAllAppsFragment
-        val canResize = isWidget && gridItem.className != BUILT_IN_CLOCK_CLASS_NAME
-        val canUninstall = isIcon &&
-            activity.canAppBeUninstalled(gridItem.packageName) &&
-            gridItem.packageName != activity.packageName
-        val canRemove = !isOnAllAppsFragment
-        val canLock = isIcon
-
-        binding.fallbackActionRemove.beVisibleIf(canRemove)
-        binding.fallbackActionRename.beVisibleIf(canRename)
-        binding.fallbackActionGestures.beVisibleIf(canGestures)
-        binding.fallbackActionHide.beVisibleIf(canHide)
-        binding.fallbackActionUninstall.beVisibleIf(canUninstall)
-        binding.fallbackActionResize.beVisibleIf(canResize)
-        binding.fallbackActionLock.beVisibleIf(canLock)
-
-        if (canGestures) {
-            binding.fallbackActionGestures.setOnClickListener {
-                listener.onAnyClick()
-                listener.customizeGestures(gridItem)
-                dismiss()
-            }
-        }
-
-        if (canLock) {
-            val isLocked = AppLockManager.isAppLocked(gridItem.packageName)
-            if (isLocked) {
-                binding.fallbackLockIcon.setImageResource(R.drawable.ic_lock_open_vector)
-                binding.fallbackLockText.text = activity.getString(R.string.unlock_app)
-            } else {
-                binding.fallbackLockIcon.setImageResource(R.drawable.ic_lock_vector)
-                binding.fallbackLockText.text = activity.getString(R.string.lock_app)
-            }
-
-            binding.fallbackActionLock.setOnClickListener {
-                listener.onAnyClick()
-                listener.toggleLock(gridItem)
-                dismiss()
-            }
-        }
-
-        binding.fallbackActionRemove.setOnClickListener {
-            listener.onAnyClick()
-            listener.remove(gridItem)
-            dismiss()
-        }
-
-        binding.fallbackActionRename.setOnClickListener {
-            listener.onAnyClick()
-            listener.rename(gridItem)
-            dismiss()
-        }
-
-        binding.fallbackActionHide.setOnClickListener {
-            listener.onAnyClick()
-            listener.hide(gridItem)
-            dismiss()
-        }
-
-        binding.fallbackActionUninstall.setOnClickListener {
-            listener.onAnyClick()
-            listener.uninstall(gridItem)
-            dismiss()
-        }
-
-        binding.fallbackActionResize.setOnClickListener {
             listener.onAnyClick()
             listener.resize(gridItem)
             dismiss()
@@ -434,7 +363,7 @@ class AppShortcutsPopupWindow(
 
         // Arrow positioning: align with icon center
         val arrowWidth = (16 * density).toInt()
-        val cornerRadius = (22 * density).toInt()
+        val cornerRadius = (18 * density).toInt()
         val relativeCenter = iconCenterX - popupX
         val minArrow = cornerRadius.toFloat()
         val maxArrow = (popupWidth - cornerRadius - arrowWidth).toFloat().coerceAtLeast(minArrow)

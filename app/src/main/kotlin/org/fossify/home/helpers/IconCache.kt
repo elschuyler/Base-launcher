@@ -1,11 +1,22 @@
 package org.fossify.home.helpers
 
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.collection.LruCache
 import org.fossify.home.models.AppLauncher
 
 object IconCache {
-    private val drawableCache = LruCache<String, Drawable>(256)
+    private val maxMemoryKb = (Runtime.getRuntime().maxMemory() / 1024).toInt()
+    private val cacheSizeKb = (maxMemoryKb / 8).coerceIn(16 * 1024, 64 * 1024)
+
+    private val drawableCache = object : LruCache<String, Drawable>(cacheSizeKb) {
+        override fun sizeOf(key: String, value: Drawable): Int {
+            return when (value) {
+                is BitmapDrawable -> (value.bitmap.byteCount / 1024).coerceAtLeast(1)
+                else -> 128
+            }
+        }
+    }
 
     @Volatile
     private var cachedLaunchers = emptyList<AppLauncher>()

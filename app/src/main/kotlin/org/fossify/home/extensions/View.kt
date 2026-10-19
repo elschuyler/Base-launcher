@@ -1,5 +1,6 @@
 package org.fossify.home.extensions
 
+import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -24,6 +25,5 @@ fun View.animateScale(
     }
 
 fun View.setupDrawerBackground() {
-    // Drawer has no background scrim; only wallpaper is visible behind the drawer
-    background = null
+    setBackgroundColor(Color.BLACK)
 }

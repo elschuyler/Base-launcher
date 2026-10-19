@@ -139,6 +139,22 @@ class AllAppsFragment(
         return shouldIntercept
     }
 
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (ignoreTouches) {
+            val mainActivity = activity as? MainActivity
+            if (mainActivity != null) {
+                val handled = mainActivity.onTouchEvent(event)
+                if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                    ignoreTouches = false
+                    touchDownY = -1
+                }
+                return handled
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
     fun gotLaunchers(appLaunchers: List<AppLauncher>) {
         launchers = sortAppLaunchers(appLaunchers)
         setupAdapter(launchers)
@@ -464,7 +480,9 @@ class AllAppsFragment(
             docked = false,
             parentId = null,
             drawable = appLauncher.drawable
-        )
+        ).apply {
+            isArchived = appLauncher.isArchived
+        }
 
         activity?.showHomeIconMenu(x, y, gridItem, true)
         ignoreTouches = true
