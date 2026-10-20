@@ -247,3 +247,42 @@ Continues from `RECEIPTS_001.md` after reaching the 500-line cap.
 - **Any deviation from what was requested, and why**: None. Built strictly to agreed specifications.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+---
+
+### Entry 023
+- **Timestamp**: 2026-10-20T02:37:00-07:00
+- **One-line summary of what was requested**: Fix all apps showing as archived (zero false positives), update archive badge to official cloud-download symbol, fix NPE crash on folder drag, make folder popup background white with high-contrast text/controls, and sanitize workspace credentials.
+- **Exact files touched**:
+  - `debug.keystore` (deleted)
+  - `debug.keystore.base64` (deleted)
+  - `app/src/main/res/drawable/ic_cloud_download_vector.xml`
+  - `app/src/main/kotlin/org/fossify/home/helpers/IconDecorator.kt`
+  - `app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `app/src/main/kotlin/org/fossify/home/helpers/ArchivedAppsManager.kt`
+  - `app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `app/src/main/kotlin/org/fossify/home/views/HomeScreenGrid.kt`
+  - `BLUEPRINT.md`
+  - `receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Security Sanitization:
+    - Removed `/debug.keystore` and `/debug.keystore.base64` from repository root in compliance with the Credential Immunity Rule.
+  - Zero-False-Positive Archive Detection:
+    - Diagnosed crash log `Package org.isoron.uhabits is not currently archived`: identified that `packageManager.getArchivedPackage(packageName)` on Xiaomi/Android 15 returns non-null manifest parcels for installed apps.
+    - Switched detection in `ArchivedAppsManager.isArchived` to query `ApplicationInfo.isArchived` via `context.packageManager.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(PackageManager.MATCH_ARCHIVED_PACKAGES.toLong())).isArchived`.
+    - In `MainActivity.kt`, removed `|| packageManager.getArchivedPackage(packageName) != null` fallback so only apps with `info.activityInfo.isArchived == true` are tagged as archived. Regular apps now load and launch instantly with zero badging.
+  - Material Cloud-Download Vector Badge:
+    - Added `ic_cloud_download_vector.xml` containing standard Android 15 / Google Play Store cloud download path.
+    - Updated `IconDecorator.kt` to render this cloud-download vector inside the bottom-right badge.
+    - Updated `popup_action_unarchive_btn` in `popup_app_shortcuts.xml` to display `ic_cloud_download_vector`.
+  - Folder / Item Dragging Crash Fix:
+    - Diagnosed `NullPointerException` at `MainActivity.kt:532` from `vian_logs__3__82df5f29.txt`: `mOpenPopupMenu?.dismiss()` synchronously invoked `onDismiss()`, resetting `mLongPressedIcon = null` before `itemDraggingStarted` could execute.
+    - Secured `MainActivity.onTouchEvent` by capturing `val iconToDrag = mLongPressedIcon` locally, restoring `mLongPressedIcon = iconToDrag` and safely invoking `itemDraggingStarted(iconToDrag)`.
+  - Clean White Folder Popup & Header Contrast:
+    - Updated `HomeScreenGrid.kt` to paint open folder popup with pure white background (`folderBackgroundPaint.color = Color.WHITE`).
+    - Inverted folder title text paint (`folderTitleTextPaint.color = Color.parseColor("#1C1B1F")`) to guarantee clear readability on white.
+    - Styled popup outline border (`#E5E7EB`) and header `(+)` add button with light plate (`#F3F4F6`) and dark stroke (`#1C1B1F`).
+- **How it was verified**: Local build only (verified compilation via `compile_applet`).
+- **Any deviation from what was requested, and why**: None. Built strictly to finalized discussion specifications.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+

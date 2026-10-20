@@ -170,7 +170,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         }
 
         folderTitleTextPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = context.getProperTextColor()
+            color = Color.parseColor("#1C1B1F")
             textSize = context.resources.getDimension(org.fossify.commons.R.dimen.medium_text_size)
             typeface = customTypeface
         }
@@ -190,7 +190,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         }
 
         folderBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = context.getProperBackgroundColor()
+            color = Color.WHITE
             style = Paint.Style.FILL
         }
 
@@ -302,12 +302,12 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
     }
 
     fun updateColors() {
-        folderTitleTextPaint.color = context.getProperTextColor()
+        folderTitleTextPaint.color = Color.parseColor("#1C1B1F")
         contrastTextPaint.color = context.getProperTextColor()
         contrastTextPaint.setShadowLayer(
             2f, 0f, 0f, context.getProperTextColor().getContrastColor()
         )
-        folderBackgroundPaint.color = context.getProperBackgroundColor()
+        folderBackgroundPaint.color = Color.WHITE
     }
 
     fun removeAppIcon(item: HomeScreenGridItem) {
@@ -1523,7 +1523,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 val popupBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     style = Paint.Style.STROKE
                     strokeWidth = 1.5f * resources.displayMetrics.density / folder.scale
-                    color = ColorUtils.setAlphaComponent(context.getProperTextColor(), 35)
+                    color = Color.parseColor("#E5E7EB")
                 }
                 canvas.drawRoundRect(
                     folderRect,
@@ -1557,13 +1557,13 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
 
                 // (+) button on the right
                 val plusBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = ColorUtils.setAlphaComponent(context.getProperTextColor(), 26)
+                    color = Color.parseColor("#F3F4F6")
                     style = Paint.Style.FILL
                 }
                 canvas.drawCircle(addBtnRect.centerX(), addBtnRect.centerY(), addBtnRect.width() / 2f, plusBgPaint)
 
                 val plusStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = context.getProperTextColor()
+                    color = Color.parseColor("#1C1B1F")
                     style = Paint.Style.STROKE
                     strokeWidth = 2f * resources.displayMetrics.density
                     strokeCap = Paint.Cap.ROUND

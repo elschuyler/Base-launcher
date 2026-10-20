@@ -104,7 +104,7 @@
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/unarchive_app"
                     android:padding="6dp"
-                    android:src="@drawable/ic_download_vector"
+                    android:src="@drawable/ic_cloud_download_vector"
                     android:visibility="gone"
                     app:tint="#A0DF88" />
 

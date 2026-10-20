@@ -527,10 +527,14 @@ class MainActivity : SimpleActivity(), FlingListener {
                 }
 
                 if (mLongPressedIcon != null && (mOpenPopupMenu != null) && hasFingerMoved) {
+                    val iconToDrag = mLongPressedIcon
                     mOpenPopupMenu?.dismiss()
                     mOpenPopupMenu = null
-                    binding.homeScreenGrid.root.itemDraggingStarted(mLongPressedIcon!!)
-                    hideFragment(binding.allAppsFragment)
+                    if (iconToDrag != null) {
+                        mLongPressedIcon = iconToDrag
+                        binding.homeScreenGrid.root.itemDraggingStarted(iconToDrag)
+                        hideFragment(binding.allAppsFragment)
+                    }
                 }
 
                 if (mLongPressedIcon != null && hasFingerMoved) {
@@ -1941,7 +1945,7 @@ class MainActivity : SimpleActivity(), FlingListener {
 
             val isArchived = if (Build.VERSION.SDK_INT >= 35) {
                 try {
-                    info.activityInfo.isArchived || packageManager.getArchivedPackage(packageName) != null
+                    info.activityInfo.isArchived
                 } catch (e: Throwable) {
                     false
                 }

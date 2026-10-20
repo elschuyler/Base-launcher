@@ -20,9 +20,13 @@ object ArchivedAppsManager {
         if (packageName.isEmpty()) return false
         if (Build.VERSION.SDK_INT >= 35) {
             try {
-                return context.packageManager.getArchivedPackage(packageName) != null
+                val appInfo = context.packageManager.getApplicationInfo(
+                    packageName,
+                    PackageManager.ApplicationInfoFlags.of(PackageManager.MATCH_ARCHIVED_PACKAGES.toLong())
+                )
+                return appInfo.isArchived
             } catch (e: Throwable) {
-                // Ignore
+                return false
             }
         }
         return false

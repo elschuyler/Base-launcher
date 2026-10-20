@@ -1,0 +1,227 @@
+CRASH DUMP:
+2026-10-19 23:20:17.271 [System] LogKeeper initialized
+2026-10-19 23:20:27.427 [LauncherActionHandler] Executing action: app_drawer for item: none
+2026-10-19 23:20:33.956 [AllApps] Launching app: org.isoron.uhabits
+2026-10-19 23:20:34.018 [ArchivedAppsManager] requestUnarchive failed: Package org.isoron.uhabits is not currently archived.
+2026-10-19 23:22:27.905 [LauncherActionHandler] Executing action: app_drawer for item: none
+2026-10-19 23:22:37.074 [LauncherActionHandler] Executing action: app_drawer for item: none
+2026-10-19 23:22:38.490 [LauncherActionHandler] Executing action: app_drawer for item: none
+2026-10-19 23:22:39.840 [LauncherActionHandler] Executing action: lock_screen for item: none
+2026-10-19 23:22:42.424 [LauncherActionHandler] Executing action: app_drawer for item: none
+2026-10-19 23:22:52.275 [LauncherActionHandler] Executing action: app_drawer for item: none
+2026-10-19 23:23:01.960 [AddElementBridge] Opening Add Element UI at coords (395.0, 1044.0)
+2026-10-19 23:23:02.054 [AddToHomeBottomSheet] Displayed Add to Home sheet at coords (395.0, 1044.0)
+2026-10-19 23:23:14.009 [AddElementBridge] Opening Add Element UI at coords (438.0, 327.0)
+2026-10-19 23:23:14.082 [AddToHomeBottomSheet] Displayed Add to Home sheet at coords (438.0, 327.0)
+2026-10-19 23:23:20.178 [AddElementBridge] Opening Add Element UI at coords (512.0, 289.0)
+2026-10-19 23:23:20.244 [AddToHomeBottomSheet] Displayed Add to Home sheet at coords (512.0, 289.0)
+
+================================================================================
+CRASH DETECTED: 2026-10-19 23:23:27.391
+App Version: 1.10.0 (16)
+Android OS: 15 (SDK 35)
+Device: Xiaomi 25028RN03I
+Exception: java.lang.NullPointerException: No error message
+Stack Trace:
+java.lang.NullPointerException
+	at org.fossify.home.activities.MainActivity.onTouchEvent(MainActivity.kt:532)
+	at android.app.Activity.dispatchTouchEvent(Activity.java:4598)
+	at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
+	at com.android.internal.policy.DecorView.dispatchTouchEvent(DecorView.java:417)
+	at android.view.View.dispatchPointerEvent(View.java:16887)
+	at android.view.ViewRootImpl$ViewPostImeInputStage.processPointerEvent(ViewRootImpl.java:8306)
+	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:8069)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7430)
+	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7509)
+	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7463)
+	at android.view.ViewRootImpl$AsyncInputStage.forward(ViewRootImpl.java:7641)
+	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7471)
+	at android.view.ViewRootImpl$AsyncInputStage.apply(ViewRootImpl.java:7698)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7444)
+	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7509)
+	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7463)
+	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7471)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7444)
+	at android.view.ViewRootImpl.deliverInputEvent(ViewRootImpl.java:10709)
+	at android.view.ViewRootImpl.doProcessInputEvents(ViewRootImpl.java:10660)
+	at android.view.ViewRootImpl.enqueueInputEvent(ViewRootImpl.java:10595)
+	at android.view.ViewRootImpl$WindowInputEventReceiver.onInputEvent(ViewRootImpl.java:10894)
+	at android.view.InputEventReceiver.dispatchInputEvent(InputEventReceiver.java:298)
+	at android.view.InputEventReceiver.nativeConsumeBatchedInputEvents(Native Method)
+	at android.view.InputEventReceiver.consumeBatchedInputEvents(InputEventReceiver.java:259)
+	at android.view.ViewRootImpl.doConsumeBatchedInput(ViewRootImpl.java:10819)
+	at android.view.ViewRootImpl$ConsumeBatchedInputRunnable.run(ViewRootImpl.java:10991)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1867)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1876)
+	at android.view.Choreographer.doCallbacks(Choreographer.java:1287)
+	at android.view.Choreographer.doFrame(Choreographer.java:1102)
+	at android.view.Choreographer$FrameDisplayEventReceiver.run(Choreographer.java:1693)
+	at android.os.Handler.handleCallback(Handler.java:959)
+	at android.os.Handler.dispatchMessage(Handler.java:100)
+	at android.os.Looper.loopOnce(Looper.java:246)
+	at android.os.Looper.loop(Looper.java:334)
+	at android.app.ActivityThread.main(ActivityThread.java:8895)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:706)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:916)
+================================================================================
+
+2026-10-19 23:23:34.220 [System] LogKeeper initialized
+
+================================================================================
+CRASH DETECTED: 2026-10-19 23:23:41.810
+App Version: 1.10.0 (16)
+Android OS: 15 (SDK 35)
+Device: Xiaomi 25028RN03I
+Exception: java.lang.NullPointerException: No error message
+Stack Trace:
+java.lang.NullPointerException
+	at org.fossify.home.activities.MainActivity.onTouchEvent(MainActivity.kt:532)
+	at android.app.Activity.dispatchTouchEvent(Activity.java:4598)
+	at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
+	at com.android.internal.policy.DecorView.dispatchTouchEvent(DecorView.java:417)
+	at android.view.View.dispatchPointerEvent(View.java:16887)
+	at android.view.ViewRootImpl$ViewPostImeInputStage.processPointerEvent(ViewRootImpl.java:8306)
+	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:8069)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7430)
+	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7509)
+	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7463)
+	at android.view.ViewRootImpl$AsyncInputStage.forward(ViewRootImpl.java:7641)
+	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7471)
+	at android.view.ViewRootImpl$AsyncInputStage.apply(ViewRootImpl.java:7698)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7444)
+	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7509)
+	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7463)
+	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7471)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7444)
+	at android.view.ViewRootImpl.deliverInputEvent(ViewRootImpl.java:10709)
+	at android.view.ViewRootImpl.doProcessInputEvents(ViewRootImpl.java:10660)
+	at android.view.ViewRootImpl.enqueueInputEvent(ViewRootImpl.java:10595)
+	at android.view.ViewRootImpl$WindowInputEventReceiver.onInputEvent(ViewRootImpl.java:10894)
+	at android.view.InputEventReceiver.dispatchInputEvent(InputEventReceiver.java:298)
+	at android.view.InputEventReceiver.nativeConsumeBatchedInputEvents(Native Method)
+	at android.view.InputEventReceiver.consumeBatchedInputEvents(InputEventReceiver.java:259)
+	at android.view.ViewRootImpl.doConsumeBatchedInput(ViewRootImpl.java:10819)
+	at android.view.ViewRootImpl$ConsumeBatchedInputRunnable.run(ViewRootImpl.java:10991)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1867)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1876)
+	at android.view.Choreographer.doCallbacks(Choreographer.java:1287)
+	at android.view.Choreographer.doFrame(Choreographer.java:1102)
+	at android.view.Choreographer$FrameDisplayEventReceiver.run(Choreographer.java:1693)
+	at android.os.Handler.handleCallback(Handler.java:959)
+	at android.os.Handler.dispatchMessage(Handler.java:100)
+	at android.os.Looper.loopOnce(Looper.java:246)
+	at android.os.Looper.loop(Looper.java:334)
+	at android.app.ActivityThread.main(ActivityThread.java:8895)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:706)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:916)
+================================================================================
+
+2026-10-19 23:24:06.780 [System] LogKeeper initialized
+2026-10-19 23:24:12.218 [AddElementBridge] Opening Add Element UI at coords (437.0, 1254.0)
+2026-10-19 23:24:12.332 [AddToHomeBottomSheet] Displayed Add to Home sheet at coords (437.0, 1254.0)
+
+================================================================================
+CRASH DETECTED: 2026-10-19 23:24:58.709
+App Version: 1.10.0 (16)
+Android OS: 15 (SDK 35)
+Device: Xiaomi 25028RN03I
+Exception: java.lang.NullPointerException: No error message
+Stack Trace:
+java.lang.NullPointerException
+	at org.fossify.home.activities.MainActivity.onTouchEvent(MainActivity.kt:532)
+	at android.app.Activity.dispatchTouchEvent(Activity.java:4598)
+	at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
+	at com.android.internal.policy.DecorView.dispatchTouchEvent(DecorView.java:417)
+	at android.view.View.dispatchPointerEvent(View.java:16887)
+	at android.view.ViewRootImpl$ViewPostImeInputStage.processPointerEvent(ViewRootImpl.java:8306)
+	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:8069)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7430)
+	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7509)
+	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7463)
+	at android.view.ViewRootImpl$AsyncInputStage.forward(ViewRootImpl.java:7641)
+	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7471)
+	at android.view.ViewRootImpl$AsyncInputStage.apply(ViewRootImpl.java:7698)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7444)
+	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7509)
+	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7463)
+	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7471)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7444)
+	at android.view.ViewRootImpl.deliverInputEvent(ViewRootImpl.java:10709)
+	at android.view.ViewRootImpl.doProcessInputEvents(ViewRootImpl.java:10660)
+	at android.view.ViewRootImpl.enqueueInputEvent(ViewRootImpl.java:10595)
+	at android.view.ViewRootImpl$WindowInputEventReceiver.onInputEvent(ViewRootImpl.java:10894)
+	at android.view.InputEventReceiver.dispatchInputEvent(InputEventReceiver.java:298)
+	at android.view.InputEventReceiver.nativeConsumeBatchedInputEvents(Native Method)
+	at android.view.InputEventReceiver.consumeBatchedInputEvents(InputEventReceiver.java:259)
+	at android.view.ViewRootImpl.doConsumeBatchedInput(ViewRootImpl.java:10819)
+	at android.view.ViewRootImpl$ConsumeBatchedInputRunnable.run(ViewRootImpl.java:10991)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1867)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1876)
+	at android.view.Choreographer.doCallbacks(Choreographer.java:1287)
+	at android.view.Choreographer.doFrame(Choreographer.java:1102)
+	at android.view.Choreographer$FrameDisplayEventReceiver.run(Choreographer.java:1693)
+	at android.os.Handler.handleCallback(Handler.java:959)
+	at android.os.Handler.dispatchMessage(Handler.java:100)
+	at android.os.Looper.loopOnce(Looper.java:246)
+	at android.os.Looper.loop(Looper.java:334)
+	at android.app.ActivityThread.main(ActivityThread.java:8895)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:706)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:916)
+================================================================================
+
+2026-10-19 23:25:03.777 [System] LogKeeper initialized
+
+================================================================================
+CRASH DETECTED: 2026-10-19 23:25:10.035
+App Version: 1.10.0 (16)
+Android OS: 15 (SDK 35)
+Device: Xiaomi 25028RN03I
+Exception: java.lang.NullPointerException: No error message
+Stack Trace:
+java.lang.NullPointerException
+	at org.fossify.home.activities.MainActivity.onTouchEvent(MainActivity.kt:532)
+	at android.app.Activity.dispatchTouchEvent(Activity.java:4598)
+	at androidx.appcompat.view.WindowCallbackWrapper.dispatchTouchEvent(WindowCallbackWrapper.java:69)
+	at com.android.internal.policy.DecorView.dispatchTouchEvent(DecorView.java:417)
+	at android.view.View.dispatchPointerEvent(View.java:16887)
+	at android.view.ViewRootImpl$ViewPostImeInputStage.processPointerEvent(ViewRootImpl.java:8306)
+	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:8069)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7430)
+	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7509)
+	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7463)
+	at android.view.ViewRootImpl$AsyncInputStage.forward(ViewRootImpl.java:7641)
+	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7471)
+	at android.view.ViewRootImpl$AsyncInputStage.apply(ViewRootImpl.java:7698)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7444)
+	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:7509)
+	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:7463)
+	at android.view.ViewRootImpl$InputStage.apply(ViewRootImpl.java:7471)
+	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:7444)
+	at android.view.ViewRootImpl.deliverInputEvent(ViewRootImpl.java:10709)
+	at android.view.ViewRootImpl.doProcessInputEvents(ViewRootImpl.java:10660)
+	at android.view.ViewRootImpl.enqueueInputEvent(ViewRootImpl.java:10595)
+	at android.view.ViewRootImpl$WindowInputEventReceiver.onInputEvent(ViewRootImpl.java:10894)
+	at android.view.InputEventReceiver.dispatchInputEvent(InputEventReceiver.java:298)
+	at android.view.InputEventReceiver.nativeConsumeBatchedInputEvents(Native Method)
+	at android.view.InputEventReceiver.consumeBatchedInputEvents(InputEventReceiver.java:259)
+	at android.view.ViewRootImpl.doConsumeBatchedInput(ViewRootImpl.java:10819)
+	at android.view.ViewRootImpl$ConsumeBatchedInputRunnable.run(ViewRootImpl.java:10991)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1867)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1876)
+	at android.view.Choreographer.doCallbacks(Choreographer.java:1287)
+	at android.view.Choreographer.doFrame(Choreographer.java:1102)
+	at android.view.Choreographer$FrameDisplayEventReceiver.run(Choreographer.java:1693)
+	at android.os.Handler.handleCallback(Handler.java:959)
+	at android.os.Handler.dispatchMessage(Handler.java:100)
+	at android.os.Looper.loopOnce(Looper.java:246)
+	at android.os.Looper.loop(Looper.java:334)
+	at android.app.ActivityThread.main(ActivityThread.java:8895)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:706)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:916)
+================================================================================
+
+

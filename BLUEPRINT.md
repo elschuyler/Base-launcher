@@ -289,4 +289,20 @@
     - **Visual Badging (`IconDecorator.kt`)**: Implemented standard launcher icon treatment for archived apps: base icon rendered with ~65% dimmed alpha, overlaid with a floating circular dark badge containing a vector download down-arrow (`ic_download_vector`) in the bottom-right corner. Cached under `"$identifier_archived"` in `IconCache` to ensure zero-overhead 60fps scrolling and grid rendering.
     - **Tap-to-Restore Flow**: Updated `Activity.launchApp` to intercept taps on archived apps across home screen grid, dock, folders, and drawer, initiating system restoration via `PackageInstaller.requestUnarchive()` and displaying immediate feedback toast (`Restoring [App Title]…`) with fallback to store page.
     - **Contextual Actions**: Added Restore / Download quick action button (`popup_action_unarchive_btn`) in `AppShortcutsPopupWindow` top pill bar, suppressed unavailable app shortcuts, enabled uninstallation of archived packages in `canAppBeUninstalled()`, and retained direct navigation to system App Info where the OS displays Archive/Unarchive, Uninstall, and Force Stop.
+- [Phase: Precise Archive Flagging, Material Cloud-Download Badge, Folder Drag Crash Elimination, White Folder Popup]
+  - **Security Sanitization**:
+    - Verified and removed `/debug.keystore` and `/debug.keystore.base64` from repository root in strict accordance with the Credential Immunity Rule.
+  - **Precise Archive Detection (Zero False Positives)**:
+    - Fixed root cause of all apps appearing as archived: replaced erroneous `packageManager.getArchivedPackage(packageName) != null` check (which returned non-null manifest parcels for installed apps on Xiaomi/Android 15) with official Android 15 `ApplicationInfo.isArchived` and `ActivityInfo.isArchived` flags.
+    - Truly archived apps show badge and unarchive flow; unarchived apps launch normally with 0 latency.
+  - **Material Cloud-Download Vector Badge**:
+    - Created `ic_cloud_download_vector.xml` representing standard Android 15 / Google Play Store cloud download glyph (cloud silhouette with downward arrow).
+    - Updated `IconDecorator.kt` and `popup_action_unarchive_btn` to use `ic_cloud_download_vector`.
+  - **Folder / Item Dragging Crash Fix**:
+    - Fixed NPE at `MainActivity.kt:532`: captured `val iconToDrag = mLongPressedIcon` before `mOpenPopupMenu?.dismiss()` so the synchronous `onDismiss()` callback cannot nullify the drag target reference before `itemDraggingStarted` executes.
+  - **Clean White Folder Popup & Contrast Inversion**:
+    - Updated `HomeScreenGrid.kt` to render open folder dialog popup with pure white background (`folderBackgroundPaint.color = Color.WHITE`).
+    - Inverted folder popup header text (`folderTitleTextPaint.color = Color.parseColor("#1C1B1F")`) to guarantee sharp, readable contrast against white.
+    - Styled folder popup boundary outline (`#E5E7EB`) and header `(+)` add button with soft light-gray background (`#F3F4F6`) and dark stroke (`#1C1B1F`).
+
 

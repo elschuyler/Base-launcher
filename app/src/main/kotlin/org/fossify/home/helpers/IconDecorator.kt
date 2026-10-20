@@ -52,10 +52,10 @@ object IconDecorator {
         }
         canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, strokePaint)
 
-        // 3. Draw download vector inside the badge
-        val downloadDrawable = ContextCompat.getDrawable(context, R.drawable.ic_download_vector)?.mutate()
+        // 3. Draw cloud download vector inside the badge
+        val downloadDrawable = ContextCompat.getDrawable(context, R.drawable.ic_cloud_download_vector)?.mutate()
         if (downloadDrawable != null) {
-            val iconInnerHalf = badgeRadius * 0.58f
+            val iconInnerHalf = badgeRadius * 0.62f
             downloadDrawable.setBounds(
                 (badgeCenterX - iconInnerHalf).toInt(),
                 (badgeCenterY - iconInnerHalf).toInt(),
