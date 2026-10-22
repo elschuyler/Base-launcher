@@ -195,7 +195,7 @@ class WidgetsFragment(context: Context, attributeSet: AttributeSet) :
                 appIcon = clockAppIcon,
                 widgetTitle = context.getString(R.string.clock_widget_title),
                 widgetPreviewImage = clockPreview,
-                widthCells = 5,
+                widthCells = 4,
                 heightCells = 2,
                 isShortcut = false,
                 className = BUILT_IN_CLOCK_CLASS_NAME,

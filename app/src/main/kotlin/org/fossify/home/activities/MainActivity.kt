@@ -749,7 +749,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                             id = null,
                             left = 0,
                             top = 0,
-                            right = 4,
+                            right = 3,
                             bottom = 1,
                             page = 0,
                             packageName = packageName,
@@ -762,7 +762,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                             icon = null,
                             docked = false,
                             parentId = null,
-                            widthCells = 5,
+                            widthCells = 4,
                             heightCells = 2
                         )
                         homeScreenGridItemsDB.insert(clockWidget)
@@ -1731,6 +1731,9 @@ class MainActivity : SimpleActivity(), FlingListener {
                 AppLockManager.authenticateAndLaunch(this@MainActivity, pkg, title) {
                     AppLockManager.unlockApp(this@MainActivity, pkg) {
                         toast(R.string.app_unlocked)
+                        IconCache.clear()
+                        refreshLaunchers()
+                        binding.homeScreenGrid.root.fetchGridItems()
                     }
                 }
             } else {
@@ -1739,6 +1742,9 @@ class MainActivity : SimpleActivity(), FlingListener {
                 }
                 AppLockManager.lockApp(this@MainActivity, pkg, title) {
                     toast(R.string.app_locked)
+                    IconCache.clear()
+                    refreshLaunchers()
+                    binding.homeScreenGrid.root.fetchGridItems()
                 }
             }
         }
@@ -1954,7 +1960,12 @@ class MainActivity : SimpleActivity(), FlingListener {
             }
 
             val label = info.loadLabel(packageManager).toString()
-            val iconCacheKey = if (isArchived) "${identifier}_archived" else identifier
+            val isLocked = AppLockManager.isAppLocked(packageName)
+            val iconCacheKey = when {
+                isArchived -> "${identifier}_archived"
+                isLocked -> "${identifier}_locked"
+                else -> identifier
+            }
             var drawable = IconCache.getDrawable(iconCacheKey)
             if (drawable == null) {
                 drawable = try {
@@ -1962,9 +1973,18 @@ class MainActivity : SimpleActivity(), FlingListener {
                 } catch (e: Exception) {
                     null
                 } ?: getDrawableForPackageName(packageName)
+                if (drawable == null && Build.VERSION.SDK_INT >= 35) {
+                    drawable = try {
+                        packageManager.getArchivedPackage(packageName)?.launcherActivities?.firstOrNull()?.icon
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
                 if (drawable != null) {
                     if (isArchived) {
                         drawable = org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(this@MainActivity, drawable)
+                    } else if (isLocked) {
+                        drawable = org.fossify.home.helpers.IconDecorator.decorateLockedIcon(this@MainActivity, drawable)
                     }
                     IconCache.putDrawable(iconCacheKey, drawable)
                 }
@@ -2182,13 +2202,13 @@ class MainActivity : SimpleActivity(), FlingListener {
             }
         }
 
-        // Add default Digital Clock widget (5x2) at the top of the home screen
+        // Add default Digital Clock widget (4x2) at the top of the home screen
         try {
             val clockWidget = HomeScreenGridItem(
                 id = null,
                 left = 0,
                 top = 0,
-                right = 4,
+                right = 3,
                 bottom = 1,
                 page = 0,
                 packageName = packageName,
@@ -2201,7 +2221,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                 icon = null,
                 docked = false,
                 parentId = null,
-                widthCells = 5,
+                widthCells = 4,
                 heightCells = 2
             )
             homeScreenGridItems.add(clockWidget)

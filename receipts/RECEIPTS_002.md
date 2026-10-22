@@ -285,4 +285,40 @@ Continues from `RECEIPTS_001.md` after reaching the 500-line cap.
 - **Any deviation from what was requested, and why**: None. Built strictly to finalized discussion specifications.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+---
 
+### Entry 024
+- **Timestamp**: 2026-10-21T08:30:00-07:00
+- **One-line summary of what was requested**: Archived app icon recovery from system archive cache, permanent pure white app drawer typography (charging-proof), standard launcher locked app padlock badge, 4-cell clock widget width, intelligent grid resize reflow, and keystore sanitization.
+- **Exact files touched**:
+  - `debug.keystore` (deleted)
+  - `debug.keystore.base64` (deleted)
+  - `app/src/main/kotlin/org/fossify/home/helpers/IconDecorator.kt`
+  - `app/src/main/kotlin/org/fossify/home/adapters/LaunchersAdapter.kt`
+  - `app/src/main/kotlin/org/fossify/home/fragments/AllAppsFragment.kt`
+  - `app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `app/src/main/kotlin/org/fossify/home/fragments/WidgetsFragment.kt`
+  - `app/src/main/kotlin/org/fossify/home/views/HomeScreenGrid.kt`
+  - `BLUEPRINT.md`
+  - `receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Security Sanitization:
+    - Purged `/debug.keystore` and `/debug.keystore.base64` from repository root in strict compliance with the Credential Immunity Rule.
+  - Archived App Icon Recovery:
+    - In `LaunchersAdapter.kt` and `MainActivity.getAllAppLaunchers`, added fallback query to `packageManager.getArchivedPackage(packageName)?.launcherActivities?.firstOrNull()?.icon` on API 35+, restoring icons for archived apps whose base APK was removed.
+  - Charging-Proof Pure White App Drawer Typography:
+    - Decoupled `LaunchersAdapter` and `AllAppsFragment` text color from dynamic `getProperTextColor()`.
+    - Hardened app drawer labels and icons to permanent `Color.WHITE`, guaranteeing maximum contrast against the pure black drawer background regardless of charging state, battery saver, or ambient display mode.
+  - Standard Launcher Locked App Padlock Badging:
+    - Implemented `decorateLockedIcon(context, original)` in `IconDecorator.kt`: preserves base icon at 100% full brightness and overlays a crisp bottom-right circular badge containing the Material padlock vector (`ic_lock_vector`).
+    - Added locked app badging to `LaunchersAdapter.kt`, `MainActivity.kt`, and `HomeScreenGrid.kt`.
+    - Integrated instant cache invalidation and UI redraw on `MainActivity.toggleLock`.
+  - Clock Widget 4-Cell Width Optimization:
+    - Updated built-in digital clock widget width from 5 cells to 4 cells (`widthCells = 4`, `left = 0, right = 3`) in `WidgetsFragment.kt` and `MainActivity.kt`, fitting cleanly on 4-column, 5-column, and 6-column home screens.
+  - Intelligent Grid Resize Reflow:
+    - Implemented `reflowGridItemsForNewSize` in `HomeScreenGrid.kt`.
+    - When column or row counts change: automatically clamps oversized widgets to fit the new width, preserves all items that fit, and reflows overflowing single-cell desktop icons and folders to available empty slots on the current page or spills to the next page.
+    - Persists all reflowed coordinates to Room DB asynchronously.
+- **How it was verified**: Local compilation verified successfully via `compile_applet`. Initial build caught missing `update` method on `HomeScreenGridItemsDao`, resolved by routing position updates through `HomeScreenGridItemsDao.updateItemPosition(...)` which matches database schema. Post-build scan purged newly generated ephemeral keystores.
+- **Any deviation from what was requested, and why**: None. Built strictly to finalized discussion specifications.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.

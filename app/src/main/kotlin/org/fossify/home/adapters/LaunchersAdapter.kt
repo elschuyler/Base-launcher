@@ -1,6 +1,7 @@
 package org.fossify.home.adapters
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -32,7 +33,7 @@ class LaunchersAdapter(
 ) : ListAdapter<AppLauncher, LaunchersAdapter.ViewHolder>(AppLauncherDiffCallback()),
     RecyclerViewFastScroller.OnPopupTextUpdate {
 
-    private var textColor = activity.getProperTextColor()
+    private var textColor = Color.WHITE
     private var iconPadding = 0
 
     init {
@@ -74,10 +75,8 @@ class LaunchersAdapter(
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateTextColor(newTextColor: Int) {
-        if (newTextColor != textColor) {
-            textColor = newTextColor
-            notifyDataSetChanged()
-        }
+        textColor = Color.WHITE
+        notifyDataSetChanged()
     }
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -90,7 +89,12 @@ class LaunchersAdapter(
                 binding.launcherLabel.beVisibleIf(activity.config.showDrawerAppLabels)
                 binding.launcherIcon.setPadding(iconPadding, iconPadding, iconPadding, iconPadding)
 
-                val key = launcher.getLauncherIdentifier()
+                val isLocked = org.fossify.home.helpers.AppLockManager.isAppLocked(launcher.packageName)
+                val key = when {
+                    launcher.isArchived -> "${launcher.getLauncherIdentifier()}_archived"
+                    isLocked -> "${launcher.getLauncherIdentifier()}_locked"
+                    else -> launcher.getLauncherIdentifier()
+                }
                 val cachedDrawable = launcher.drawable ?: IconCache.getDrawable(key)
 
                 if (cachedDrawable != null) {
@@ -106,16 +110,26 @@ class LaunchersAdapter(
                     binding.launcherIcon.tag = key
 
                     ensureBackgroundThread {
-                        val rawDrawable = activity.getDrawableForPackageName(launcher.packageName)
+                        var rawDrawable = activity.getDrawableForPackageName(launcher.packageName)
                             ?: try {
                                 activity.packageManager.getApplicationIcon(launcher.packageName)
                             } catch (e: Exception) {
                                 null
                             }
-                        val loadedDrawable = if (rawDrawable != null && launcher.isArchived) {
-                            org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(activity, rawDrawable)
-                        } else {
-                            rawDrawable
+                        if (rawDrawable == null && android.os.Build.VERSION.SDK_INT >= 35) {
+                            rawDrawable = try {
+                                activity.packageManager.getArchivedPackage(launcher.packageName)
+                                    ?.launcherActivities?.firstOrNull()?.icon
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+
+                        val loadedDrawable = when {
+                            rawDrawable == null -> null
+                            launcher.isArchived -> org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(activity, rawDrawable)
+                            isLocked -> org.fossify.home.helpers.IconDecorator.decorateLockedIcon(activity, rawDrawable)
+                            else -> rawDrawable
                         }
                         if (loadedDrawable != null) {
                             IconCache.putDrawable(key, loadedDrawable)

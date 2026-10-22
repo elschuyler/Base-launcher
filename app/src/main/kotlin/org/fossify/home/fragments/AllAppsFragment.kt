@@ -1,6 +1,7 @@
 package org.fossify.home.fragments
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -266,9 +267,9 @@ class AllAppsFragment(
         })
 
         setupDrawerBackground()
-        getAdapter()?.updateTextColor(context.getProperTextColor())
+        getAdapter()?.updateTextColor(Color.WHITE)
 
-        val textColor = context.getProperTextColor()
+        val textColor = Color.WHITE
         binding.drawerTitle.setTextColor(textColor)
         binding.drawerBtnSearch.applyColorFilter(textColor)
         binding.drawerBtnPlayStore.applyColorFilter(textColor)

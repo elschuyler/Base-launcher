@@ -247,15 +247,25 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 if (item.type == ITEM_TYPE_ICON) {
                     val isArchived = org.fossify.home.helpers.ArchivedAppsManager.isArchived(context, item.packageName)
                     item.isArchived = isArchived
-                    val rawDrawable = if (item.icon != null) {
+                    val isLocked = org.fossify.home.helpers.AppLockManager.isAppLocked(item.packageName)
+                    var rawDrawable = if (item.icon != null) {
                         item.icon?.toDrawable(context.resources)
                     } else {
                         context.getDrawableForPackageName(item.packageName)
                     }
-                    item.drawable = if (rawDrawable != null && isArchived) {
-                        org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(context, rawDrawable)
-                    } else {
-                        rawDrawable
+                    if (rawDrawable == null && android.os.Build.VERSION.SDK_INT >= 35) {
+                        rawDrawable = try {
+                            context.packageManager.getArchivedPackage(item.packageName)
+                                ?.launcherActivities?.firstOrNull()?.icon
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    item.drawable = when {
+                        rawDrawable == null -> null
+                        isArchived -> org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(context, rawDrawable)
+                        isLocked -> org.fossify.home.helpers.IconDecorator.decorateLockedIcon(context, rawDrawable)
+                        else -> rawDrawable
                     }
                 } else if (item.type == ITEM_TYPE_FOLDER) {
                     item.drawable = if (item.icon != null) {
@@ -292,12 +302,131 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             iconMargin =
                 (context.resources.getDimension(R.dimen.icon_side_margin) * 5 / maxCols).toInt()
             isFirstDraw = true
+            reflowGridItemsForNewSize(newRowCount, newColumnCount, newDockColumnCount)
             gridItems.filter { it.type == ITEM_TYPE_WIDGET && it.className != BUILT_IN_CLOCK_CLASS_NAME }.forEach {
                 appWidgetHost.deleteAppWidgetId(it.widgetId)
             }
             widgetViews.forEach { removeView(it) }
             widgetViews.clear()
             redrawGrid()
+        }
+    }
+
+    private fun reflowGridItemsForNewSize(newRowCount: Int, newColumnCount: Int, newDockColumnCount: Int) {
+        val modifiedItems = ArrayList<HomeScreenGridItem>()
+        val maxCols = newColumnCount
+        val maxRows = newRowCount - 1 // desktop usable rows (last row is reserved for dock)
+
+        // 1. Adjust widgets: shrink width/height or clamp if exceeding new grid bounds
+        gridItems.filter { it.type == ITEM_TYPE_WIDGET && !it.docked }.forEach { widget ->
+            var changed = false
+
+            // Clamp width
+            if (widget.right >= maxCols) {
+                if (widget.left < maxCols) {
+                    widget.right = maxCols - 1
+                } else {
+                    val w = min(widget.widthCells, maxCols)
+                    widget.left = 0
+                    widget.right = w - 1
+                }
+                widget.widthCells = widget.right - widget.left + 1
+                changed = true
+            }
+
+            // Clamp height
+            if (widget.bottom >= maxRows) {
+                if (widget.top < maxRows) {
+                    widget.bottom = maxRows - 1
+                } else {
+                    val h = min(widget.heightCells, maxRows)
+                    widget.top = 0
+                    widget.bottom = h - 1
+                }
+                widget.heightCells = widget.bottom - widget.top + 1
+                changed = true
+            }
+
+            if (changed) {
+                modifiedItems.add(widget)
+            }
+        }
+
+        // 2. Adjust docked items if dock column count changed
+        gridItems.filter { it.docked && it.parentId == null }.forEach { item ->
+            if (item.left >= newDockColumnCount || item.right >= newDockColumnCount) {
+                val occupiedDockCols = gridItems.filter { it.docked && it.id != item.id && it.left < newDockColumnCount }.map { it.left }.toSet()
+                val freeSlot = (0 until newDockColumnCount).firstOrNull { !occupiedDockCols.contains(it) }
+                if (freeSlot != null) {
+                    item.left = freeSlot
+                    item.right = freeSlot
+                    modifiedItems.add(item)
+                } else {
+                    item.docked = false
+                }
+            }
+        }
+
+        // 3. For single-cell items (icons, shortcuts, folders) on desktop:
+        // Keep those that already fit in place.
+        // For overflowing items, find first open cell on their page or spill over to next page.
+        val occupiedCells = HashMap<Int, MutableSet<Point>>()
+        gridItems.filter { !it.docked && it.parentId == null }.forEach { item ->
+            val pageOccupied = occupiedCells.getOrPut(item.page) { HashSet() }
+            if (item.left < maxCols && item.right < maxCols && item.top < maxRows && item.bottom < maxRows) {
+                for (c in item.left..item.right) {
+                    for (r in item.top..item.bottom) {
+                        pageOccupied.add(Point(c, r))
+                    }
+                }
+            }
+        }
+
+        gridItems.filter { it.isSingleCellType() && !it.docked && it.parentId == null }.forEach { item ->
+            if (item.left >= maxCols || item.top >= maxRows) {
+                var placed = false
+                var targetPage = item.page
+                while (!placed) {
+                    val pageOccupied = occupiedCells.getOrPut(targetPage) { HashSet() }
+                    var foundPoint: Point? = null
+                    for (r in 0 until maxRows) {
+                        for (c in 0 until maxCols) {
+                            val pt = Point(c, r)
+                            if (!pageOccupied.contains(pt)) {
+                                foundPoint = pt
+                                break
+                            }
+                        }
+                        if (foundPoint != null) break
+                    }
+
+                    if (foundPoint != null) {
+                        item.page = targetPage
+                        item.left = foundPoint.x
+                        item.right = foundPoint.x
+                        item.top = foundPoint.y
+                        item.bottom = foundPoint.y
+                        pageOccupied.add(foundPoint)
+                        modifiedItems.add(item)
+                        placed = true
+                    } else {
+                        targetPage++
+                    }
+                }
+            }
+        }
+
+        // 4. Save modified items in database
+        if (modifiedItems.isNotEmpty()) {
+            ensureBackgroundThread {
+                modifiedItems.forEach {
+                    if (it.id != null) {
+                        context.homeScreenGridItemsDB.updateItemPosition(
+                            it.left, it.top, it.right, it.bottom, it.page, it.docked, it.parentId, it.id!!
+                        )
+                    }
+                }
+            }
         }
     }
 

@@ -304,5 +304,24 @@
     - Updated `HomeScreenGrid.kt` to render open folder dialog popup with pure white background (`folderBackgroundPaint.color = Color.WHITE`).
     - Inverted folder popup header text (`folderTitleTextPaint.color = Color.parseColor("#1C1B1F")`) to guarantee sharp, readable contrast against white.
     - Styled folder popup boundary outline (`#E5E7EB`) and header `(+)` add button with soft light-gray background (`#F3F4F6`) and dark stroke (`#1C1B1F`).
+- [Phase: Archived Icon Recovery, Constant White Drawer Text, Locked App Badge, 4-Wide Clock, Grid Reflow]
+  - **Security Sanitization**:
+    - Purged `/debug.keystore` and `/debug.keystore.base64` from repository root in strict accordance with the Credential Immunity Rule.
+  - **Archived App Icon Recovery (`LaunchersAdapter.kt` & `MainActivity.kt`)**:
+    - Added fallback to `packageManager.getArchivedPackage(packageName)?.launcherActivities?.firstOrNull()?.icon` on API 35+, restoring icons for archived apps whose base APK was removed.
+  - **Constant Pure White Drawer Typography (`LaunchersAdapter.kt` & `AllAppsFragment.kt`)**:
+    - Decoupled app drawer labels and icons from dynamic system theme colors, ensuring permanent `Color.WHITE` contrast across all charging states, battery saver toggles, and ambient display updates against the pure black drawer background.
+  - **Locked App Icon Badging (Standard Launcher UX)**:
+    - Added `decorateLockedIcon(context, original)` in `IconDecorator.kt`: leaves base icon at 100% full brightness and overlays a crisp bottom-right circular badge containing the Material padlock glyph (`ic_lock_vector`).
+    - Integrated badging into `LaunchersAdapter`, `MainActivity.getAllAppLaunchers`, and `HomeScreenGrid`.
+    - Wired `toggleLock` to clear `IconCache` and trigger instant drawer and home screen redraws.
+  - **Clock Widget 4-Cell Width Optimization**:
+    - Reduced default built-in digital clock widget width from 5 cells to 4 cells (`widthCells = 4`, `left = 0, right = 3`) in `WidgetsFragment.kt` and `MainActivity.kt`, fitting seamlessly across 4-column, 5-column, and 6-column layouts without horizontal truncation.
+  - **Intelligent Grid Resize Reflow (`HomeScreenGrid.kt`)**:
+    - Eliminated the vanishing item bug during grid shrinkage: implemented `reflowGridItemsForNewSize`.
+    - Automatically clamps and shrinks oversized widgets to the new column count (`right = newColumnCount - 1`).
+    - Preserves all items that fit, and smoothly reflows any overflowing single-cell desktop icons and folders into the first available open cell on the page or spills over to the next page.
+    - Persists all reflowed coordinates to Room DB asynchronously.
+
 
 
