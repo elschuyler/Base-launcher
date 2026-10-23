@@ -263,6 +263,10 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                     }
                     item.drawable = when {
                         rawDrawable == null -> null
+                        isArchived && isLocked -> {
+                            val arch = org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(context, rawDrawable)
+                            org.fossify.home.helpers.IconDecorator.decorateLockedIcon(context, arch)
+                        }
                         isArchived -> org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(context, rawDrawable)
                         isLocked -> org.fossify.home.helpers.IconDecorator.decorateLockedIcon(context, rawDrawable)
                         else -> rawDrawable

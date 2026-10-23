@@ -91,6 +91,7 @@ class LaunchersAdapter(
 
                 val isLocked = org.fossify.home.helpers.AppLockManager.isAppLocked(launcher.packageName)
                 val key = when {
+                    launcher.isArchived && isLocked -> "${launcher.getLauncherIdentifier()}_archived_locked"
                     launcher.isArchived -> "${launcher.getLauncherIdentifier()}_archived"
                     isLocked -> "${launcher.getLauncherIdentifier()}_locked"
                     else -> launcher.getLauncherIdentifier()
@@ -127,6 +128,10 @@ class LaunchersAdapter(
 
                         val loadedDrawable = when {
                             rawDrawable == null -> null
+                            launcher.isArchived && isLocked -> {
+                                val arch = org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(activity, rawDrawable)
+                                org.fossify.home.helpers.IconDecorator.decorateLockedIcon(activity, arch)
+                            }
                             launcher.isArchived -> org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(activity, rawDrawable)
                             isLocked -> org.fossify.home.helpers.IconDecorator.decorateLockedIcon(activity, rawDrawable)
                             else -> rawDrawable

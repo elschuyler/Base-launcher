@@ -322,6 +322,23 @@
     - Automatically clamps and shrinks oversized widgets to the new column count (`right = newColumnCount - 1`).
     - Preserves all items that fit, and smoothly reflows any overflowing single-cell desktop icons and folders into the first available open cell on the page or spills over to the next page.
     - Persists all reflowed coordinates to Room DB asynchronously.
+- [Phase: Dual-Layer Archived Apps Discovery & Option A Lock Badge Styling]
+  - **Security Sanitization**:
+    - Silently scanned and purged ephemeral `/debug.keystore` and `/debug.keystore.base64` generated during Gradle compilation in strict compliance with the Credential Immunity Rule.
+  - **Dual-Layer Archived Apps Discovery (`MainActivity.kt` & `ArchivedAppsManager.kt`)**:
+    - Resolved root cause of missing archived apps: `PackageManager.queryIntentActivities` only queries active APK component tables in memory; when apps are archived on Android 15, their APK is removed from disk, causing `queryIntentActivities` to return 0 activities and triggering `refreshLaunchers()` to falsely assume the app was uninstalled.
+    - Implemented bulletproof dual-layer retrieval on API 35+:
+      1. Layer A: `LauncherApps.getActivityList(null, user)` queries synthesized launcher entries for archived apps (`applicationInfo.isArchived == true`).
+      2. Layer B: `PackageManager.getInstalledPackages(MATCH_ARCHIVED_PACKAGES)` queries the package table directly, extracting cached launcher metadata via `PackageManager.getArchivedPackage(packageName)?.launcherActivities`.
+    - Both layers populate `allApps` with `isArchived = true` and serialize them into `launchersDB`, preventing deletion from `homeScreenGridItemsDB` and ensuring full alphabetical drawer visibility.
+    - Hardened `ArchivedAppsManager.isArchived` with multi-path check (`appInfo.isArchived` and `getArchivedPackage(pkg) != null`).
+  - **Option A Lock Badge Styling (`IconDecorator.kt`)**:
+    - Unified locked app aesthetic with archived app design language:
+      1. Base icon dimmed to 65% alpha (165/255) for immediate visual feedback of restricted state.
+      2. Prominent circular dark container badge (`#F21C1B1F`) in bottom-right corner expanded to 23% of icon width with crisp 40% white border.
+      3. Bold white padlock vector (`ic_lock_vector`) scaled to 72% of badge area (up from 58%), eliminating small/subtle badge rendering.
+    - Matched badge sizing and glyph scale in `decorateArchivedIcon` for visual symmetry across all special app states.
+    - Added combined state handling (`_archived_locked`) across `MainActivity`, `LaunchersAdapter`, and `HomeScreenGrid`.
 
 
 

@@ -1951,9 +1951,9 @@ class MainActivity : SimpleActivity(), FlingListener {
 
             val isArchived = if (Build.VERSION.SDK_INT >= 35) {
                 try {
-                    info.activityInfo.isArchived
+                    info.activityInfo.isArchived || org.fossify.home.helpers.ArchivedAppsManager.isArchived(this, packageName)
                 } catch (e: Throwable) {
-                    false
+                    org.fossify.home.helpers.ArchivedAppsManager.isArchived(this, packageName)
                 }
             } else {
                 false
@@ -1962,6 +1962,7 @@ class MainActivity : SimpleActivity(), FlingListener {
             val label = info.loadLabel(packageManager).toString()
             val isLocked = AppLockManager.isAppLocked(packageName)
             val iconCacheKey = when {
+                isArchived && isLocked -> "${identifier}_archived_locked"
                 isArchived -> "${identifier}_archived"
                 isLocked -> "${identifier}_locked"
                 else -> identifier
@@ -1983,7 +1984,8 @@ class MainActivity : SimpleActivity(), FlingListener {
                 if (drawable != null) {
                     if (isArchived) {
                         drawable = org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(this@MainActivity, drawable)
-                    } else if (isLocked) {
+                    }
+                    if (isLocked) {
                         drawable = org.fossify.home.helpers.IconDecorator.decorateLockedIcon(this@MainActivity, drawable)
                     }
                     IconCache.putDrawable(iconCacheKey, drawable)
@@ -2023,6 +2025,191 @@ class MainActivity : SimpleActivity(), FlingListener {
                     this.isArchived = isArchived
                 }
             )
+        }
+
+        // Dual-Layer Archived Apps Discovery on Android 15+ (API 35+)
+        if (Build.VERSION.SDK_INT >= 35) {
+            val processedPackages = allApps.map { it.packageName }.toMutableSet()
+            processedPackages.add(simpleLauncher)
+            processedPackages.add(microG)
+
+            // Method A: LauncherApps.getActivityList for archived packages
+            try {
+                val launcherApps = applicationContext.getSystemService(LAUNCHER_APPS_SERVICE) as? LauncherApps
+                val user = android.os.Process.myUserHandle()
+                val activityList = launcherApps?.getActivityList(null, user) ?: emptyList()
+                for (activity in activityList) {
+                    val pkg = activity.applicationInfo.packageName
+                    if (processedPackages.contains(pkg)) continue
+                    val isArchived = try {
+                        activity.applicationInfo.isArchived || org.fossify.home.helpers.ArchivedAppsManager.isArchived(this, pkg)
+                    } catch (e: Throwable) {
+                        org.fossify.home.helpers.ArchivedAppsManager.isArchived(this, pkg)
+                    }
+                    if (!isArchived) continue
+
+                    val actName = activity.name ?: ""
+                    val identifier = "$pkg/$actName"
+                    if (hiddenIcons.contains(identifier)) continue
+
+                    val label = activity.label?.toString() ?: pkg
+                    val isLocked = AppLockManager.isAppLocked(pkg)
+                    val iconCacheKey = when {
+                        isLocked -> "${identifier}_archived_locked"
+                        else -> "${identifier}_archived"
+                    }
+                    var drawable = IconCache.getDrawable(iconCacheKey)
+                    if (drawable == null) {
+                        drawable = try {
+                            activity.getBadgedIcon(0)
+                        } catch (e: Exception) {
+                            null
+                        } ?: try {
+                            activity.getIcon(0)
+                        } catch (e: Exception) {
+                            null
+                        } ?: try {
+                            packageManager.getArchivedPackage(pkg)?.launcherActivities?.firstOrNull()?.icon
+                        } catch (e: Exception) {
+                            null
+                        }
+
+                        if (drawable != null) {
+                            drawable = org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(this@MainActivity, drawable)
+                            if (isLocked) {
+                                drawable = org.fossify.home.helpers.IconDecorator.decorateLockedIcon(this@MainActivity, drawable)
+                            }
+                            IconCache.putDrawable(iconCacheKey, drawable)
+                        }
+                    }
+
+                    if (drawable == null) continue
+
+                    val placeholderColor = existingColors[identifier] ?: try {
+                        val bitmap = drawable.toBitmap(
+                            width = max(drawable.intrinsicWidth, 1),
+                            height = max(drawable.intrinsicHeight, 1),
+                            config = Bitmap.Config.ARGB_8888
+                        )
+                        calculateAverageColor(bitmap)
+                    } catch (e: Exception) {
+                        0
+                    }
+
+                    val appInstallTime = try {
+                        packageManager.getPackageInfo(
+                            pkg,
+                            PackageManager.PackageInfoFlags.of(PackageManager.MATCH_ARCHIVED_PACKAGES.toLong())
+                        ).firstInstallTime
+                    } catch (e: Exception) {
+                        0L
+                    }
+
+                    allApps.add(
+                        AppLauncher(
+                            id = null,
+                            title = label,
+                            packageName = pkg,
+                            activityName = actName,
+                            order = 0,
+                            thumbnailColor = placeholderColor,
+                            drawable = drawable
+                        ).apply {
+                            installTime = appInstallTime
+                            this.isArchived = true
+                        }
+                    )
+                    processedPackages.add(pkg)
+                }
+            } catch (e: Exception) {
+                org.fossify.home.helpers.LogCatcher.log("MainActivity", "LauncherApps archived query failed: ${e.message}")
+            }
+
+            // Method B: Direct query via PackageManager.getInstalledPackages / getArchivedPackage
+            try {
+                val installedPackages = packageManager.getInstalledPackages(
+                    PackageManager.PackageInfoFlags.of(PackageManager.MATCH_ARCHIVED_PACKAGES.toLong())
+                )
+                for (packageInfo in installedPackages) {
+                    val pkg = packageInfo.packageName
+                    if (processedPackages.contains(pkg)) continue
+                    val isArchived = try {
+                        packageInfo.applicationInfo?.isArchived == true || org.fossify.home.helpers.ArchivedAppsManager.isArchived(this, pkg)
+                    } catch (e: Throwable) {
+                        org.fossify.home.helpers.ArchivedAppsManager.isArchived(this, pkg)
+                    }
+                    if (!isArchived) continue
+
+                    val archivedPackageInfo = try {
+                        packageManager.getArchivedPackage(pkg)
+                    } catch (e: Exception) {
+                        null
+                    } ?: continue
+
+                    val launcherActivity = archivedPackageInfo.launcherActivities.firstOrNull() ?: continue
+                    val actName = launcherActivity.componentName.className ?: ""
+                    val identifier = "$pkg/$actName"
+                    if (hiddenIcons.contains(identifier)) continue
+
+                    val label = launcherActivity.label?.toString()
+                        ?: packageInfo.applicationInfo?.loadLabel(packageManager)?.toString()
+                        ?: pkg
+                    val isLocked = AppLockManager.isAppLocked(pkg)
+                    val iconCacheKey = when {
+                        isLocked -> "${identifier}_archived_locked"
+                        else -> "${identifier}_archived"
+                    }
+                    var drawable = IconCache.getDrawable(iconCacheKey)
+                    if (drawable == null) {
+                        drawable = launcherActivity.icon ?: try {
+                            packageManager.getApplicationIcon(pkg)
+                        } catch (e: Exception) {
+                            null
+                        }
+
+                        if (drawable != null) {
+                            drawable = org.fossify.home.helpers.IconDecorator.decorateArchivedIcon(this@MainActivity, drawable)
+                            if (isLocked) {
+                                drawable = org.fossify.home.helpers.IconDecorator.decorateLockedIcon(this@MainActivity, drawable)
+                            }
+                            IconCache.putDrawable(iconCacheKey, drawable)
+                        }
+                    }
+
+                    if (drawable == null) continue
+
+                    val placeholderColor = existingColors[identifier] ?: try {
+                        val bitmap = drawable.toBitmap(
+                            width = max(drawable.intrinsicWidth, 1),
+                            height = max(drawable.intrinsicHeight, 1),
+                            config = Bitmap.Config.ARGB_8888
+                        )
+                        calculateAverageColor(bitmap)
+                    } catch (e: Exception) {
+                        0
+                    }
+
+                    val appInstallTime = packageInfo.firstInstallTime
+
+                    allApps.add(
+                        AppLauncher(
+                            id = null,
+                            title = label,
+                            packageName = pkg,
+                            activityName = actName,
+                            order = 0,
+                            thumbnailColor = placeholderColor,
+                            drawable = drawable
+                        ).apply {
+                            installTime = appInstallTime
+                            this.isArchived = true
+                        }
+                    )
+                    processedPackages.add(pkg)
+                }
+            } catch (e: Exception) {
+                org.fossify.home.helpers.LogCatcher.log("MainActivity", "PackageManager archived query failed: ${e.message}")
+            }
         }
 
         launchersDB.insertAll(allApps)

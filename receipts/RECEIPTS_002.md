@@ -322,3 +322,34 @@ Continues from `RECEIPTS_001.md` after reaching the 500-line cap.
 - **How it was verified**: Local compilation verified successfully via `compile_applet`. Initial build caught missing `update` method on `HomeScreenGridItemsDao`, resolved by routing position updates through `HomeScreenGridItemsDao.updateItemPosition(...)` which matches database schema. Post-build scan purged newly generated ephemeral keystores.
 - **Any deviation from what was requested, and why**: None. Built strictly to finalized discussion specifications.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+---
+
+### Entry 025
+- **Timestamp**: 2026-10-23 07:08:00
+- **Summary**: Implemented Option A lock badge styling (dimmed base icon + enlarged padlock badge) and dual-layer discovery for Android 15 archived apps via LauncherApps and PackageManager.
+- **Exact files touched**:
+  - `app/src/main/kotlin/org/fossify/home/helpers/IconDecorator.kt`
+  - `app/src/main/kotlin/org/fossify/home/helpers/ArchivedAppsManager.kt`
+  - `app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `app/src/main/kotlin/org/fossify/home/adapters/LaunchersAdapter.kt`
+  - `app/src/main/kotlin/org/fossify/home/views/HomeScreenGrid.kt`
+  - `BLUEPRINT.md`
+  - `receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Security Sanitization:
+    - Post-compilation scan detected and purged `/debug.keystore` and `/debug.keystore.base64` from repository root in strict adherence to the Credential Immunity Rule.
+  - Option A Locked App Badge Styling:
+    - Updated `IconDecorator.decorateLockedIcon`: dimmed base icon to ~65% alpha (165/255) to visually match the archive state language, enlarged bottom-right circular badge radius to 23% of icon width, applied 40% crisp white border, and scaled the solid white `ic_lock_vector` to fill 72% of the badge container for prominent, unmistakable visibility.
+    - Symmetrically updated `IconDecorator.decorateArchivedIcon` with 23% badge radius and 72% inner glyph area for cohesive aesthetic across all special app states.
+    - Added combined `_archived_locked` caching and decoration pipeline in `LaunchersAdapter`, `HomeScreenGrid`, and `MainActivity`.
+  - Dual-Layer Archived Apps Discovery on Android 15+:
+    - In `MainActivity.getAllAppLaunchers()`: supplemented standard `queryIntentActivities` with a dedicated dual-layer discovery mechanism on API 35+:
+      - Layer A: Queries `LauncherApps.getActivityList(null, user)` for synthesized launcher entries with `applicationInfo.isArchived == true`.
+      - Layer B: Queries `PackageManager.getInstalledPackages(MATCH_ARCHIVED_PACKAGES)` for archived packages, resolving icons via `getArchivedPackage(packageName)?.launcherActivities`.
+    - Prevents false-positive package deletion in `refreshLaunchers()`, stores archived apps in `launchersDB`, and guarantees their appearance in the App Drawer with valid restored icons.
+    - Hardened `ArchivedAppsManager.isArchived` with fallback to `packageManager.getArchivedPackage(packageName) != null`.
+- **How it was verified**: Local compilation verified successfully via `compile_applet`. Post-build scan purged newly generated ephemeral keystores.
+- **Any deviation from what was requested, and why**: None. Built strictly to finalized Option A and dual-layer architecture specifications.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+

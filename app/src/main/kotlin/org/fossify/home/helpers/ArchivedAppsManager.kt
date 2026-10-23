@@ -24,9 +24,14 @@ object ArchivedAppsManager {
                     packageName,
                     PackageManager.ApplicationInfoFlags.of(PackageManager.MATCH_ARCHIVED_PACKAGES.toLong())
                 )
-                return appInfo.isArchived
-            } catch (e: Throwable) {
-                return false
+                if (appInfo.isArchived) return true
+            } catch (ignored: Throwable) {
+            }
+            try {
+                if (context.packageManager.getArchivedPackage(packageName) != null) {
+                    return true
+                }
+            } catch (ignored: Throwable) {
             }
         }
         return false

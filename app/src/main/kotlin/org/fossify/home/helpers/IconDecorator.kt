@@ -34,28 +34,28 @@ object IconDecorator {
         original.draw(canvas)
         original.alpha = prevAlpha
 
-        // 2. Draw circular download badge in bottom-right corner
-        val badgeRadius = width * 0.19f
-        val badgeCenterX = width - badgeRadius - (width * 0.04f)
-        val badgeCenterY = height - badgeRadius - (height * 0.04f)
+        // 2. Draw circular download badge in bottom-right corner (prominent 23% radius)
+        val badgeRadius = width * 0.23f
+        val badgeCenterX = width - badgeRadius - (width * 0.035f)
+        val badgeCenterY = height - badgeRadius - (height * 0.035f)
 
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#E61C1B1F") // Dark surface matching M3 dark elevation
+            color = Color.parseColor("#F21C1B1F") // 95% opacity dark surface
             style = Paint.Style.FILL
         }
         canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, bgPaint)
 
         val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#4DFFFFFF") // Subtle 30% white stroke for crisp boundary
+            color = Color.parseColor("#66FFFFFF") // 40% crisp white border
             style = Paint.Style.STROKE
-            strokeWidth = max(width * 0.015f, 2f)
+            strokeWidth = max(width * 0.018f, 2.5f)
         }
         canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, strokePaint)
 
-        // 3. Draw cloud download vector inside the badge
+        // 3. Draw cloud download vector inside the badge (filling 72% of badge)
         val downloadDrawable = ContextCompat.getDrawable(context, R.drawable.ic_cloud_download_vector)?.mutate()
         if (downloadDrawable != null) {
-            val iconInnerHalf = badgeRadius * 0.62f
+            val iconInnerHalf = badgeRadius * 0.72f
             downloadDrawable.setBounds(
                 (badgeCenterX - iconInnerHalf).toInt(),
                 (badgeCenterY - iconInnerHalf).toInt(),
@@ -70,9 +70,10 @@ object IconDecorator {
     }
 
     /**
-     * Decorates an application icon for locked apps according to standard Android launcher UX:
-     * 1. Draws the base icon at 100% full opacity (no dimming)
-     * 2. Overlays a crisp circular badge in the bottom-right corner with a lock symbol
+     * Decorates an application icon for locked apps according to Option A ("like archive app"):
+     * 1. Draws the base icon dimmed to ~65% alpha (165/255)
+     * 2. Overlays a prominent circular dark badge with crisp border in the bottom-right corner
+     * 3. Renders a bold, crisp white padlock vector inside
      */
     fun decorateLockedIcon(context: Context, original: Drawable): Drawable {
         val width = max(original.intrinsicWidth, 192)
@@ -81,39 +82,42 @@ object IconDecorator {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // 1. Draw base icon at full 100% opacity
+        // 1. Draw base icon dimmed to ~65% alpha (165/255) matching archive app style
         original.setBounds(0, 0, width, height)
+        val prevAlpha = original.alpha
+        original.alpha = 165
         original.draw(canvas)
+        original.alpha = prevAlpha
 
-        // 2. Draw circular badge in bottom-right corner
-        val badgeRadius = width * 0.19f
-        val badgeCenterX = width - badgeRadius - (width * 0.04f)
-        val badgeCenterY = height - badgeRadius - (height * 0.04f)
+        // 2. Draw circular badge in bottom-right corner (prominent 23% radius)
+        val badgeRadius = width * 0.23f
+        val badgeCenterX = width - badgeRadius - (width * 0.035f)
+        val badgeCenterY = height - badgeRadius - (height * 0.035f)
 
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#E61C1B1F") // Dark surface matching M3 dark elevation
+            color = Color.parseColor("#F21C1B1F") // 95% opacity dark surface
             style = Paint.Style.FILL
         }
         canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, bgPaint)
 
         val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#4DFFFFFF") // Subtle 30% white stroke for crisp boundary
+            color = Color.parseColor("#66FFFFFF") // 40% crisp white border
             style = Paint.Style.STROKE
-            strokeWidth = max(width * 0.015f, 2f)
+            strokeWidth = max(width * 0.018f, 2.5f)
         }
         canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, strokePaint)
 
-        // 3. Draw lock vector inside the badge
+        // 3. Draw lock vector inside the badge (filling 72% of badge)
         val lockDrawable = ContextCompat.getDrawable(context, R.drawable.ic_lock_vector)?.mutate()
         if (lockDrawable != null) {
-            val iconInnerHalf = badgeRadius * 0.58f
+            val iconInnerHalf = badgeRadius * 0.72f
             lockDrawable.setBounds(
                 (badgeCenterX - iconInnerHalf).toInt(),
                 (badgeCenterY - iconInnerHalf).toInt(),
                 (badgeCenterX + iconInnerHalf).toInt(),
                 (badgeCenterY + iconInnerHalf).toInt()
             )
-            lockDrawable.colorFilter = PorterDuffColorFilter(Color.parseColor("#FFFFFF"), PorterDuff.Mode.SRC_IN)
+            lockDrawable.colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)
             lockDrawable.draw(canvas)
         }
 
