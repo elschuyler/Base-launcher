@@ -367,6 +367,32 @@
     - Implemented `isBuiltInClockWidget` helper in `Constants.kt` checking both `shura.home.built_in_clock_widget` and `org.fossify.home.built_in_clock_widget` to preserve 100% backward compatibility for existing desktop items in SQLite without schema breaks.
   - **Security Sanitization**:
     - Silently scanned and purged ephemeral `/debug.keystore` and `/debug.keystore.base64` generated during Gradle compilation in strict compliance with the Credential Immunity Rule.
+- [Phase: App Lock Main-Thread Crash Resolution & Clock Widget Resize Rendering Glitch Fix]
+  - **App Lock Crash on Lock/Unlock Resolution (`MainActivity.kt`)**:
+    - Diagnosed `IllegalStateException: Cannot access database on the main thread` triggered when locking or unlocking an app in `MainActivity.kt`.
+    - Wrapped `refreshLaunchers()` inside `ensureBackgroundThread { refreshLaunchers() }` in both `lockApp` and `unlockApp` completion callbacks, safely delegating Room DAO queries (`hiddenIconsDB.getHiddenIcons()` and `launchersDB.getAppLaunchers()`) off the UI thread while preserving synchronous icon cache invalidation and home screen re-fetch.
+  - **Clock Widget Resize Double-Rendering & Glitch Elimination (`BuiltInClockWidgetView.kt`)**:
+    - Discovered `drawClockContent(canvas)` was being called concurrently in both `onDraw(canvas)` and `dispatchDraw(canvas)`. Because `setWillNotDraw(false)` is active on `BuiltInClockWidgetView`, both draw passes fired per frame, rendering stroke-over-fill text twice and causing severe anti-aliasing edge jitter, flicker, and artifacts during resize.
+    - Purged redundant `drawClockContent` call from `dispatchDraw(canvas)`, keeping single-pass drawing strictly in `onDraw`.
+    - Implemented dynamic horizontal text bounding in `drawClockContent(canvas)`: measures `timeText` and `dateText` against `width * 0.88f` and `width * 0.90f` respectively, scaling down text size when resized narrower than tall to prevent clipping or boundaries overflow.
+  - **Real-Time Layout Synchronization on Resize (`HomeScreenGrid.kt`)**:
+    - Added `widgetView.requestLayout()` and `widgetView.invalidate()` in `updateWidgetPositionAndSize`, ensuring immediate remeasure and smooth redraw during drag-handle resizing rather than lagging behind layout mutations.
+  - **Minimum Grid Constraints for Built-In Clock (`MyAppWidgetResizeFrame.kt`)**:
+    - Enforced `minResizeWidthCells = Math.min(context.config.homeColumnCount, 2)` and `minResizeHeightCells = 1` for `isBuiltInClockWidget(gridItem.className)`, preventing the clock from collapsing into an unreadable 1x1 cell while allowing flexible 2x1 to full-width resizing.
+  - **Security Sanitization**:
+    - Verified clean workspace; deleted ephemeral keystores and build binaries per Credential Immunity Rule.
+- [Phase: Launcher Icon Redesign — Deep Sky Blue & Option B s-V-l Monogram]
+  - **Background Palette Modernization (`ic_launcher_background.xml`)**:
+    - Replaced legacy green (`#106D20`) with Deep Sky Blue (`#0288D1`), improving contrast and giving a vibrant, modern sky appearance across all wallpaper types.
+  - **Option B Architectural Monogram Implementation (`ic_launcher_foreground.xml` & `ic_launcher_monochrome.xml`)**:
+    - Designed an assertive modern launcher chevron / inverted delta (Big `V`) centered within the 512x512 adaptive icon safe zone (Y: 155 to 365), featuring subtle rounded outer apex and parallel 54px arms.
+    - Integrated subtle lowercase `s` tucked into the upper-left inner crook (X: 228 to 248, Y: 184 to 216) with 82% alpha fill (`android:fillAlpha="0.82"`).
+    - Integrated subtle lowercase `l` tucked into the upper-right inner crook (X: 264 to 276, Y: 176 to 216) with ascender and curved base foot, balanced at 82% alpha fill.
+    - Synchronized identical vector paths and alpha hierarchy in `ic_launcher_monochrome.xml` ensuring consistent Material You dynamic theming on Android 13+.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+
+
 
 
 

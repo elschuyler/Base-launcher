@@ -1,0 +1,78 @@
+CRASH DUMP:
+2026-10-26 00:39:32.345 [System] LogKeeper initialized
+2026-10-26 00:40:06.493 [LauncherActionHandler] Executing action: app_drawer for item: none
+
+================================================================================
+CRASH DETECTED: 2026-10-26 00:40:17.693
+App Version: 1.10.0 (16)
+Android OS: 15 (SDK 35)
+Device: Xiaomi 25028RN03I
+Exception: java.lang.IllegalStateException: Cannot access database on the main thread since it may potentially lock the UI for a long period of time.
+Stack Trace:
+java.lang.IllegalStateException: Cannot access database on the main thread since it may potentially lock the UI for a long period of time.
+	at androidx.room.RoomDatabase.assertNotMainThread(RoomDatabase.android.kt:592)
+	at androidx.room.util.DBUtil__DBUtil_androidKt.performBlocking(DBUtil.android.kt:68)
+	at androidx.room.util.DBUtil.performBlocking(dex-id-cb82894673aa4465078816dfec0a10a34ea8bd99:1)
+	at shura.home.interfaces.HiddenIconsDao_Impl.getHiddenIcons(HiddenIconsDao_Impl.kt:76)
+	at shura.home.activities.MainActivity.getAllAppLaunchers(MainActivity.kt:1880)
+	at shura.home.activities.MainActivity.refreshLaunchers(MainActivity.kt:720)
+	at shura.home.activities.MainActivity.access$refreshLaunchers(MainActivity.kt:127)
+	at shura.home.activities.MainActivity$menuListener$1.toggleLock$lambda$2(MainActivity.kt:1713)
+	at shura.home.activities.MainActivity$menuListener$1$$ExternalSyntheticLambda1.invoke(D8$$SyntheticClass:0)
+	at shura.home.helpers.AppLockManager.lockApp$lambda$2$lambda$1(AppLockManager.kt:83)
+	at shura.home.helpers.AppLockManager$$ExternalSyntheticLambda6.run(D8$$SyntheticClass:0)
+	at android.os.Handler.handleCallback(Handler.java:959)
+	at android.os.Handler.dispatchMessage(Handler.java:100)
+	at android.os.Looper.loopOnce(Looper.java:246)
+	at android.os.Looper.loop(Looper.java:334)
+	at android.app.ActivityThread.main(ActivityThread.java:8895)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:706)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:916)
+================================================================================
+
+2026-10-26 00:40:29.876 [System] LogKeeper initialized
+2026-10-26 00:40:33.083 [LauncherActionHandler] Executing action: app_drawer for item: none
+2026-10-26 00:40:45.893 [AllApps] Launching app: com.android.fmradio
+2026-10-26 00:40:46.818 [AllApps] Launching app: com.android.fmradio
+2026-10-26 00:40:47.434 [AllApps] Launching app: com.android.fmradio
+2026-10-26 00:40:47.934 [AllApps] Launching app: com.android.fmradio
+2026-10-26 00:40:49.002 [AllApps] Launching app: com.fampay.in
+2026-10-26 00:40:49.025 [ArchivedAppsManager] requestUnarchive failed: You need the com.android.permission.INSTALL_PACKAGES or com.android.permission.REQUEST_INSTALL_PACKAGES permission to request an unarchival.
+2026-10-26 00:40:49.243 [AppLock] Authentication error (10) for com.android.fmradio
+2026-10-26 00:40:57.965 [LauncherActionHandler] Executing action: app_drawer for item: none
+2026-10-26 00:40:59.619 [AllApps] Launching app: com.google.ai.edge.gallery
+2026-10-26 00:40:59.630 [ArchivedAppsManager] requestUnarchive failed: You need the com.android.permission.INSTALL_PACKAGES or com.android.permission.REQUEST_INSTALL_PACKAGES permission to request an unarchival.
+2026-10-26 00:41:03.953 [AllApps] Launching app: com.android.fmradio
+2026-10-26 00:41:08.750 [AppLock] Authentication succeeded for com.android.fmradio
+
+================================================================================
+CRASH DETECTED: 2026-10-26 00:41:15.260
+App Version: 1.10.0 (16)
+Android OS: 15 (SDK 35)
+Device: Xiaomi 25028RN03I
+Exception: java.lang.IllegalStateException: Cannot access database on the main thread since it may potentially lock the UI for a long period of time.
+Stack Trace:
+java.lang.IllegalStateException: Cannot access database on the main thread since it may potentially lock the UI for a long period of time.
+	at androidx.room.RoomDatabase.assertNotMainThread(RoomDatabase.android.kt:592)
+	at androidx.room.util.DBUtil__DBUtil_androidKt.performBlocking(DBUtil.android.kt:68)
+	at androidx.room.util.DBUtil.performBlocking(dex-id-cb82894673aa4465078816dfec0a10a34ea8bd99:1)
+	at shura.home.interfaces.HiddenIconsDao_Impl.getHiddenIcons(HiddenIconsDao_Impl.kt:76)
+	at shura.home.activities.MainActivity.getAllAppLaunchers(MainActivity.kt:1880)
+	at shura.home.activities.MainActivity.refreshLaunchers(MainActivity.kt:720)
+	at shura.home.activities.MainActivity.access$refreshLaunchers(MainActivity.kt:127)
+	at shura.home.activities.MainActivity$menuListener$1.toggleLock$lambda$2(MainActivity.kt:1713)
+	at shura.home.activities.MainActivity$menuListener$1$$ExternalSyntheticLambda1.invoke(D8$$SyntheticClass:0)
+	at shura.home.helpers.AppLockManager.lockApp$lambda$2$lambda$1(AppLockManager.kt:83)
+	at shura.home.helpers.AppLockManager$$ExternalSyntheticLambda6.run(D8$$SyntheticClass:0)
+	at android.os.Handler.handleCallback(Handler.java:959)
+	at android.os.Handler.dispatchMessage(Handler.java:100)
+	at android.os.Looper.loopOnce(Looper.java:246)
+	at android.os.Looper.loop(Looper.java:334)
+	at android.app.ActivityThread.main(ActivityThread.java:8895)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:706)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:916)
+================================================================================
+
+

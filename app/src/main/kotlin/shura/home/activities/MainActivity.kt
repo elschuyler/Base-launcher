@@ -1699,8 +1699,9 @@ class MainActivity : SimpleActivity(), FlingListener {
                     AppLockManager.unlockApp(this@MainActivity, pkg) {
                         toast(R.string.app_unlocked)
                         IconCache.clear()
-                        refreshLaunchers()
-                        binding.homeScreenGrid.root.fetchGridItems()
+                        ensureBackgroundThread {
+                            refreshLaunchers()
+                        }
                     }
                 }
             } else {
@@ -1710,8 +1711,9 @@ class MainActivity : SimpleActivity(), FlingListener {
                 AppLockManager.lockApp(this@MainActivity, pkg, title) {
                     toast(R.string.app_locked)
                     IconCache.clear()
-                    refreshLaunchers()
-                    binding.homeScreenGrid.root.fetchGridItems()
+                    ensureBackgroundThread {
+                        refreshLaunchers()
+                    }
                 }
             }
         }

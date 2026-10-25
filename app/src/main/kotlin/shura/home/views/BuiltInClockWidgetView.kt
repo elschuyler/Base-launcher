@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.max
 
 @SuppressLint("ViewConstructor")
 class BuiltInClockWidgetView(context: Context) : MyAppWidgetHostView(context) {
@@ -126,7 +127,6 @@ class BuiltInClockWidgetView(context: Context) : MyAppWidgetHostView(context) {
 
     override fun dispatchDraw(canvas: Canvas) {
         super.dispatchDraw(canvas)
-        drawClockContent(canvas)
     }
 
     private fun drawClockContent(canvas: Canvas) {
@@ -134,11 +134,29 @@ class BuiltInClockWidgetView(context: Context) : MyAppWidgetHostView(context) {
 
         val centerX = width / 2f
 
-        val timeTextSize = (height * 0.44f).coerceIn(36f, 130f)
-        val dateTextSize = (height * 0.16f).coerceIn(16f, 40f)
+        var timeTextSize = (height * 0.44f).coerceIn(24f, 130f)
+        var dateTextSize = (height * 0.16f).coerceIn(12f, 40f)
 
-        val timeStrokeWidth = (timeTextSize * 0.12f).coerceIn(4f, 16f)
-        val dateStrokeWidth = (dateTextSize * 0.14f).coerceIn(2f, 6f)
+        // Ensure time text does not exceed available width
+        timeFillPaint.textSize = timeTextSize
+        val maxTimeWidth = width * 0.88f
+        val measuredTimeWidth = timeFillPaint.measureText(timeText)
+        if (measuredTimeWidth > maxTimeWidth && measuredTimeWidth > 0f) {
+            val scale = maxTimeWidth / measuredTimeWidth
+            timeTextSize = max(18f, timeTextSize * scale)
+        }
+
+        // Ensure date text does not exceed available width
+        dateFillPaint.textSize = dateTextSize
+        val maxDateWidth = width * 0.90f
+        val measuredDateWidth = dateFillPaint.measureText(dateText)
+        if (measuredDateWidth > maxDateWidth && measuredDateWidth > 0f) {
+            val scale = maxDateWidth / measuredDateWidth
+            dateTextSize = max(10f, dateTextSize * scale)
+        }
+
+        val timeStrokeWidth = (timeTextSize * 0.12f).coerceIn(2f, 16f)
+        val dateStrokeWidth = (dateTextSize * 0.14f).coerceIn(1.5f, 6f)
 
         timeStrokePaint.textSize = timeTextSize
         timeStrokePaint.strokeWidth = timeStrokeWidth

@@ -13,6 +13,7 @@ import shura.home.R
 import shura.home.extensions.config
 import shura.home.extensions.getCellCount
 import shura.home.helpers.MAX_CLICK_DURATION
+import shura.home.helpers.isBuiltInClockWidget
 import shura.home.models.HomeScreenGridItem
 
 @SuppressLint("ViewConstructor")
@@ -76,15 +77,17 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
             it.provider.className == gridItem.className
         }
 
-        minResizeWidthCells = if (providerInfo != null) {
-            Math.min(context.config.homeColumnCount, Math.max(1, context.getCellCount(providerInfo.minResizeWidth)))
-        } else {
-            1
+        val isBuiltInClock = isBuiltInClockWidget(gridItem.className)
+
+        minResizeWidthCells = when {
+            providerInfo != null -> Math.min(context.config.homeColumnCount, Math.max(1, context.getCellCount(providerInfo.minResizeWidth)))
+            isBuiltInClock -> Math.min(context.config.homeColumnCount, 2)
+            else -> 1
         }
-        minResizeHeightCells = if (providerInfo != null) {
-            Math.min(context.config.homeRowCount, Math.max(1, context.getCellCount(providerInfo.minResizeHeight)))
-        } else {
-            1
+        minResizeHeightCells = when {
+            providerInfo != null -> Math.min(context.config.homeRowCount, Math.max(1, context.getCellCount(providerInfo.minResizeHeight)))
+            isBuiltInClock -> 1
+            else -> 1
         }
         redrawFrame()
 

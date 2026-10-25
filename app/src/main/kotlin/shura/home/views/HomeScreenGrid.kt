@@ -1446,6 +1446,8 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
 
         widgetView.layoutParams?.width = widgetWidth
         widgetView.layoutParams?.height = widgetHeight
+        widgetView.requestLayout()
+        widgetView.invalidate()
         return Size(widgetWidth, widgetHeight)
     }
 
