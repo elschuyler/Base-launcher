@@ -353,3 +353,73 @@ Continues from `RECEIPTS_001.md` after reaching the 500-line cap.
 - **Any deviation from what was requested, and why**: None. Built strictly to finalized Option A and dual-layer architecture specifications.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+---
+
+### Entry 026
+- **Timestamp**: 2026-10-24 13:42:00
+- **Summary**: Eliminated clock widget auto re-addition, enabled clock widget resizing, resolved Log Keeper status bar overlap, purged Xiaomi archive false-positive check, and implemented standard launcher UX centered icon overlays.
+- **Exact files touched**:
+  - `app/src/main/kotlin/org/fossify/home/activities/MainActivity.kt`
+  - `app/src/main/kotlin/org/fossify/home/views/AppShortcutsPopupWindow.kt`
+  - `app/src/main/kotlin/org/fossify/home/activities/LogViewerActivity.kt`
+  - `app/src/main/kotlin/org/fossify/home/helpers/ArchivedAppsManager.kt`
+  - `app/src/main/kotlin/org/fossify/home/helpers/IconDecorator.kt`
+  - `BLUEPRINT.md`
+  - `receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Security Sanitization:
+    - Post-compilation scan detected and purged ephemeral `/debug.keystore` and `/debug.keystore.base64` from repository root in strict compliance with the Credential Immunity Rule.
+  - Clock Re-add Elimination:
+    - Removed intrusive clock auto-injection block from `MainActivity.refreshLaunchers()`. Clock widget placement is now strictly restricted to the one-time first launcher run (`!config.wasHomeScreenInit`). Deleting or moving the clock widget is permanently respected without re-adding or resetting row/column counts.
+  - Clock Widget Resizing:
+    - Removed `gridItem.className != BUILT_IN_CLOCK_CLASS_NAME` exclusion in `AppShortcutsPopupWindow.kt`, unlocking standard resize handles for the digital clock widget on long press.
+  - Log Keeper Status Bar Inset Fix:
+    - In `LogViewerActivity.kt`, routed `padTopSystem` to `binding.logViewerRoot` instead of the fixed-height 56dp `log_viewer_top_bar`, ensuring header actions and title render cleanly below the status bar.
+  - Archive False-Positive Elimination:
+    - In `ArchivedAppsManager.kt`, removed `packageManager.getArchivedPackage(packageName) != null` which returned non-null manifest parcels for all installed apps on Xiaomi HyperOS. Standardized strictly on `appInfo.isArchived == true`.
+  - Standard Launcher UX Centered Overlays:
+    - In `IconDecorator.kt`, updated `decorateArchivedIcon` and `decorateLockedIcon` to center the cloud download and padlock glyphs directly OVER the dimmed icon (55% alpha) on a circular 85% dark disc with a subtle 30% white stroke boundary, exactly matching Pixel Launcher / Android 15 standard launcher UX.
+- **How it was verified**: Local compilation verified successfully via `compile_applet`. Ephemeral keystores purged.
+- **Any deviation from what was requested, and why**: None. Built strictly to finalized user instructions.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+---
+
+### Entry 027
+- **Timestamp**: 2026-10-24 14:56:00
+- **Summary**: Renamed Android launcher package and namespace from `org.fossify.home` to `shura.home`.
+- **Exact files touched**:
+  - `gradle.properties`
+  - `app/build.gradle.kts`
+  - `app/src/main/res/layout/home_screen_grid.xml`
+  - `app/src/main/res/layout/widgets_fragment.xml`
+  - `app/src/main/res/layout/all_apps_fragment.xml`
+  - `app/src/main/kotlin/shura/home/` (all 74 Kotlin files moved and updated)
+  - `app/src/main/kotlin/shura/home/helpers/Constants.kt`
+  - `app/src/main/kotlin/shura/home/views/HomeScreenGrid.kt`
+  - `app/schemas/shura.home.databases.AppsDatabase/` (Room schemas copied)
+  - `app/detekt-baseline.xml`
+  - `app/lint-baseline.xml`
+  - `fastlane/Appfile`
+  - `BLUEPRINT.md`
+  - `receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Package Configuration:
+    - Set `APP_ID=shura.home` in `gradle.properties`.
+    - Updated fallback/default `namespace` and `applicationId` to `shura.home` in `app/build.gradle.kts`.
+  - Directory Relocation & Code Package Migration:
+    - Moved source directory from `app/src/main/kotlin/org/fossify/home/` to `app/src/main/kotlin/shura/home/`, preserving all subdirectories and class names.
+    - Updated package statements and imports across all 74 Kotlin files to `package shura.home.*` and `import shura.home.*`.
+    - Updated custom view and fragment class paths in layout XMLs (`home_screen_grid.xml`, `widgets_fragment.xml`, `all_apps_fragment.xml`) to `shura.home.*`.
+    - Updated `ArchivedAppsManager.kt` action to `shura.home.UNARCHIVE_STATUS`.
+    - Updated `fastlane/Appfile` package name to `shura.home`.
+    - Updated baseline files (`detekt-baseline.xml`, `lint-baseline.xml`) to reference `shura/home` and `shura.home`.
+  - Database & Desktop Backward Compatibility:
+    - Copied all Room schema versions from `app/schemas/org.fossify.home.databases.AppsDatabase` to `app/schemas/shura.home.databases.AppsDatabase/` so Room KSP validation continues seamlessly without invalidating existing migrations.
+    - Added `LEGACY_BUILT_IN_CLOCK_CLASS_NAME = "org.fossify.home.built_in_clock_widget"` and `isBuiltInClockWidget` helper in `Constants.kt` to seamlessly recognize and bind any clock widgets created under the legacy package name on existing user installs.
+  - Security Sanitization:
+    - Post-compilation scan detected and purged ephemeral `/debug.keystore` and `/debug.keystore.base64` from repository root in strict compliance with the Credential Immunity Rule.
+- **How it was verified**: Local compilation verified successfully via `compile_applet`. Ephemeral keystores purged.
+- **Any deviation from what was requested, and why**: None. Built strictly to user instructions.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+

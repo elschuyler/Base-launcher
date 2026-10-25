@@ -1,12 +1,12 @@
 # Vian Launcher (Fossify Home) Blueprint
 
 ## 1. Architecture & App Structure
-- **Application Type**: Android Launcher / Home Screen (`org.fossify.home` / Vian Launcher)
+- **Application Type**: Android Launcher / Home Screen (`shura.home` / Vian Launcher)
 - **Upstream / Base**: Fossify Home
 - **Tech Stack**: Kotlin, AndroidX, Jetpack Lifecycle, ViewBinding, Room (persistence), Coroutines, Detekt, Gradle Kotlin DSL
 - **Platform**: Modern Android SDK 36, Java 17/21 target, AGP 9.1.1 / 9.3.0
 - **Package Structure**:
-  - `org.fossify.home`: Core Application, launcher activity, adapters, databases, receivers, dialogs, helpers, settings
+  - `shura.home`: Core Application, launcher activity, adapters, databases, receivers, dialogs, helpers, settings
   - Local database: Room DB for hidden apps, custom order, favorites, app drawer shortcuts
 
 ## 2. Planned Migration & Development Phases
@@ -339,6 +339,35 @@
       3. Bold white padlock vector (`ic_lock_vector`) scaled to 72% of badge area (up from 58%), eliminating small/subtle badge rendering.
     - Matched badge sizing and glyph scale in `decorateArchivedIcon` for visual symmetry across all special app states.
     - Added combined state handling (`_archived_locked`) across `MainActivity`, `LaunchersAdapter`, and `HomeScreenGrid`.
+- [Phase: Clock Re-add Elimination, Clock Resizing, Log Viewer Inset Fix, False-Positive Archive Resolution, Standard Centered Overlay]
+  - **Security Sanitization**:
+    - Silently scanned and purged ephemeral `/debug.keystore` and `/debug.keystore.base64` generated during Gradle compilation in strict compliance with the Credential Immunity Rule.
+  - **Clock Auto Re-add Elimination (`MainActivity.kt`)**:
+    - Removed intrusive clock auto-injection block from `refreshLaunchers()`. Default clock placement now belongs strictly to the one-time initial home screen initialization (`!config.wasHomeScreenInit`). Deleting or moving the clock widget is respected permanently with zero unwanted re-additions or grid dimension overwrites.
+  - **Clock Widget Resizing Support (`AppShortcutsPopupWindow.kt`)**:
+    - Removed `&& gridItem.className != BUILT_IN_CLOCK_CLASS_NAME` exclusion from `canResize`, unlocking standard resize handles for the digital clock widget on long press.
+  - **Log Keeper Status Bar Inset Fix (`LogViewerActivity.kt`)**:
+    - Routed system top insets (`padTopSystem`) to `binding.logViewerRoot` rather than fixed-height `log_viewer_top_bar`, preventing header compression and ensuring the title and actions render cleanly below the status bar.
+  - **Archive False-Positive Elimination (`ArchivedAppsManager.kt`)**:
+    - Purged `packageManager.getArchivedPackage(packageName) != null` check which returned non-null manifest parcels for all installed apps on Xiaomi HyperOS. Standardized strictly on `appInfo.isArchived == true`.
+  - **Standard Launcher UX Centered Overlay (`IconDecorator.kt`)**:
+    - Upgraded `decorateArchivedIcon` and `decorateLockedIcon` to standard Android 15 / Pixel Launcher UX: centered the prominent glyph directly OVER the dimmed icon (55% alpha) on an 85% dark circular disc with a 30% white stroke boundary.
+- [Phase: Package & Namespace Rename to shura.home]
+  - **Gradle & Application ID Alignment**:
+    - Updated `APP_ID=shura.home` in `gradle.properties`.
+    - Updated fallback/default `namespace` and `applicationId` to `shura.home` in `app/build.gradle.kts`.
+  - **Source Directory & Code Relocation**:
+    - Relocated Kotlin source tree from `app/src/main/kotlin/org/fossify/home/` to `app/src/main/kotlin/shura/home/`, preserving all subpackages.
+    - Updated all 74 Kotlin source files to use `package shura.home.*` declarations and `import shura.home.*` statements.
+    - Updated custom view references in XML layouts (`home_screen_grid.xml`, `widgets_fragment.xml`, `all_apps_fragment.xml`) to `shura.home.*`.
+    - Updated intent actions (e.g. `shura.home.UNARCHIVE_STATUS` in `ArchivedAppsManager.kt`) and `fastlane/Appfile`.
+    - Updated detekt and lint baselines for `shura/home`.
+  - **Database & Clock Backward Compatibility**:
+    - Copied existing Room schemas to `app/schemas/shura.home.databases.AppsDatabase/` to ensure flawless migration continuity and schema verification under the new database package name.
+    - Implemented `isBuiltInClockWidget` helper in `Constants.kt` checking both `shura.home.built_in_clock_widget` and `org.fossify.home.built_in_clock_widget` to preserve 100% backward compatibility for existing desktop items in SQLite without schema breaks.
+  - **Security Sanitization**:
+    - Silently scanned and purged ephemeral `/debug.keystore` and `/debug.keystore.base64` generated during Gradle compilation in strict compliance with the Credential Immunity Rule.
+
 
 
 

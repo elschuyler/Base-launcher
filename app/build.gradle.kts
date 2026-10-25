@@ -22,11 +22,11 @@ fun hasSigningVars(): Boolean {
 }
 
 android {
-    namespace = project.findProperty("APP_ID")?.toString() ?: "org.fossify.home"
+    namespace = project.findProperty("APP_ID")?.toString() ?: "shura.home"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = project.findProperty("APP_ID")?.toString() ?: "org.fossify.home"
+        applicationId = project.findProperty("APP_ID")?.toString() ?: "shura.home"
         minSdk = 26
         targetSdk = 36
         versionName = project.findProperty("VERSION_NAME")?.toString() ?: "1.10.0"
