@@ -34,33 +34,31 @@ object IconDecorator {
         original.draw(canvas)
         original.alpha = prevAlpha
 
-        // 2. Draw circular backdrop centered directly over the icon
+        // 2. Overlay prominent, floating Cloud Run-inspired glyph centered directly OVER the icon (no grey bubble)
         val centerX = width / 2f
         val centerY = height / 2f
-        val badgeRadius = width * 0.28f
+        val glyphSize = width * 0.54f
+        val glyphHalf = glyphSize / 2f
 
-        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#D91C1B1F") // 85% dark surface
-            style = Paint.Style.FILL
-        }
-        canvas.drawCircle(centerX, centerY, badgeRadius, bgPaint)
-
-        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#4DFFFFFF") // Subtle 30% white stroke for boundary
-            style = Paint.Style.STROKE
-            strokeWidth = max(width * 0.016f, 2f)
-        }
-        canvas.drawCircle(centerX, centerY, badgeRadius, strokePaint)
-
-        // 3. Draw cloud download vector centered inside the disc
         val downloadDrawable = ContextCompat.getDrawable(context, R.drawable.ic_cloud_download_vector)?.mutate()
         if (downloadDrawable != null) {
-            val iconInnerHalf = badgeRadius * 0.68f
+            // Soft shadow offset for crisp boundary separation on light icons
+            val shadowOffset = max(width * 0.016f, 2f)
             downloadDrawable.setBounds(
-                (centerX - iconInnerHalf).toInt(),
-                (centerY - iconInnerHalf).toInt(),
-                (centerX + iconInnerHalf).toInt(),
-                (centerY + iconInnerHalf).toInt()
+                (centerX - glyphHalf).toInt(),
+                (centerY - glyphHalf + shadowOffset).toInt(),
+                (centerX + glyphHalf).toInt(),
+                (centerY + glyphHalf + shadowOffset).toInt()
+            )
+            downloadDrawable.colorFilter = PorterDuffColorFilter(Color.parseColor("#B3000000"), PorterDuff.Mode.SRC_IN)
+            downloadDrawable.draw(canvas)
+
+            // Crisp solid white glyph directly centered
+            downloadDrawable.setBounds(
+                (centerX - glyphHalf).toInt(),
+                (centerY - glyphHalf).toInt(),
+                (centerX + glyphHalf).toInt(),
+                (centerY + glyphHalf).toInt()
             )
             downloadDrawable.colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)
             downloadDrawable.draw(canvas)
@@ -70,9 +68,9 @@ object IconDecorator {
     }
 
     /**
-     * Decorates an application icon for locked apps according to standard launcher UX:
+     * Decorates an application icon for locked apps:
      * 1. Draws the base icon dimmed to ~55% alpha (140/255)
-     * 2. Overlays a prominent padlock glyph centered directly OVER the icon with a dark disc
+     * 2. Overlays a prominent, floating architectural lock glyph directly OVER the icon (no grey bubble)
      */
     fun decorateLockedIcon(context: Context, original: Drawable): Drawable {
         val width = max(original.intrinsicWidth, 192)
@@ -88,33 +86,31 @@ object IconDecorator {
         original.draw(canvas)
         original.alpha = prevAlpha
 
-        // 2. Draw circular backdrop centered directly over the icon
+        // 2. Overlay prominent, floating architectural lock glyph centered directly OVER the icon (no grey bubble)
         val centerX = width / 2f
         val centerY = height / 2f
-        val badgeRadius = width * 0.28f
+        val glyphSize = width * 0.54f
+        val glyphHalf = glyphSize / 2f
 
-        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#D91C1B1F") // 85% dark surface
-            style = Paint.Style.FILL
-        }
-        canvas.drawCircle(centerX, centerY, badgeRadius, bgPaint)
-
-        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#4DFFFFFF") // Subtle 30% white stroke for boundary
-            style = Paint.Style.STROKE
-            strokeWidth = max(width * 0.016f, 2f)
-        }
-        canvas.drawCircle(centerX, centerY, badgeRadius, strokePaint)
-
-        // 3. Draw lock vector centered inside the disc
         val lockDrawable = ContextCompat.getDrawable(context, R.drawable.ic_lock_vector)?.mutate()
         if (lockDrawable != null) {
-            val iconInnerHalf = badgeRadius * 0.68f
+            // Soft shadow offset for crisp boundary separation on light icons
+            val shadowOffset = max(width * 0.016f, 2f)
             lockDrawable.setBounds(
-                (centerX - iconInnerHalf).toInt(),
-                (centerY - iconInnerHalf).toInt(),
-                (centerX + iconInnerHalf).toInt(),
-                (centerY + iconInnerHalf).toInt()
+                (centerX - glyphHalf).toInt(),
+                (centerY - glyphHalf + shadowOffset).toInt(),
+                (centerX + glyphHalf).toInt(),
+                (centerY + glyphHalf + shadowOffset).toInt()
+            )
+            lockDrawable.colorFilter = PorterDuffColorFilter(Color.parseColor("#B3000000"), PorterDuff.Mode.SRC_IN)
+            lockDrawable.draw(canvas)
+
+            // Crisp solid white glyph directly centered
+            lockDrawable.setBounds(
+                (centerX - glyphHalf).toInt(),
+                (centerY - glyphHalf).toInt(),
+                (centerX + glyphHalf).toInt(),
+                (centerY + glyphHalf).toInt()
             )
             lockDrawable.colorFilter = PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN)
             lockDrawable.draw(canvas)

@@ -22,7 +22,7 @@ class Config(context: Context) : BaseConfig(context) {
         set(homeColumnCount) = prefs.edit().putInt(HOME_COLUMN_COUNT, homeColumnCount).apply()
 
     var dockColumnCount: Int
-        get() = prefs.getInt(DOCK_COLUMN_COUNT, COLUMN_COUNT)
+        get() = prefs.getInt(DOCK_COLUMN_COUNT, 5)
         set(dockColumnCount) = prefs.edit().putInt(DOCK_COLUMN_COUNT, dockColumnCount).apply()
 
     var homeRowCount: Int

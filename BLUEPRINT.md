@@ -391,6 +391,22 @@
     - Synchronized identical vector paths and alpha hierarchy in `ic_launcher_monochrome.xml` ensuring consistent Material You dynamic theming on Android 13+.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Widget Resize Stability, Grid Defaults Alignment & Cloud Run Glyph Modernization]
+  - **Widget Resize Coordinate & Handle Fix (`MyAppWidgetResizeFrame.kt`)**:
+    - Converted screen-space `event.rawX` and `event.rawY` to local view-space coordinates relative to parent `HomeScreenGrid` by subtracting `parentLocation` insets, eliminating coordinate distortion and false jumping to row 0.
+    - Replaced sequential touch detection with closest-handle distance evaluation (`minDist` among left, right, top, bottom), clamped to half the widget dimension. This prevents touch overlaps from mistakenly triggering `DRAGGING_TOP` on short 1-to-2 row widgets when touching the bottom handle.
+    - Dispatched `cellChanged()` on `ACTION_UP` ensuring final snapped cell positions are reliably synchronized with `HomeScreenGrid` and saved to Room DB.
+  - **Default Grid & Drawer Dimension Alignment**:
+    - Configured default home screen dimensions to 8 desktop rows beside dock + 1 dock row (`ROW_COUNT = 9`) and 4 columns (`COLUMN_COUNT = 4`) in `Constants.kt`.
+    - Decoupled dock default column count in `Config.kt` to explicitly default to 5 columns (`prefs.getInt(DOCK_COLUMN_COUNT, 5)`).
+    - Configured default app drawer portrait column count to 4 columns in `res/values/integers.xml` (`portrait_column_count = 4`).
+  - **Modern Floating Icon Glyphs (`IconDecorator.kt`)**:
+    - Eliminated the `#D91C1B1F` 85% grey circular bubble and stroke boundary for archived and locked apps.
+    - Enlarged both the cloud download (archive) and padlock (lock) glyphs to a prominent 54% icon scale (`width * 0.54f`), styled with Cloud Run-inspired minimalist geometry.
+    - Added a subtle soft shadow offset (`#B3000000`) behind the white glyphs to ensure high-contrast readability across all light, dark, and colorful icon artwork without needing a background bubble.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+
 
 
 

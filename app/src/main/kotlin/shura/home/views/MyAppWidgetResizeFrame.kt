@@ -118,20 +118,34 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
             return false
         }
 
+        val parentLocation = IntArray(2)
+        (parent as? android.view.View)?.getLocationOnScreen(parentLocation)
+        val localX = (event.rawX - parentLocation[0]).toInt()
+        val localY = (event.rawY - parentLocation[1]).toInt()
+
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 actionDownCoords.x = event.rawX
                 actionDownCoords.y = event.rawY
                 actionDownMS = System.currentTimeMillis()
                 dragDirection = DRAGGING_NONE
-                if (event.x < MAX_TOUCH_LINE_DISTANCE) {
-                    dragDirection = DRAGGING_LEFT
-                } else if (event.y < MAX_TOUCH_LINE_DISTANCE) {
-                    dragDirection = DRAGGING_TOP
-                } else if (event.x > width - MAX_TOUCH_LINE_DISTANCE) {
-                    dragDirection = DRAGGING_RIGHT
-                } else if (event.y > height - MAX_TOUCH_LINE_DISTANCE) {
-                    dragDirection = DRAGGING_BOTTOM
+
+                val distLeft = event.x
+                val distRight = width - event.x
+                val distTop = event.y
+                val distBottom = height - event.y
+
+                val maxTouch = minOf(MAX_TOUCH_LINE_DISTANCE, minOf(width.toFloat(), height.toFloat()) / 2f)
+                val minDist = minOf(distLeft, distRight, distTop, distBottom)
+
+                if (minDist <= maxTouch) {
+                    dragDirection = when (minDist) {
+                        distLeft -> DRAGGING_LEFT
+                        distRight -> DRAGGING_RIGHT
+                        distTop -> DRAGGING_TOP
+                        distBottom -> DRAGGING_BOTTOM
+                        else -> DRAGGING_NONE
+                    }
                 }
             }
 
@@ -140,9 +154,9 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
                 val minHeight = minResizeHeightCells * cellHeight
                 when (dragDirection) {
                     DRAGGING_LEFT -> {
-                        val newWidth = frameRect.right - event.rawX.toInt()
+                        val newWidth = frameRect.right - localX
                         val wantedLeft = if (newWidth >= minWidth) {
-                            event.rawX.toInt()
+                            localX
                         } else {
                             frameRect.right - minWidth
                         }
@@ -167,9 +181,9 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
                     }
 
                     DRAGGING_TOP -> {
-                        val newHeight = frameRect.bottom - event.rawY.toInt()
+                        val newHeight = frameRect.bottom - localY
                         val wantedTop = if (newHeight >= minHeight) {
-                            event.rawY.toInt()
+                            localY
                         } else {
                             frameRect.bottom - minHeight
                         }
@@ -194,9 +208,9 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
                     }
 
                     DRAGGING_RIGHT -> {
-                        val newWidth = event.rawX.toInt() - frameRect.left
+                        val newWidth = localX - frameRect.left
                         val wantedRight = if (newWidth >= minWidth) {
-                            event.rawX.toInt()
+                            localX
                         } else {
                             frameRect.left + minWidth
                         }
@@ -221,9 +235,9 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
                     }
 
                     DRAGGING_BOTTOM -> {
-                        val newHeight = event.rawY.toInt() - frameRect.top
+                        val newHeight = localY - frameRect.top
                         val wantedBottom = if (newHeight >= minHeight) {
-                            event.rawY.toInt()
+                            localY
                         } else {
                             frameRect.top + minHeight
                         }
@@ -353,6 +367,7 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
                             }
                         }
                     }
+                    cellChanged()
                     redrawFrame()
                 }
             }
@@ -362,7 +377,8 @@ class MyAppWidgetResizeFrame(context: Context, attrs: AttributeSet, defStyle: In
     }
 
     private fun roundToClosestMultiplyOfNumber(value: Int, number: Int): Int {
-        return number * (Math.round(Math.abs(value / number.toDouble()))).toInt()
+        if (number <= 0) return 0
+        return number * (Math.round(value.toDouble() / number)).toInt()
     }
 
     override fun onDraw(canvas: Canvas) {

@@ -41,3 +41,28 @@
 - **Any deviation from what was requested, and why**: None. Implemented Option B exactly as agreed during the discussion phase.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+### Entry 017
+- **Timestamp**: 2026-10-26T01:28:30-07:00
+- **One-line summary of what was requested**: Fix clock widget jump to top on resize, set default grid dimensions (8 rows, 4 columns home; 5 dock columns; 4 app drawer columns), and modernize lock/archive glyphs (larger, no grey bubble, Cloud Run style).
+- **Exact files touched**:
+  - `/app/src/main/kotlin/shura/home/views/MyAppWidgetResizeFrame.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/Constants.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/Config.kt`
+  - `/app/src/main/res/values/integers.xml`
+  - `/app/src/main/kotlin/shura/home/helpers/IconDecorator.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - In `MyAppWidgetResizeFrame.kt`, resolved coordinate space mismatch by calculating local drag positions relative to parent `HomeScreenGrid` (`localX = event.rawX - parentLocation[0]`, `localY = event.rawY - parentLocation[1]`), preventing raw screen coordinates and status bar offsets from pulling widget bounds to `top = 0`.
+  - In `MyAppWidgetResizeFrame.kt`, replaced sequential handle checks with closest-handle distance detection (`minDist` among left, right, top, bottom clamped to half the widget dimension), preventing touches near the bottom handle of 1-to-2 row widgets from erroneously triggering `DRAGGING_TOP`.
+  - In `MyAppWidgetResizeFrame.kt`, invoked `cellChanged()` on `ACTION_UP` ensuring final snapped cell positions are communicated to `HomeScreenGrid` and saved in Room DB.
+  - In `Constants.kt`, updated default `ROW_COUNT = 9` (8 desktop rows beside dock + 1 dock row) and `COLUMN_COUNT = 4`.
+  - In `Config.kt`, decoupled dock default column count to explicitly default to 5 columns (`prefs.getInt(DOCK_COLUMN_COUNT, 5)`).
+  - In `res/values/integers.xml`, updated default `portrait_column_count` to 4 for app drawer.
+  - In `IconDecorator.kt`, removed the `#D91C1B1F` 85% grey circular bubble and stroke boundary, enlarged glyphs to 54% icon scale with Cloud Run-inspired geometry, and added a soft drop shadow (`#B3000000`) for high contrast across all icon artwork.
+  - Updated `BLUEPRINT.md` running change ledger with phase documentation.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Implemented exactly as requested.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+
