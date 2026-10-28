@@ -4,11 +4,11 @@
     android:id="@+id/shortcut_item_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="40dp"
-    android:paddingStart="14dp"
-    android:paddingEnd="10dp"
-    android:paddingTop="4dp"
-    android:paddingBottom="4dp"
+    android:minHeight="30dp"
+    android:paddingStart="10dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:background="?attr/selectableItemBackground"
@@ -17,9 +17,9 @@
 
     <ImageView
         android:id="@+id/shortcut_item_icon"
-        android:layout_width="22dp"
-        android:layout_height="22dp"
-        android:layout_marginEnd="10dp"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginEnd="8dp"
         android:contentDescription="@null"
         android:scaleType="fitCenter" />
 
@@ -29,19 +29,19 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:textColor="#FFFFFF"
-        android:textSize="14sp"
+        android:textSize="12.5sp"
         android:textStyle="normal"
         android:maxLines="1"
         android:ellipsize="end" />
 
     <ImageView
         android:id="@+id/shortcut_item_pin"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
-        android:padding="5dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:padding="3dp"
         android:src="@drawable/ic_pin_shortcut_vector"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/pin_to_home"
-        app:tint="#A0B094" />
+        app:tint="#81D4FA" />
 
 </LinearLayout>

@@ -127,7 +127,11 @@ object BackupHelper {
             val hiddenIcons = db.HiddenIconsDao().getHiddenIcons()
             val hiddenArray = JSONArray()
             for (hidden in hiddenIcons) {
-                hiddenArray.put(hidden.packageName)
+                val hiddenObj = JSONObject().apply {
+                    put("packageName", hidden.packageName)
+                    put("activityName", hidden.activityName)
+                }
+                hiddenArray.put(hiddenObj)
             }
             root.put("hidden_icons", hiddenArray)
 
@@ -143,6 +147,16 @@ object BackupHelper {
                 lockedArray.put(lockedObj)
             }
             root.put("locked_apps", lockedArray)
+
+            // 6. Export Custom Drawer Renames (launchersDB)
+            val appLaunchers = db.AppLaunchersDao().getAppLaunchers()
+            val drawerRenamesJson = JSONObject()
+            for (launcher in appLaunchers) {
+                if (launcher.title.isNotEmpty()) {
+                    drawerRenamesJson.put(launcher.packageName, launcher.title)
+                }
+            }
+            root.put("drawer_renames", drawerRenamesJson)
 
             // 6. Export Custom Icons (Base64 PNG)
             val customIconsDir = File(context.filesDir, "custom_icons")
@@ -314,8 +328,13 @@ object BackupHelper {
                 // 3. Restore Hidden Icons
                 val hiddenArray = root.optJSONArray("hidden_icons") ?: JSONArray()
                 for (i in 0 until hiddenArray.length()) {
-                    val pkg = hiddenArray.getString(i)
-                    hiddenDao.insert(HiddenIcon(id = null, packageName = pkg, activityName = "", title = ""))
+                    val item = hiddenArray.get(i)
+                    val (pkg, act) = if (item is JSONObject) {
+                        Pair(item.getString("packageName"), item.optString("activityName", ""))
+                    } else {
+                        Pair(item.toString(), "")
+                    }
+                    hiddenDao.insert(HiddenIcon(id = null, packageName = pkg, activityName = act, title = ""))
                 }
 
                 // 4. Restore Locked Apps
@@ -328,6 +347,18 @@ object BackupHelper {
                         lockedAt = lObj.optLong("lockedAt", System.currentTimeMillis())
                     )
                     lockedDao.insertLockedApp(lockedApp)
+                }
+
+                // 5. Restore Custom Drawer Renames
+                val drawerRenamesJson = root.optJSONObject("drawer_renames")
+                if (drawerRenamesJson != null) {
+                    val launcherDao = db.AppLaunchersDao()
+                    val keys = drawerRenamesJson.keys()
+                    while (keys.hasNext()) {
+                        val pkg = keys.next()
+                        val customTitle = drawerRenamesJson.getString(pkg)
+                        launcherDao.updateAppTitle(customTitle, pkg)
+                    }
                 }
             }
 
@@ -356,6 +387,8 @@ object BackupHelper {
                 if (configJson.has("gesturePinchInAction")) config.gesturePinchInAction = configJson.getString("gesturePinchInAction")
                 if (configJson.has("folderCoverMode")) config.folderCoverMode = configJson.getBoolean("folderCoverMode")
                 if (configJson.has("gestureHaptics")) config.gestureHaptics = configJson.getBoolean("gestureHaptics")
+                config.wasHomeScreenInit = true
+                config.wasDefaultClockAdded = true
             }
 
             // 6. Restore Custom Icons
@@ -377,8 +410,9 @@ object BackupHelper {
                 }
             }
 
-            // Evict in-memory icon and app caches
+            // Evict in-memory icon and app caches, reload app locks
             IconCache.clear()
+            AppLockManager.reload(context)
 
             LogCatcher.log(TAG, "Backup restored successfully")
             true

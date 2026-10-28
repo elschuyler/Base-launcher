@@ -65,4 +65,48 @@
 - **Any deviation from what was requested, and why**: None. Implemented exactly as requested.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+### Entry 018
+- **Timestamp**: 2026-10-27T07:12:00-07:00
+- **One-line summary of what was requested**: Make Android system status bar clear in app drawer regardless of charging state or system theme, and make swipe-up gesture non-vibrating (no haptics) by default.
+- **Exact files touched**:
+  - `/app/src/main/kotlin/shura/home/helpers/Config.kt`
+  - `/app/src/main/kotlin/shura/home/activities/MainActivity.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - In `Config.kt`, updated default value of `gestureHaptics` from `true` to `false` (`prefs.getBoolean(GESTURE_HAPTICS, false)`). This turns off vibration on swipe-up (and other gestures) out of the box while preserving the toggle in Settings → Gestures.
+  - In `MainActivity.kt`, enforced `window.statusBarColor = Color.TRANSPARENT`, `FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS`, and cleared `FLAG_TRANSLUCENT_STATUS` in `onCreate()`, `showFragment()`, `hideFragment()`, `closeAppDrawer()`, and `updateStatusBarIcons()`.
+  - In `MainActivity.kt`, disabled Android 10+ contrast enforcement via `window.isStatusBarContrastEnforced = false` and `window.isNavigationBarContrastEnforced = false`, eliminating the OS DecorView protective grey/translucent scrim triggered during charging animations or system theme changes.
+  - In `MainActivity.kt:updateStatusBarIcons()`, forced `isAppearanceLightStatusBars = false` when `isAllAppsFragmentExpanded()` is true, guaranteeing clear white status bar icons (clock, battery, charging lightning bolt) directly over the black app drawer background.
+  - In `MainActivity.kt:showFragment()`, immediately applied `updateStatusBarIcons(Color.BLACK)` when expanding `AllAppsFragment` to eliminate any visual transition flash.
+  - Updated `BLUEPRINT.md` running change ledger with phase documentation.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Implemented exactly as requested.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+### Entry 019
+- **Timestamp**: 2026-10-28T01:04:00-07:00
+- **One-line summary of what was requested**: Implement compact, horizontally thinner Sky Blue long-press popup menu, enable App Info for widgets, and audit/harden Backup & Restore state completeness.
+- **Exact files touched**:
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/res/layout/item_popup_shortcut.xml`
+  - `/app/src/main/kotlin/shura/home/views/AppShortcutsPopupWindow.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/AppLockManager.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/BackupHelper.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - In `popup_app_shortcuts.xml`, slimmed card width from 180dp min down to 160dp min with a 185dp measurement cap, re-themed card background to `#16191D` deep slate, added `#2638BDF8` subtle Sky Blue border stroke, compressed header height to 28dp, shrunk action buttons to 28x28dp with 2dp margins tinted Sky Blue (`#81D4FA` / `#03A9F4`) while preserving soft coral red (`#F08888`) for Uninstall, and compressed default launcher prompt.
+  - In `item_popup_shortcut.xml`, reduced row height from 40dp to 30dp, shrunk shortcut icon to 18dp, pin button to 20dp tinted Sky Blue (`#81D4FA`), and text to 12.5sp.
+  - In `AppShortcutsPopupWindow.kt`, expanded `canShowAppInfo` to support `ITEM_TYPE_WIDGET`, allowing tapping the Gear icon on widgets to launch the widget provider's system App Info page via `launchAppInfo()`. Constrained `targetMeasureWidth` to `185 * density` to guarantee a horizontally thinner layout.
+  - In `AppLockManager.kt`, added `reload(context)` to refresh the in-memory `lockedPackages` cache from `lockedAppsDB`.
+  - In `BackupHelper.kt`, updated `exportBackup()` to write both `packageName` and `activityName` for hidden icons, and added export of custom drawer app renames from `launchersDB` (`drawer_renames`).
+  - In `BackupHelper.kt`, updated `importBackup()` to restore `activityName` for hidden icons, restore custom drawer titles to `launchersDB`, set `config.wasHomeScreenInit = true` and `config.wasDefaultClockAdded = true` to prevent clean-install duplicate default icon injection, and invoked `AppLockManager.reload(context)` to activate restored app locks immediately.
+  - Updated `BLUEPRINT.md` running change ledger with phase documentation.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Implemented exactly as agreed.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+
+
 

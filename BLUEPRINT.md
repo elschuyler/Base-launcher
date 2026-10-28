@@ -406,6 +406,34 @@
     - Added a subtle soft shadow offset (`#B3000000`) behind the white glyphs to ensure high-contrast readability across all light, dark, and colorful icon artwork without needing a background bubble.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: App Drawer Clear System Status Bar & Non-Vibrating Swipe-Up Default]
+  - **Non-Vibrating Swipe-Up Gesture Default (`Config.kt`)**:
+    - Changed default for `gestureHaptics` in `Config.kt` from `true` to `false` (`prefs.getBoolean(GESTURE_HAPTICS, false)`).
+    - Ensures out-of-the-box swipe-up gesture opening the app drawer (and general launcher gestures) executes completely vibration-free without haptic pulse, while preserving user toggle functionality in Gestures settings.
+  - **100% Clear Transparent System Status Bar in App Drawer (`MainActivity.kt`)**:
+    - Enforced `window.statusBarColor = Color.TRANSPARENT` and set `window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)` alongside `window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)` in `onCreate()`, `showFragment()`, `hideFragment()`, `closeAppDrawer()`, and `updateStatusBarIcons()`.
+    - Explicitly disabled Android 10+ status bar and navigation bar contrast enforcement via `isStatusBarContrastEnforced = false` and `isNavigationBarContrastEnforced = false`. This permanently prevents Android DecorView from injecting a grey/translucent protective scrim when charging animations, battery state shifts, or system theme changes occur.
+    - Updated `updateStatusBarIcons()` to lock `isLightBackground = false` (`isAppearanceLightStatusBars = false`) whenever `isAllAppsFragmentExpanded()` is true, ensuring crisp white status bar icons (clock, battery, charging lightning indicator) directly over the black drawer background without any tint or scrim.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Ultra-Compact Sky Blue Popup Menu, Widget App Info & Comprehensive Backup/Restore Sync]
+  - **Ultra-Compact & Horizontally Thinner Popup Menu (`popup_app_shortcuts.xml`, `item_popup_shortcut.xml`, `AppShortcutsPopupWindow.kt`)**:
+    - Reduced card width measurement constraint from 280dp down to 185dp (`targetMeasureWidth = minOf(maxAllowedWidth, (185 * density).toInt())`), slimming horizontal footprint by ~34%.
+    - Re-themed card with deep slate background (`#16191D`), 14dp snug corner radius, and subtle Sky Blue stroke (`#2638BDF8`).
+    - Compressed title header to 28dp height with bold 12.5sp title and 24dp Sky Blue Gear button (`#38BDF8`).
+    - Compressed action buttons from 36x36dp to 28x28dp with 2dp margins, tinted Sky Blue (`#81D4FA` / `#03A9F4`) while strictly retaining soft coral red (`#F08888`) for Uninstall safety.
+    - Compressed shortcut items from 40dp to 30dp height with 18dp icons, 12.5sp typography, and 20dp Sky Blue pin buttons (`#81D4FA`).
+  - **Widget App Info Integration (`AppShortcutsPopupWindow.kt`)**:
+    - Expanded `canShowAppInfo` to include `gridItem.type == ITEM_TYPE_WIDGET`, allowing instant access to the widget provider app's system App Info settings via `launchAppInfo(gridItem.packageName)`.
+  - **Comprehensive Backup & Restore Sync (`BackupHelper.kt`, `AppLockManager.kt`)**:
+    - Added `AppLockManager.reload(context)` to refresh in-memory `lockedPackages` cache immediately upon backup import.
+    - Extended `HiddenIcon` backup to export and import both `packageName` and `activityName`.
+    - Added export and restore of custom App Drawer titles from `launchersDB` (`drawer_renames`).
+    - Enforced `wasHomeScreenInit = true` and `wasDefaultClockAdded = true` upon restore to prevent clean-install duplicate default icon injection.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+
+
 
 
 

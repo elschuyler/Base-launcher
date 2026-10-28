@@ -103,6 +103,6 @@ class Config(context: Context) : BaseConfig(context) {
         set(value) = prefs.edit().putBoolean(FOLDER_COVER_MODE, value).apply()
 
     var gestureHaptics: Boolean
-        get() = prefs.getBoolean(GESTURE_HAPTICS, true)
+        get() = prefs.getBoolean(GESTURE_HAPTICS, false)
         set(value) = prefs.edit().putBoolean(GESTURE_HAPTICS, value).apply()
 }

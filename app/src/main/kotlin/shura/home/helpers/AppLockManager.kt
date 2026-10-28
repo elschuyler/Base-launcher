@@ -38,6 +38,20 @@ object AppLockManager {
         }
     }
 
+    fun reload(context: Context) {
+        ensureBackgroundThread {
+            try {
+                val packages = context.lockedAppsDB.getAllLockedPackages()
+                lockedPackages.clear()
+                lockedPackages.addAll(packages)
+                isInitialized = true
+                LogCatcher.log("AppLock", "Reloaded ${packages.size} locked packages into cache")
+            } catch (e: Exception) {
+                LogCatcher.log("AppLock", "Failed to reload locked packages", e)
+            }
+        }
+    }
+
     fun isAppLocked(packageName: String): Boolean {
         return lockedPackages.contains(packageName)
     }

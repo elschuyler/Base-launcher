@@ -36,6 +36,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.animation.DecelerateInterpolator
+import android.view.WindowManager
 import android.widget.PopupWindow
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.graphics.drawable.toBitmap
@@ -194,6 +195,14 @@ class MainActivity : SimpleActivity(), FlingListener {
             ),
             padBottomSystem = listOf(binding.homeScreenGrid.root)
         )
+
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        window.statusBarColor = Color.TRANSPARENT
+        if (isQPlus()) {
+            window.isStatusBarContrastEnforced = false
+            window.isNavigationBarContrastEnforced = false
+        }
 
         mDetector = GestureDetectorCompat(this, MyGestureListener(this))
         mScaleDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
@@ -763,6 +772,11 @@ class MainActivity : SimpleActivity(), FlingListener {
             start()
         }
 
+        window.statusBarColor = Color.TRANSPARENT
+        if (isQPlus()) {
+            window.isStatusBarContrastEnforced = false
+            window.isNavigationBarContrastEnforced = false
+        }
         window.navigationBarColor = resources.getColor(R.color.semitransparent_navigation)
         binding.homeScreenGrid.root.fragmentExpanded()
         binding.homeScreenGrid.root.hideResizeLines()
@@ -772,6 +786,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                 interpolator = DecelerateInterpolator()
                 start()
             }
+            updateStatusBarIcons(Color.BLACK)
         }
 
         @SuppressLint("AccessibilityFocus")
@@ -802,6 +817,11 @@ class MainActivity : SimpleActivity(), FlingListener {
             start()
         }
 
+        window.statusBarColor = Color.TRANSPARENT
+        if (isQPlus()) {
+            window.isStatusBarContrastEnforced = false
+            window.isNavigationBarContrastEnforced = false
+        }
         window.navigationBarColor = Color.TRANSPARENT
         binding.homeScreenGrid.root.fragmentCollapsed()
         if (fragment is AllAppsFragmentBinding) {
@@ -966,6 +986,11 @@ class MainActivity : SimpleActivity(), FlingListener {
                 binding.allAppsFragment.root.touchDownY = -1
                 binding.allAppsFragment.root.closeSearchMode()
                 binding.homeScreenGrid.root.fragmentCollapsed()
+                window.statusBarColor = Color.TRANSPARENT
+                if (isQPlus()) {
+                    window.isStatusBarContrastEnforced = false
+                    window.isNavigationBarContrastEnforced = false
+                }
                 updateStatusBarIcons()
             }
             if (delayed) {
@@ -2442,7 +2467,9 @@ class MainActivity : SimpleActivity(), FlingListener {
     }
 
     private fun updateStatusBarIcons(backgroundColor: Int? = null) {
+        val isDrawerOpen = isAllAppsFragmentExpanded()
         val isLightBackground = when {
+            isDrawerOpen -> false
             backgroundColor != null -> backgroundColor.getContrastColor() == DARK_GREY
             wallpaperSupportsDarkText != null -> wallpaperSupportsDarkText!!
             else -> {
@@ -2450,9 +2477,14 @@ class MainActivity : SimpleActivity(), FlingListener {
                 wallpaperSupportsDarkText ?: false
             }
         }
+        window.statusBarColor = Color.TRANSPARENT
+        if (isQPlus()) {
+            window.isStatusBarContrastEnforced = false
+            window.isNavigationBarContrastEnforced = false
+        }
         window.insetsController().apply {
             isAppearanceLightStatusBars = isLightBackground
-            isAppearanceLightNavigationBars = isLightBackground
+            isAppearanceLightNavigationBars = if (isDrawerOpen) false else isLightBackground
         }
     }
 

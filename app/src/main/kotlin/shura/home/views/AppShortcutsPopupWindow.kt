@@ -70,8 +70,8 @@ class AppShortcutsPopupWindow(
             }
         }
 
-        // Header Gear icon (App Info)
-        val canShowAppInfo = gridItem.type == ITEM_TYPE_ICON && gridItem.packageName.isNotEmpty()
+        // Header Gear icon (App Info) - enabled for both apps and widgets
+        val canShowAppInfo = (gridItem.type == ITEM_TYPE_ICON || gridItem.type == ITEM_TYPE_WIDGET) && gridItem.packageName.isNotEmpty()
         binding.popupAppInfoBtn.beVisibleIf(canShowAppInfo)
         if (canShowAppInfo) {
             binding.popupAppInfoBtn.setOnClickListener {
@@ -315,7 +315,7 @@ class AppShortcutsPopupWindow(
 
         val horizontalMargin = (12 * density).toInt()
         val maxAllowedWidth = (screenWidth - 2 * horizontalMargin).coerceAtLeast(100)
-        val targetMeasureWidth = minOf(maxAllowedWidth, (280 * density).toInt())
+        val targetMeasureWidth = minOf(maxAllowedWidth, (185 * density).toInt())
 
         // Measure content view with capped width
         binding.root.measure(
