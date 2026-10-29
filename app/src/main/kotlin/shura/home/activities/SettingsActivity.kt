@@ -112,29 +112,30 @@ class SettingsActivity : SimpleActivity() {
 
         setupCustomizeColors()
         setupUseEnglish()
-        setupGesturesAndActions()
-        setupDoubleTapToLock()
-        setupCloseAppDrawerOnOtherAppOpen()
-        setupOpenKeyboardOnAppDrawer()
-        setupDrawerColumnCount()
-        setupDrawerSearchBar()
-        setupShowDrawerAppLabels()
+        setupLanguage()
         setupHomeRowCount()
         setupHomeColumnCount()
         setupDockColumnCount()
         setupShowHomeAppLabels()
-        setupLanguage()
-        setupManageHiddenIcons()
+        setupDrawerColumnCount()
+        setupDrawerSearchBar()
+        setupOpenKeyboardOnAppDrawer()
+        setupCloseAppDrawerOnOtherAppOpen()
+        setupShowDrawerAppLabels()
+        setupGesturesAndActions()
         setupAppLock()
+        setupManageHiddenIcons()
         setupViewAppLogs()
         setupBackupAndRestore()
+        setupAbout()
         updateTextColors(binding.settingsHolder)
 
         arrayOf(
             binding.settingsColorCustomizationSectionLabel,
-            binding.settingsGeneralSettingsLabel,
-            binding.settingsDrawerSettingsLabel,
             binding.settingsHomeScreenLabel,
+            binding.settingsDrawerSettingsLabel,
+            binding.settingsGeneralSettingsLabel,
+            binding.settingsPrivacySecurityLabel,
             binding.settingsBackupRestoreLabel
         ).forEach {
             it.setTextColor(getProperPrimaryColor())
@@ -187,32 +188,9 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
-    private fun setupDoubleTapToLock() {
-        val devicePolicyManager = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        binding.settingsDoubleTapToLock.isChecked = devicePolicyManager.isAdminActive(
-            ComponentName(this, LockDeviceAdminReceiver::class.java)
-        )
-
-        binding.settingsDoubleTapToLockHolder.setOnClickListener {
-            val isLockDeviceAdminActive = devicePolicyManager.isAdminActive(
-                ComponentName(this, LockDeviceAdminReceiver::class.java)
-            )
-            if (isLockDeviceAdminActive) {
-                devicePolicyManager.removeActiveAdmin(
-                    ComponentName(this, LockDeviceAdminReceiver::class.java)
-                )
-            } else {
-                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
-                intent.putExtra(
-                    DevicePolicyManager.EXTRA_DEVICE_ADMIN,
-                    ComponentName(this, LockDeviceAdminReceiver::class.java)
-                )
-                intent.putExtra(
-                    DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                    getString(R.string.lock_device_admin_hint)
-                )
-                startActivity(intent)
-            }
+    private fun setupAbout() {
+        binding.settingsAboutHolder.setOnClickListener {
+            launchAbout()
         }
     }
 
@@ -430,27 +408,25 @@ class SettingsActivity : SimpleActivity() {
         val licenses = 0L
         val faqItems = ArrayList<FAQItem>()
 
-        if (!resources.getBoolean(org.fossify.commons.R.bool.hide_google_relations)) {
-            faqItems.add(
-                FAQItem(
-                    title = org.fossify.commons.R.string.faq_2_title_commons,
-                    text = org.fossify.commons.R.string.faq_2_text_commons
-                )
+        faqItems.add(
+            FAQItem(
+                title = getString(R.string.faq_about_app_title),
+                text = getString(R.string.faq_about_app_text)
             )
-            faqItems.add(
-                FAQItem(
-                    title = org.fossify.commons.R.string.faq_6_title_commons,
-                    text = org.fossify.commons.R.string.faq_6_text_commons
-                )
+        )
+        faqItems.add(
+            FAQItem(
+                title = getString(R.string.faq_fork_title),
+                text = getString(R.string.faq_fork_text)
             )
-        }
+        )
 
         startAboutActivity(
             appNameId = R.string.app_name,
             licenseMask = licenses,
-            versionName = BuildConfig.VERSION_NAME,
+            versionName = "${BuildConfig.VERSION_NAME} (Viabhron Series)",
             faqItems = faqItems,
-            showFAQBeforeMail = true
+            showFAQBeforeMail = false
         )
     }
 }

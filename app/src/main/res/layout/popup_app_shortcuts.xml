@@ -21,7 +21,7 @@
         android:id="@+id/popup_card"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:minWidth="160dp"
+        android:minWidth="140dp"
         app:cardBackgroundColor="#16191D"
         app:cardCornerRadius="14dp"
         app:cardElevation="6dp"
@@ -55,7 +55,7 @@
                     android:ellipsize="end"
                     android:singleLine="true"
                     android:textColor="#FFFFFF"
-                    android:textSize="12.5sp"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
 
                 <ImageView
@@ -95,95 +95,95 @@
                 android:layout_height="32dp"
                 android:gravity="center"
                 android:orientation="horizontal"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp">
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
 
                 <ImageView
                     android:id="@+id/popup_action_unarchive_btn"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginHorizontal="2dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_marginHorizontal="1.5dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/unarchive_app"
-                    android:padding="4dp"
+                    android:padding="3dp"
                     android:src="@drawable/ic_cloud_download_vector"
                     android:visibility="gone"
                     app:tint="#03A9F4" />
 
                 <ImageView
                     android:id="@+id/popup_action_remove_btn"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginHorizontal="2dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_marginHorizontal="1.5dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/remove"
-                    android:padding="4dp"
+                    android:padding="3dp"
                     android:src="@drawable/ic_cross_vector"
                     app:tint="#81D4FA" />
 
                 <ImageView
                     android:id="@+id/popup_action_rename_btn"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginHorizontal="2dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_marginHorizontal="1.5dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/custom_icon"
-                    android:padding="4dp"
+                    android:padding="3dp"
                     android:src="@drawable/ic_rename_vector"
                     app:tint="#81D4FA" />
 
                 <ImageView
                     android:id="@+id/popup_action_gestures_btn"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginHorizontal="2dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_marginHorizontal="1.5dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/gestures"
-                    android:padding="4dp"
+                    android:padding="3dp"
                     android:src="@drawable/ic_touch_vector"
                     app:tint="#81D4FA" />
 
                 <ImageView
                     android:id="@+id/popup_action_hide_btn"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginHorizontal="2dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_marginHorizontal="1.5dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/hide_icon"
-                    android:padding="4dp"
+                    android:padding="3dp"
                     android:src="@drawable/ic_hide_vector"
                     app:tint="#81D4FA" />
 
                 <ImageView
                     android:id="@+id/popup_action_lock_btn"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginHorizontal="2dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_marginHorizontal="1.5dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/lock_app"
-                    android:padding="4dp"
+                    android:padding="3dp"
                     android:src="@drawable/ic_lock_vector"
                     app:tint="#81D4FA" />
 
                 <ImageView
                     android:id="@+id/popup_action_uninstall_btn"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginHorizontal="2dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_marginHorizontal="1.5dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/uninstall"
-                    android:padding="4dp"
+                    android:padding="3dp"
                     android:src="@drawable/ic_delete_vector"
                     app:tint="#F08888" />
 
                 <ImageView
                     android:id="@+id/popup_action_resize_btn"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginHorizontal="2dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_marginHorizontal="1.5dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/resize"
-                    android:padding="4dp"
+                    android:padding="3dp"
                     android:src="@drawable/ic_resize_vector"
                     app:tint="#81D4FA" />
 

@@ -22,11 +22,11 @@ fun hasSigningVars(): Boolean {
 }
 
 android {
-    namespace = project.findProperty("APP_ID")?.toString() ?: "shura.home"
+    namespace = "shura.home"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = project.findProperty("APP_ID")?.toString() ?: "shura.home"
+        applicationId = "shura.launcher"
         minSdk = 26
         targetSdk = 36
         versionName = project.findProperty("VERSION_NAME")?.toString() ?: "1.10.0"

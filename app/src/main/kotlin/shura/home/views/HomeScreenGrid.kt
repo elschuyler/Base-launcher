@@ -95,7 +95,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
     var cellHeight = 0
 
     private var iconMargin =
-        (context.resources.getDimension(R.dimen.icon_side_margin) * 5 / max(columnCount, dockColumnCount)).toInt()
+        (context.resources.getDimension(R.dimen.icon_side_margin) * 0.22f).toInt().coerceAtLeast(2)
     private var labelSideMargin =
         context.resources.getDimension(org.fossify.commons.R.dimen.small_margin).toInt()
     private var roundedCornerRadius =
@@ -205,8 +205,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             val gestures = insets.getInsets(Type.systemGestures())
             val navIgnoring = insets.getInsetsIgnoringVisibility(Type.navigationBars())
 
-            val sideMargin = context.resources
-                .getDimension(org.fossify.commons.R.dimen.normal_margin).toInt()
+            val sideMargin = (18f * context.resources.displayMetrics.density).toInt()
 
             val newLeft   = sideMargin + bars.left
             val newRight  = sideMargin + bars.right
@@ -305,7 +304,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             gridCenters.clear()
             val maxCols = max(columnCount, dockColumnCount)
             iconMargin =
-                (context.resources.getDimension(R.dimen.icon_side_margin) * 5 / maxCols).toInt()
+                (context.resources.getDimension(R.dimen.icon_side_margin) * 0.22f).toInt().coerceAtLeast(2)
             isFirstDraw = true
             reflowGridItemsForNewSize(newRowCount, newColumnCount, newDockColumnCount)
             gridItems.filter { it.type == ITEM_TYPE_WIDGET && !isBuiltInClockWidget(it.className) }.forEach {
@@ -1743,12 +1742,14 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                     val shadowX = center.second - cellSize / 2 + iconMargin + iconSize / 2f
                     val shadowY = center.third - cellSize / 2 + iconMargin + iconSize / 2
 
-                    canvas.drawCircle(
-                        shadowX,
-                        shadowY.toFloat(),
-                        iconSize / 2f,
-                        dragShadowCirclePaint
+                    val halfSize = iconSize / 2f
+                    val dropSquirclePath = createSquirclePath(
+                        shadowX - halfSize,
+                        shadowY.toFloat() - halfSize,
+                        shadowX + halfSize,
+                        shadowY.toFloat() + halfSize
                     )
+                    canvas.drawPath(dropSquirclePath, dragShadowCirclePaint)
                 } else {
                     // draw a circle under the current cell
                     val center = gridCenters.minBy {
@@ -1765,9 +1766,14 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                                 iconMargin + iconSize / 2f
                             } + sideMargins.top + cell.top
 
-                            canvas.drawCircle(
-                                shadowX, shadowY, iconSize / 2f, dragShadowCirclePaint
+                            val halfSize = iconSize / 2f
+                            val dropSquirclePath = createSquirclePath(
+                                shadowX - halfSize,
+                                shadowY - halfSize,
+                                shadowX + halfSize,
+                                shadowY + halfSize
                             )
+                            canvas.drawPath(dropSquirclePath, dragShadowCirclePaint)
                         }
                     }
                 }
@@ -1862,7 +1868,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         val effectiveCellWidth = min(cellWidth, dockCellWidth)
         val maxCols = max(columnCount, dockColumnCount)
         iconMargin =
-            (context.resources.getDimension(R.dimen.icon_side_margin) * 0.45f).toInt()
+            (context.resources.getDimension(R.dimen.icon_side_margin) * 0.22f).toInt().coerceAtLeast(2)
         iconSize = min(effectiveCellWidth, cellHeight) - 2 * iconMargin
         dockCellY = (rowCount - 1) * cellHeight
         pageIndicatorsYPos = dockCellY + extraYMargin
@@ -2502,24 +2508,34 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             val bitmap = createBitmap(iconSize, iconSize)
             val canvas = Canvas(bitmap)
 
-            val inset = 2f
+            val inset = 3.5f * resources.displayMetrics.density
             val squirclePath = createSquirclePath(inset, inset, iconSize.toFloat() - inset, iconSize.toFloat() - inset)
-            canvas.clipPath(squirclePath)
+
+            // Outer drop shadow around squircle border
+            val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.parseColor("#4D000000")
+                style = Paint.Style.STROKE
+                strokeWidth = 2.5f * resources.displayMetrics.density
+                maskFilter = android.graphics.BlurMaskFilter(2.5f * resources.displayMetrics.density, android.graphics.BlurMaskFilter.Blur.NORMAL)
+            }
+            canvas.drawPath(squirclePath, shadowPaint)
 
             // Translucent white squircle bubble background
             val translucentBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = ColorUtils.setAlphaComponent(Color.WHITE, 115)
+                color = ColorUtils.setAlphaComponent(Color.WHITE, 125)
                 style = Paint.Style.FILL
             }
             canvas.drawPath(squirclePath, translucentBgPaint)
 
             // Subtle white bubble border outline
             val bubbleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = ColorUtils.setAlphaComponent(Color.WHITE, 70)
+                color = ColorUtils.setAlphaComponent(Color.WHITE, 90)
                 style = Paint.Style.STROKE
                 strokeWidth = 1.5f * resources.displayMetrics.density
             }
             canvas.drawPath(squirclePath, bubbleBorderPaint)
+
+            canvas.clipPath(squirclePath)
 
             if (itemsCount == 0) {
                 return bitmap.toDrawable(resources)

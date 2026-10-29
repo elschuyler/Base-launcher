@@ -10,14 +10,18 @@ import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.ActivityNotFoundException
+import android.content.BroadcastReceiver
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
@@ -47,6 +51,7 @@ import androidx.core.view.isVisible
 import androidx.core.view.iterator
 import androidx.viewbinding.ViewBinding
 import kotlinx.collections.immutable.toImmutableList
+import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.extensions.appLaunched
 import org.fossify.commons.extensions.beVisible
 import org.fossify.commons.extensions.getContrastColor
@@ -155,6 +160,19 @@ class MainActivity : SimpleActivity(), FlingListener {
     private val binding by viewBinding(ActivityMainBinding::inflate)
     val logKeeper by lazy { shura.home.helpers.LogKeeperHelper(applicationContext) }
 
+    private var needsAppListRefresh = true
+    private val packageUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val action = intent?.action ?: return
+            val packageName = intent.data?.schemeSpecificPart ?: return
+            logKeeper.log("MainActivity", "Package event: $action for $packageName")
+            needsAppListRefresh = true
+            ensureBackgroundThread {
+                refreshLaunchers()
+            }
+        }
+    }
+
     private var mIconPickerCallback: ((Bitmap?) -> Unit)? = null
     private val mPickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -254,6 +272,15 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
 
         setupWallpaperColorListener()
+
+        val packageFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_CHANGED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        }
+        registerReceiver(packageUpdateReceiver, packageFilter)
     }
 
     private fun setupWallpaperColorListener() {
@@ -358,7 +385,10 @@ class MainActivity : SimpleActivity(), FlingListener {
             }
 
             binding.allAppsFragment.root.gotLaunchers(IconCache.launchers)
-            refreshLaunchers()
+            if (needsAppListRefresh || IconCache.launchers.isEmpty()) {
+                needsAppListRefresh = false
+                refreshLaunchers()
+            }
         }
 
         binding.homeScreenGrid.root.resizeGrid(
@@ -383,6 +413,11 @@ class MainActivity : SimpleActivity(), FlingListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        try {
+            unregisterReceiver(packageUpdateReceiver)
+        } catch (e: Exception) {
+            // Receiver already unregistered
+        }
         if (isOreoMr1Plus() && wallpaperColorChangeListener != null) {
             WallpaperManager.getInstance(this)
                 .removeOnColorsChangedListener(wallpaperColorChangeListener!!)
@@ -1659,6 +1694,7 @@ class MainActivity : SimpleActivity(), FlingListener {
     }
 
     private fun launchSettings() {
+        needsAppListRefresh = true
         startActivity(
             Intent(this@MainActivity, SettingsActivity::class.java)
         )
@@ -1691,7 +1727,14 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
 
         override fun hide(gridItem: HomeScreenGridItem) {
-            hideIcon(gridItem)
+            ConfirmationDialog(
+                activity = this@MainActivity,
+                message = getString(R.string.hide_icon_confirm, gridItem.title),
+                positive = org.fossify.commons.R.string.ok,
+                negative = org.fossify.commons.R.string.cancel
+            ) {
+                hideIcon(gridItem)
+            }
         }
 
         override fun rename(gridItem: HomeScreenGridItem) {
@@ -1707,11 +1750,25 @@ class MainActivity : SimpleActivity(), FlingListener {
         }
 
         override fun remove(gridItem: HomeScreenGridItem) {
-            binding.homeScreenGrid.root.removeAppIcon(gridItem)
+            ConfirmationDialog(
+                activity = this@MainActivity,
+                message = getString(R.string.remove_from_home_confirm, gridItem.title),
+                positive = org.fossify.commons.R.string.ok,
+                negative = org.fossify.commons.R.string.cancel
+            ) {
+                binding.homeScreenGrid.root.removeAppIcon(gridItem)
+            }
         }
 
         override fun uninstall(gridItem: HomeScreenGridItem) {
-            uninstallApp(gridItem.packageName)
+            ConfirmationDialog(
+                activity = this@MainActivity,
+                message = getString(R.string.uninstall_app_confirm, gridItem.title),
+                positive = R.string.uninstall,
+                negative = org.fossify.commons.R.string.cancel
+            ) {
+                uninstallApp(gridItem.packageName)
+            }
         }
 
         override fun toggleLock(gridItem: HomeScreenGridItem) {
@@ -1730,14 +1787,21 @@ class MainActivity : SimpleActivity(), FlingListener {
                     }
                 }
             } else {
-                if (!config.isAppLockEnabled) {
-                    config.isAppLockEnabled = true
-                }
-                AppLockManager.lockApp(this@MainActivity, pkg, title) {
-                    toast(R.string.app_locked)
-                    IconCache.clear()
-                    ensureBackgroundThread {
-                        refreshLaunchers()
+                ConfirmationDialog(
+                    activity = this@MainActivity,
+                    message = getString(R.string.lock_app_confirm_message, title),
+                    positive = org.fossify.commons.R.string.ok,
+                    negative = org.fossify.commons.R.string.cancel
+                ) {
+                    if (!config.isAppLockEnabled) {
+                        config.isAppLockEnabled = true
+                    }
+                    AppLockManager.lockApp(this@MainActivity, pkg, title) {
+                        toast(R.string.app_locked)
+                        IconCache.clear()
+                        ensureBackgroundThread {
+                            refreshLaunchers()
+                        }
                     }
                 }
             }
@@ -1902,6 +1966,33 @@ class MainActivity : SimpleActivity(), FlingListener {
         binding.homeScreenGrid.root.nextPage(redraw = true)
     }
 
+    private fun downsampleIconDrawable(raw: Drawable, maxDimension: Int = CustomIconManager.MAX_ICON_SIZE): Drawable {
+        if (raw is BitmapDrawable && raw.bitmap != null) {
+            val bmp = raw.bitmap
+            if (bmp.width <= maxDimension && bmp.height <= maxDimension) {
+                return raw
+            }
+            val scaled = CustomIconManager.downsampleBitmap(bmp, maxDimension)
+            return BitmapDrawable(resources, scaled)
+        }
+
+        val width = if (raw.intrinsicWidth > 0) raw.intrinsicWidth else maxDimension
+        val height = if (raw.intrinsicHeight > 0) raw.intrinsicHeight else maxDimension
+        val ratio = minOf(maxDimension.toFloat() / width, maxDimension.toFloat() / height).coerceAtMost(1f)
+        val targetWidth = maxOf(1, (width * ratio).toInt())
+        val targetHeight = maxOf(1, (height * ratio).toInt())
+
+        return try {
+            val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            raw.setBounds(0, 0, targetWidth, targetHeight)
+            raw.draw(canvas)
+            BitmapDrawable(resources, bitmap)
+        } catch (e: Exception) {
+            raw
+        }
+    }
+
     @SuppressLint("WrongConstant")
     fun getAllAppLaunchers(): ArrayList<AppLauncher> {
         val hiddenIcons = hiddenIconsDB.getHiddenIcons().map {
@@ -1976,6 +2067,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                     }
                 }
                 if (drawable != null) {
+                    drawable = downsampleIconDrawable(drawable)
                     if (isArchived) {
                         drawable = shura.home.helpers.IconDecorator.decorateArchivedIcon(this@MainActivity, drawable)
                     }

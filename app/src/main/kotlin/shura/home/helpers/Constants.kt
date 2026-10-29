@@ -41,8 +41,8 @@ const val APP_LOCK_TIMEOUT_1_MIN = 60
 const val APP_LOCK_TIMEOUT_5_MIN = 300
 const val APP_LOCK_TIMEOUT_SCREEN_OFF = -1
 
-// default home screen grid size (8 rows beside dock + 1 dock row = 9 total)
-const val ROW_COUNT = 9
+// default home screen grid size (9 rows beside dock + 1 dock row = 10 total)
+const val ROW_COUNT = 10
 const val COLUMN_COUNT = 4
 const val MIN_ROW_COUNT = 2
 const val MAX_ROW_COUNT = 15

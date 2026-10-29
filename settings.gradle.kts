@@ -23,6 +23,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Vian Launcher"
+rootProject.name = "Vian Home"
 
 include(":app")
