@@ -109,6 +109,8 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
     private var contrastTextPaint: TextPaint
     private var folderTitleTextPaint: TextPaint
     private var dragShadowCirclePaint: Paint
+    private var dragShadowBlockedFillPaint: Paint
+    private var dragShadowBlockedStrokePaint: Paint
     private var emptyPageIndicatorPaint: Paint
     private var currentPageIndicatorPaint: Paint
     private var folderBackgroundPaint: Paint
@@ -178,6 +180,17 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
 
         dragShadowCirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = context.resources.getColor(org.fossify.commons.R.color.hint_white)
+            strokeWidth = context.resources.getDimension(org.fossify.commons.R.dimen.small_margin)
+            style = Paint.Style.STROKE
+        }
+
+        dragShadowBlockedFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#33EF4444")
+            style = Paint.Style.FILL
+        }
+
+        dragShadowBlockedStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#80EF4444")
             strokeWidth = context.resources.getDimension(org.fossify.commons.R.dimen.small_margin)
             style = Paint.Style.STROKE
         }
@@ -1749,9 +1762,16 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                         shadowX + halfSize,
                         shadowY.toFloat() + halfSize
                     )
-                    canvas.drawPath(dropSquirclePath, dragShadowCirclePaint)
+                    val isFolderFull = folder.getItems().count() >= HomeScreenGridItem.FOLDER_MAX_CAPACITY &&
+                        draggedItem?.parentId != folder.item.id
+                    if (isFolderFull) {
+                        canvas.drawPath(dropSquirclePath, dragShadowBlockedFillPaint)
+                        canvas.drawPath(dropSquirclePath, dragShadowBlockedStrokePaint)
+                    } else {
+                        canvas.drawPath(dropSquirclePath, dragShadowCirclePaint)
+                    }
                 } else {
-                    // draw a circle under the current cell
+                    // draw drop indicator or full occupied block
                     val center = gridCenters.minBy {
                         abs(it.x - draggedItemCurrentCoords.first + sideMargins.left) + abs(it.y - draggedItemCurrentCoords.second + sideMargins.top)
                     }
@@ -1773,7 +1793,50 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                                 shadowX + halfSize,
                                 shadowY + halfSize
                             )
-                            canvas.drawPath(dropSquirclePath, dragShadowCirclePaint)
+
+                            val hoveredItem = gridItems.filterVisibleOnCurrentPageOnly()
+                                .filter { it.id != draggedItem?.id }
+                                .firstOrNull { item ->
+                                    gridCells.x in item.left..item.right &&
+                                    gridCells.y in item.getDockAdjustedTop(rowCount)..item.getDockAdjustedBottom(rowCount)
+                                }
+
+                            val isDockOutOfRange = gridCells.y == rowCount - 1 && gridCells.x >= dockColumnCount
+
+                            if (hoveredItem?.type == ITEM_TYPE_WIDGET) {
+                                val topLeftCell = cells[Point(hoveredItem.left, hoveredItem.top)]
+                                val bottomRightCell = cells[Point(hoveredItem.right, hoveredItem.bottom)]
+                                if (topLeftCell != null && bottomRightCell != null) {
+                                    val widgetLeft = topLeftCell.left.toFloat() + sideMargins.left
+                                    val widgetTop = topLeftCell.top.toFloat() + sideMargins.top
+                                    val widgetRight = bottomRightCell.right.toFloat() + sideMargins.left
+                                    val widgetBottom = bottomRightCell.bottom.toFloat() + sideMargins.top
+                                    val widgetRect = RectF(widgetLeft, widgetTop, widgetRight, widgetBottom)
+                                    val cornerRadius = 16f * resources.displayMetrics.density
+                                    canvas.drawRoundRect(widgetRect, cornerRadius, cornerRadius, dragShadowBlockedFillPaint)
+                                    canvas.drawRoundRect(widgetRect, cornerRadius, cornerRadius, dragShadowBlockedStrokePaint)
+                                } else {
+                                    canvas.drawPath(dropSquirclePath, dragShadowBlockedFillPaint)
+                                    canvas.drawPath(dropSquirclePath, dragShadowBlockedStrokePaint)
+                                }
+                            } else if (isDockOutOfRange) {
+                                canvas.drawPath(dropSquirclePath, dragShadowBlockedFillPaint)
+                                canvas.drawPath(dropSquirclePath, dragShadowBlockedStrokePaint)
+                            } else if (hoveredItem != null) {
+                                val isFolderFull = hoveredItem.type == ITEM_TYPE_FOLDER &&
+                                    hoveredItem.toFolder().getItems().count() >= HomeScreenGridItem.FOLDER_MAX_CAPACITY
+                                val isFolderDropOnFolder = draggedItem?.type == ITEM_TYPE_FOLDER && hoveredItem.type == ITEM_TYPE_FOLDER
+                                val isWidgetDropOnItem = draggedItem?.type == ITEM_TYPE_WIDGET
+
+                                if (isFolderFull || isFolderDropOnFolder || isWidgetDropOnItem) {
+                                    canvas.drawPath(dropSquirclePath, dragShadowBlockedFillPaint)
+                                    canvas.drawPath(dropSquirclePath, dragShadowBlockedStrokePaint)
+                                } else {
+                                    canvas.drawPath(dropSquirclePath, dragShadowCirclePaint)
+                                }
+                            } else {
+                                canvas.drawPath(dropSquirclePath, dragShadowCirclePaint)
+                            }
                         }
                     }
                 }

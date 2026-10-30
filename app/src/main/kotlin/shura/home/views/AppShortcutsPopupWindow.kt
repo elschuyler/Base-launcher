@@ -314,8 +314,8 @@ class AppShortcutsPopupWindow(
         val screenHeight = activity.realScreenSize.y
 
         val horizontalMargin = (12 * density).toInt()
-        val maxAllowedWidth = (screenWidth - 2 * horizontalMargin).coerceAtLeast(100)
-        val targetMeasureWidth = minOf(maxAllowedWidth, (150 * density).toInt())
+        val maxAllowedWidth = (screenWidth - 2 * horizontalMargin).coerceAtLeast(80)
+        val targetMeasureWidth = minOf(maxAllowedWidth, (100 * density).toInt())
 
         // Measure content view with capped width
         binding.root.measure(

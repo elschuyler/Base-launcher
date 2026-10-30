@@ -185,6 +185,29 @@
 - **Any deviation from what was requested, and why**: None. Implemented exactly to user specifications.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+### Entry 023
+- **Timestamp**: 2026-10-30T02:05:00-07:00
+- **One-line summary of what was requested**: Default app drawer time sort (newest to oldest), slender 100dp popup menu with 18dp action buttons, and standard launcher full-block "cannot drop" indicator when moving icons over widgets and occupied cells.
+- **Exact files touched**:
+  - `/app/src/main/kotlin/shura/home/helpers/Config.kt`
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/res/layout/item_popup_shortcut.xml`
+  - `/app/src/main/kotlin/shura/home/views/AppShortcutsPopupWindow.kt`
+  - `/app/src/main/kotlin/shura/home/views/HomeScreenGrid.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - In `Config.kt`, set `drawerSortBy` default to `DRAWER_SORT_BY_TIME` (2) and `drawerSortOrder` default to `DRAWER_SORT_DESCENDING` (2), defaulting the drawer to sort from newest installed/updated apps to oldest.
+  - In `popup_app_shortcuts.xml`, configured card `minWidth="96dp"`, header height to 26dp with 12sp bold title and 18dp gear button, and action bar height to 26dp with 18x18dp action buttons and 0.5dp margins, fitting all 5 actions comfortably on a single horizontal row.
+  - In `item_popup_shortcut.xml`, set item height to 26dp with 16dp icon, 18dp pin icon, and 11.5sp bold typography.
+  - In `AppShortcutsPopupWindow.kt`, clamped `targetMeasureWidth` to `minOf(maxAllowedWidth, (100 * density).toInt())`.
+  - In `HomeScreenGrid.kt`, implemented `dragShadowBlockedFillPaint` (`#33EF4444`) and `dragShadowBlockedStrokePaint` (`#80EF4444`).
+  - In `HomeScreenGrid.kt` `onDraw`, when hovering over a widget, detected full widget bounds (`topLeftCell` to `bottomRightCell`) and rendered a full-block rounded overlay (`drawRoundRect`) with soft warning red fill and stroke, indicating that dropping onto the widget block is impossible. Added single-cell blocked squircle for full folders and invalid dock cells. Retained clean white squircle outline for valid vacant cells.
+  - Updated `BLUEPRINT.md` and `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Built exactly to the agreed specifications.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
 
 
 

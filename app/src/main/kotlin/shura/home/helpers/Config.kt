@@ -77,11 +77,11 @@ class Config(context: Context) : BaseConfig(context) {
         set(appLockProtectHiddenApps) = prefs.edit().putBoolean(APP_LOCK_PROTECT_HIDDEN_APPS, appLockProtectHiddenApps).apply()
 
     var drawerSortBy: Int
-        get() = prefs.getInt(DRAWER_SORT_BY, DRAWER_SORT_BY_NAME)
+        get() = prefs.getInt(DRAWER_SORT_BY, DRAWER_SORT_BY_TIME)
         set(drawerSortBy) = prefs.edit().putInt(DRAWER_SORT_BY, drawerSortBy).apply()
 
     var drawerSortOrder: Int
-        get() = prefs.getInt(DRAWER_SORT_ORDER, DRAWER_SORT_ASCENDING)
+        get() = prefs.getInt(DRAWER_SORT_ORDER, DRAWER_SORT_DESCENDING)
         set(drawerSortOrder) = prefs.edit().putInt(DRAWER_SORT_ORDER, drawerSortOrder).apply()
 
     var gestureDoubleTapAction: String

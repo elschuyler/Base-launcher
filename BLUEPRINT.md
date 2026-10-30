@@ -474,6 +474,20 @@
     - Added user confirmation dialogs (`ConfirmationDialog`) for Remove from Home, Hide App, Lock App, and Uninstall App with clear explanatory prompts and Ok/Cancel buttons.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: App Drawer Default Time Sort, 100dp Slender Popup Menu & Full Block Drag Feedback]
+  - **App Drawer Default Time Sort (`Config.kt`)**:
+    - Set default `drawerSortBy` to `DRAWER_SORT_BY_TIME` (2) and `drawerSortOrder` to `DRAWER_SORT_DESCENDING` (2), making the app drawer sort from newest installed/updated apps to oldest out of the box.
+  - **100dp Slender Long-Press Popup Menu (`AppShortcutsPopupWindow.kt`, `popup_app_shortcuts.xml`, `item_popup_shortcut.xml`)**:
+    - Clamped card measurement constraint to 100dp (`targetMeasureWidth = minOf(maxAllowedWidth, (100 * density).toInt())`) and card `minWidth` to 96dp.
+    - Proportioned action buttons to 18x18dp with 0.5dp margins and 2dp padding, fitting all 5 actions in a single 26dp-high horizontal bar without clipping.
+    - Scaled header gear button to 18x18dp with 12sp bold title.
+    - Scaled shortcut items to 16dp icon, 18dp pin button, and 11.5sp bold typography.
+  - **Full Block Drag Indicator on Occupied Cells / Multi-Cell Widgets (`HomeScreenGrid.kt`)**:
+    - When dragging an item over any multi-cell widget (e.g. 5x2 clock widget), `HomeScreenGrid` detects the full widget bounds (`item.left..item.right`, `item.top..item.bottom`) and renders a prominent full-block rounded overlay with translucent warning fill (`#33EF4444`) and soft red stroke (`#80EF4444`), visually indicating that dropping onto the widget block is impossible.
+    - Added single-cell blocked warning squircle when hovering over full folders, invalid dock slots, or incompatible drop targets.
+    - Retained clean white squircle outline for valid vacant cells and folder mergers.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
 
 
 
