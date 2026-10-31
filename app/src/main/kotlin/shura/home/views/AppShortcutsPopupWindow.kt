@@ -70,6 +70,17 @@ class AppShortcutsPopupWindow(
             }
         }
 
+        // Header Share icon - enabled for installed applications
+        val canShare = gridItem.type == ITEM_TYPE_ICON && gridItem.packageName.isNotEmpty()
+        binding.popupAppShareBtn.beVisibleIf(canShare)
+        if (canShare) {
+            binding.popupAppShareBtn.setOnClickListener {
+                listener.onAnyClick()
+                shareApp(gridItem)
+                dismiss()
+            }
+        }
+
         // Header Gear icon (App Info) - enabled for both apps and widgets
         val canShowAppInfo = (gridItem.type == ITEM_TYPE_ICON || gridItem.type == ITEM_TYPE_WIDGET) && gridItem.packageName.isNotEmpty()
         binding.popupAppInfoBtn.beVisibleIf(canShowAppInfo)
@@ -295,6 +306,24 @@ class AppShortcutsPopupWindow(
         }
     }
 
+    private fun shareApp(gridItem: HomeScreenGridItem) {
+        try {
+            val appName = gridItem.title.ifEmpty {
+                activity.packageManager.getApplicationLabel(
+                    activity.packageManager.getApplicationInfo(gridItem.packageName, 0)
+                ).toString()
+            }
+            val shareText = "$appName - https://play.google.com/store/apps/details?id=${gridItem.packageName}"
+            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, shareText)
+            }
+            activity.startActivity(Intent.createChooser(sendIntent, activity.getString(R.string.share_app)))
+        } catch (e: Exception) {
+            activity.showErrorToast(e)
+        }
+    }
+
     private fun launchSetAsDefault() {
         val intents = listOf(
             Intent(Settings.ACTION_HOME_SETTINGS),
@@ -314,15 +343,21 @@ class AppShortcutsPopupWindow(
         val screenHeight = activity.realScreenSize.y
 
         val horizontalMargin = (12 * density).toInt()
+        val lockedCardWidth = (136 * density).toInt()
         val maxAllowedWidth = (screenWidth - 2 * horizontalMargin).coerceAtLeast(80)
-        val targetMeasureWidth = minOf(maxAllowedWidth, (100 * density).toInt())
+        val popupWidth = minOf(maxAllowedWidth, lockedCardWidth)
 
-        // Measure content view with capped width
+        // Lock card width explicitly and configure PopupWindow width to prevent WindowManager wrap expansion
+        binding.popupCard.layoutParams = binding.popupCard.layoutParams.apply {
+            width = popupWidth
+        }
+        this.width = popupWidth
+
+        // Measure content view with locked width
         binding.root.measure(
-            View.MeasureSpec.makeMeasureSpec(targetMeasureWidth, View.MeasureSpec.AT_MOST),
+            View.MeasureSpec.makeMeasureSpec(popupWidth, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(screenHeight, View.MeasureSpec.AT_MOST)
         )
-        val popupWidth = binding.root.measuredWidth.coerceAtMost(maxAllowedWidth)
         val popupHeight = binding.root.measuredHeight
 
         // Determine icon center and vertical bounds

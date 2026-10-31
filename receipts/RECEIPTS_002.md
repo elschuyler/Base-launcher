@@ -208,6 +208,47 @@
 - **Any deviation from what was requested, and why**: None. Built exactly to the agreed specifications.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+### Entry 024
+- **Timestamp**: 2026-10-31T00:54:00-07:00
+- **One-line summary of what was requested**: Choice A implementation: fix half-screen popup menu blowout by locking popup card and window width to 136dp (~33% of screen), and enlarge action buttons from 18dp to 24dp in a single clean row.
+- **Exact files touched**:
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/res/layout/item_popup_shortcut.xml`
+  - `/app/src/main/kotlin/shura/home/views/AppShortcutsPopupWindow.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Diagnosed and resolved the root cause of the half-screen popup menu: unconstrained `PopupWindow.width = WRAP_CONTENT` allowed wide strings (such as "Set as default to enable shortcuts" and shortcut labels) to expand the card during the WindowManager measure pass.
+  - In `AppShortcutsPopupWindow.kt`, set `lockedCardWidth = (136 * density).toInt()`, explicitly set `binding.popupCard.layoutParams.width = popupWidth`, and set `this.width = popupWidth` directly on the `PopupWindow` before `showAtLocation()`. Changed measure spec to `MeasureSpec.EXACTLY` at `popupWidth`.
+  - In `popup_app_shortcuts.xml`, configured `layout_width="136dp"` on `popup_card`, enlarged action buttons (*Remove, Rename, Gestures, Lock, Uninstall*) from 18dp up to 24x24dp with 0.8dp margins and 2.5dp padding, fitting all 5 actions in a single 32dp-high horizontal row.
+  - In `popup_app_shortcuts.xml`, enlarged header gear button to 20x20dp with 13sp bold app title, and added `maxLines="2"` with `ellipsize="end"` on `popup_default_launcher_prompt` text to prevent horizontal stretching.
+  - In `item_popup_shortcut.xml`, set item height to 28dp, icon to 16dp, pin button to 20dp, and typography to 12sp bold.
+  - Updated `BLUEPRINT.md` and `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Built Choice A exactly as agreed.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+### Entry 025
+- **Timestamp**: 2026-10-31T11:52:00-07:00
+- **One-line summary of what was requested**: Add a native app share button in the popup menu header beside the app info gear button (ordered: Share then App Info), sharing a formatted text link with app name and Google Play Store URL.
+- **Exact files touched**:
+  - `/app/src/main/res/drawable/ic_share_vector.xml`
+  - `/app/src/main/res/values/strings.xml`
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/kotlin/shura/home/views/AppShortcutsPopupWindow.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Created `ic_share_vector.xml` with standard Material 3 share vector graphics.
+  - Added string resource `<string name="share_app">Share app</string>` in `strings.xml`.
+  - In `popup_app_shortcuts.xml`, added `popup_app_share_btn` (20x20dp, 2.5dp padding, `#38BDF8` Sky Blue tint) directly before `popup_app_info_btn`, ordering the header as `[ App Title ] [ Share ] [ App Info ]`.
+  - In `AppShortcutsPopupWindow.kt`, wired `popup_app_share_btn` with `beVisibleIf(canShare)` for installed apps (`ITEM_TYPE_ICON` with non-empty `packageName`).
+  - Implemented `shareApp(gridItem)` to construct `"$appName - https://play.google.com/store/apps/details?id=${gridItem.packageName}"` and dispatch Android's native system chooser sheet via `Intent.ACTION_SEND`.
+  - Updated `BLUEPRINT.md` and `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Built exactly to the requested specifications.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
 
 
 

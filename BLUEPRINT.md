@@ -488,6 +488,28 @@
     - Retained clean white squircle outline for valid vacant cells and folder mergers.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Choice A Slender Locked Popup Menu (136dp) with 24dp Action Buttons]
+  - **Explicit Width Locking (`AppShortcutsPopupWindow.kt`, `popup_app_shortcuts.xml`)**:
+    - Addressed the WindowManager wrap-expansion bug that blew the popup card out to half-screen width.
+    - Explicitly set `popup_card.layout_width = 136dp`, set `binding.popupCard.layoutParams.width = popupWidth`, and set `this.width = popupWidth` directly on the `PopupWindow` object before attaching to WindowManager.
+    - Clamped measure pass using `MeasureSpec.EXACTLY` at `popupWidth` (136dp, ~33% of screen width).
+  - **24dp Action Buttons & Ergonomics (`popup_app_shortcuts.xml`)**:
+    - Enlarged all action buttons (*Remove, Rename, Gestures, Lock, Uninstall*) from 18dp back up to a comfortable 24x24dp with 0.8dp margins and 2.5dp internal padding, fitting all 5 buttons cleanly across a single 32dp-high horizontal row.
+    - Enlarged header gear button to 20x20dp with 13sp bold app title.
+  - **Constraint-Safe Content Layout (`popup_app_shortcuts.xml`, `item_popup_shortcut.xml`)**:
+    - Added `maxLines="2"` and `ellipsize="end"` to `popup_default_launcher_prompt` text to prevent horizontal stretching.
+    - Set shortcut items to 28dp min height, 16dp icon, 20dp pin button, and 12sp bold typography.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Popup Menu Native App Sharing Integration]
+  - **Header Share Button (`popup_app_shortcuts.xml`, `ic_share_vector.xml`)**:
+    - Added clean standard Material 3 share vector drawable (`ic_share_vector.xml`).
+    - Positioned `popup_app_share_btn` (20x20dp, 2.5dp padding, `#38BDF8` Sky Blue tint) directly to the left of `popup_app_info_btn` in `popup_header`, establishing a clear `[ Title ] [ Share ] [ App Info ]` hierarchy.
+  - **Native Share Intent Dispatching (`AppShortcutsPopupWindow.kt`, `strings.xml`)**:
+    - Implemented `shareApp(gridItem)` to format text as `"<AppName> - https://play.google.com/store/apps/details?id=<package>"` and trigger Android's native system chooser sheet via `Intent.ACTION_SEND`.
+    - Wired visibility logic (`canShare = gridItem.type == ITEM_TYPE_ICON && gridItem.packageName.isNotEmpty()`), showing the button on application popups and cleanly suppressing it on folders and widgets.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
 
 
 
