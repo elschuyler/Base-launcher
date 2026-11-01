@@ -30,6 +30,7 @@ import org.fossify.commons.extensions.showErrorToast
 import org.fossify.commons.helpers.isQPlus
 import org.fossify.commons.helpers.isSPlus
 import shura.home.R
+import shura.home.activities.MainActivity
 import shura.home.activities.SettingsActivity
 import androidx.fragment.app.FragmentActivity
 import shura.home.helpers.AppLockManager
@@ -65,6 +66,10 @@ fun Activity.launchApp(packageName: String, activityName: String, appTitle: Stri
 }
 
 private fun Activity.performActualAppLaunch(packageName: String, activityName: String) {
+    config.removeNewInstalledPackage(packageName)
+    if (this is MainActivity) {
+        refreshHomeScreenBadges()
+    }
     try {
         Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)

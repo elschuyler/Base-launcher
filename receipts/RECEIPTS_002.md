@@ -249,6 +249,39 @@
 - **Any deviation from what was requested, and why**: None. Built exactly to the requested specifications.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+### Entry 026
+- **Timestamp**: 2026-11-01T03:45:00-08:00
+- **One-line summary of what was requested**: Widen popup menu card by 1/3 (to 180dp) with centered 26dp action buttons; fix system app install time sort when updates are uninstalled; add white dot to newly installed unlaunched apps in drawer and home screen; implement zero-overhead on-demand home screen red notification badges toggleable in settings.
+- **Exact files touched**:
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/kotlin/shura/home/views/AppShortcutsPopupWindow.kt`
+  - `/app/src/main/res/drawable/shape_white_dot.xml`
+  - `/app/src/main/res/layout/item_launcher_label.xml`
+  - `/app/src/main/kotlin/shura/home/adapters/LaunchersAdapter.kt`
+  - `/app/src/main/kotlin/shura/home/fragments/AllAppsFragment.kt`
+  - `/app/src/main/kotlin/shura/home/activities/MainActivity.kt`
+  - `/app/src/main/kotlin/shura/home/extensions/Activity.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/Constants.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/Config.kt`
+  - `/app/src/main/kotlin/shura/home/services/NotificationBadgeService.kt`
+  - `/app/src/main/AndroidManifest.xml`
+  - `/app/src/main/res/values/strings.xml`
+  - `/app/src/main/res/layout/activity_settings.xml`
+  - `/app/src/main/kotlin/shura/home/activities/SettingsActivity.kt`
+  - `/app/src/main/kotlin/shura/home/views/HomeScreenGrid.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Widened popup card from 136dp to 180dp (+32.4%, 1/3 increase) and set action bar buttons to 26dp with 3dp margins.
+  - In `AllAppsFragment.kt` and `MainActivity.kt`, updated `getInstallTime` and `appInstallTime` to detect `ApplicationInfo.FLAG_SYSTEM` and use `File(sourceDir).lastModified()` to prevent uninstalled updates from bumping preinstalled apps like Chrome to the top of the install-time sort.
+  - Added `shape_white_dot.xml` circular indicator in `item_launcher_label.xml` (drawer) and `HomeScreenGrid.kt` (home screen). Tracked newly installed apps via `packageUpdateReceiver` on `ACTION_PACKAGE_ADDED` and permanently cleared from the set upon first launch in `performActualAppLaunch()`.
+  - Created `NotificationBadgeService` implementing `NotificationListenerService` with zero background polling. Wired on-demand badge retrieval in `MainActivity.onResume()` and on app drawer collapse. Rendered Material red pill/circle badges with white bold count text at the top-right corner of Home Screen icons only.
+  - Added Settings toggle for Notification Badges under *Home Screen & Dock* with direct routing to system notification listener settings.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Followed Path A and all user constraints precisely.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+
 
 
 

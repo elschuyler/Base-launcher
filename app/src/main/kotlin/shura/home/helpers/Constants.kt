@@ -30,6 +30,8 @@ const val GESTURE_SWIPE_UP_ACTION = "gesture_swipe_up_action"
 const val GESTURE_PINCH_IN_ACTION = "gesture_pinch_in_action"
 const val FOLDER_COVER_MODE = "folder_cover_mode"
 const val GESTURE_HAPTICS = "gesture_haptics"
+const val SHOW_NOTIFICATION_BADGES = "show_notification_badges"
+const val NEW_INSTALLED_PACKAGES = "new_installed_packages"
 
 const val DRAWER_SORT_BY_NAME = 1
 const val DRAWER_SORT_BY_TIME = 2

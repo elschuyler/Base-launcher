@@ -17,8 +17,11 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
+import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
+import java.io.File
+import shura.home.services.NotificationBadgeService
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -166,6 +169,17 @@ class MainActivity : SimpleActivity(), FlingListener {
             val action = intent?.action ?: return
             val packageName = intent.data?.schemeSpecificPart ?: return
             logKeeper.log("MainActivity", "Package event: $action for $packageName")
+            if (action == Intent.ACTION_PACKAGE_ADDED) {
+                val replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
+                if (!replacing) {
+                    config.addNewInstalledPackage(packageName)
+                }
+            } else if (action == Intent.ACTION_PACKAGE_REMOVED) {
+                val replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
+                if (!replacing) {
+                    config.removeNewInstalledPackage(packageName)
+                }
+            }
             needsAppListRefresh = true
             ensureBackgroundThread {
                 refreshLaunchers()
@@ -398,6 +412,7 @@ class MainActivity : SimpleActivity(), FlingListener {
         )
         binding.homeScreenGrid.root.updateColors()
         binding.allAppsFragment.root.onResume()
+        refreshHomeScreenBadges()
     }
 
     override fun onStop() {
@@ -865,6 +880,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                 interpolator = DecelerateInterpolator()
                 start()
             }
+            refreshHomeScreenBadges()
         }
         updateStatusBarIcons()
         if (fragment is WidgetsFragmentBinding) {
@@ -881,6 +897,16 @@ class MainActivity : SimpleActivity(), FlingListener {
                 fragment.root.touchDownY = -1
             }
         }, animationDuration)
+    }
+
+    fun refreshHomeScreenBadges() {
+        if (config.showNotificationBadges && NotificationBadgeService.isNotificationAccessGranted(this)) {
+            val badges = NotificationBadgeService.getActiveBadgeCounts(this)
+            binding.homeScreenGrid.root.updateNotificationBadges(badges)
+        } else {
+            binding.homeScreenGrid.root.updateNotificationBadges(emptyMap())
+        }
+        binding.homeScreenGrid.root.invalidate()
     }
 
     fun homeScreenLongPressed(eventX: Float, eventY: Float) {
@@ -2093,7 +2119,14 @@ class MainActivity : SimpleActivity(), FlingListener {
             }
 
             val appInstallTime = try {
-                packageManager.getPackageInfo(packageName, 0).firstInstallTime
+                val pkgInfo = packageManager.getPackageInfo(packageName, 0)
+                val isSystemApp = (pkgInfo.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM != 0
+                if (isSystemApp) {
+                    val sourceDir = pkgInfo.applicationInfo?.sourceDir
+                    if (sourceDir != null) File(sourceDir).lastModified() else pkgInfo.firstInstallTime
+                } else {
+                    pkgInfo.firstInstallTime
+                }
             } catch (e: Exception) {
                 0L
             }
@@ -2183,10 +2216,17 @@ class MainActivity : SimpleActivity(), FlingListener {
                     }
 
                     val appInstallTime = try {
-                        packageManager.getPackageInfo(
+                        val pkgInfo = packageManager.getPackageInfo(
                             pkg,
                             PackageManager.PackageInfoFlags.of(PackageManager.MATCH_ARCHIVED_PACKAGES.toLong())
-                        ).firstInstallTime
+                        )
+                        val isSystemApp = (pkgInfo.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM != 0
+                        if (isSystemApp) {
+                            val sourceDir = pkgInfo.applicationInfo?.sourceDir
+                            if (sourceDir != null) File(sourceDir).lastModified() else pkgInfo.firstInstallTime
+                        } else {
+                            pkgInfo.firstInstallTime
+                        }
                     } catch (e: Exception) {
                         0L
                     }
@@ -2275,7 +2315,13 @@ class MainActivity : SimpleActivity(), FlingListener {
                         0
                     }
 
-                    val appInstallTime = packageInfo.firstInstallTime
+                    val isSystemApp = (packageInfo.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM != 0
+                    val appInstallTime = if (isSystemApp) {
+                        val sourceDir = packageInfo.applicationInfo?.sourceDir
+                        if (sourceDir != null) File(sourceDir).lastModified() else packageInfo.firstInstallTime
+                    } else {
+                        packageInfo.firstInstallTime
+                    }
 
                     allApps.add(
                         AppLauncher(

@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.graphics.Color
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
+import java.io.File
 import android.net.Uri
 import android.util.AttributeSet
 import android.view.Gravity
@@ -164,7 +166,14 @@ class AllAppsFragment(
     private fun getInstallTime(launcher: AppLauncher): Long {
         if (launcher.installTime != 0L) return launcher.installTime
         val time = try {
-            context.packageManager.getPackageInfo(launcher.packageName, 0).firstInstallTime
+            val pkgInfo = context.packageManager.getPackageInfo(launcher.packageName, 0)
+            val isSystemApp = (pkgInfo.applicationInfo?.flags ?: 0) and ApplicationInfo.FLAG_SYSTEM != 0
+            if (isSystemApp) {
+                val sourceDir = pkgInfo.applicationInfo?.sourceDir
+                if (sourceDir != null) File(sourceDir).lastModified() else pkgInfo.firstInstallTime
+            } else {
+                pkgInfo.firstInstallTime
+            }
         } catch (e: Exception) {
             0L
         }

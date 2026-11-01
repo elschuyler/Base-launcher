@@ -16,6 +16,7 @@ import android.graphics.Path
 import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
@@ -115,6 +116,21 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
     private var currentPageIndicatorPaint: Paint
     private var folderBackgroundPaint: Paint
     private var folderIconBackgroundPaint: Paint
+    private var badgeBackgroundPaint: Paint
+    private var badgeTextPaint: Paint
+    private var newAppDotPaint: Paint
+    private var newAppDotStrokePaint: Paint
+
+    var notificationBadges: Map<String, Int> = emptyMap()
+        private set
+
+    fun updateNotificationBadges(badges: Map<String, Int>) {
+        if (notificationBadges != badges) {
+            notificationBadges = badges
+            invalidate()
+        }
+    }
+
     private var draggedItem: HomeScreenGridItem? = null
     private var resizedWidget: HomeScreenGridItem? = null
     private var isFirstDraw = true
@@ -211,6 +227,29 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         folderIconBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = context.getProperBackgroundColor().adjustAlpha(0.9f)
             style = Paint.Style.FILL
+        }
+
+        badgeBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#E53935")
+            style = Paint.Style.FILL
+        }
+
+        badgeTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textSize = 9.5f * context.resources.displayMetrics.density
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+        }
+
+        newAppDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+        }
+
+        newAppDotStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#66000000")
+            style = Paint.Style.STROKE
+            strokeWidth = 1f * context.resources.displayMetrics.density
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
@@ -2419,52 +2458,87 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 }
             }
 
-            if (item.docked) {
-                val drawableY = dockCellY + cellHeight - iconMargin - iconSize + sideMargins.top
-
-                drawable?.setBounds(
-                    drawableX,
-                    drawableY,
-                    drawableX + iconSize,
-                    drawableY + iconSize
-                )
+            val drawableY = if (item.docked) {
+                dockCellY + cellHeight - iconMargin - iconSize + sideMargins.top
+            } else if (item.parentId != null) {
+                cell.top + (cell.height() - iconSize) / 2
             } else {
-                val drawableY = if (item.parentId != null) {
-                    cell.top + (cell.height() - iconSize) / 2
-                } else {
-                    cell.top + iconMargin
-                }
-                drawable?.setBounds(
-                    drawableX,
-                    drawableY,
-                    drawableX + iconSize,
-                    drawableY + iconSize
-                )
+                cell.top + iconMargin
+            }
 
-                if (item.parentId == null && item.id != draggedItem?.id && item.title.isNotEmpty() && context.config.showHomeAppLabels && item.type != ITEM_TYPE_FOLDER) {
-                    val textX = cell.left.toFloat() + labelSideMargin
-                    val textY = cell.top.toFloat() + iconSize + iconMargin + labelSideMargin
-                    val textPaintToUse = textPaint
-                    val staticLayout = StaticLayout.Builder
-                        .obtain(
-                            item.title,
-                            0,
-                            item.title.length,
-                            textPaintToUse,
-                            cell.width() - 2 * labelSideMargin
-                        )
-                        .setMaxLines(2)
-                        .setEllipsize(TextUtils.TruncateAt.END)
-                        .setAlignment(Layout.Alignment.ALIGN_CENTER)
-                        .build()
+            drawable?.setBounds(
+                drawableX,
+                drawableY,
+                drawableX + iconSize,
+                drawableY + iconSize
+            )
 
-                    withTranslation(textX, textY) {
-                        staticLayout.draw(this)
-                    }
+            if (!item.docked && item.parentId == null && item.id != draggedItem?.id && item.title.isNotEmpty() && context.config.showHomeAppLabels && item.type != ITEM_TYPE_FOLDER) {
+                val textX = cell.left.toFloat() + labelSideMargin
+                val textY = cell.top.toFloat() + iconSize + iconMargin + labelSideMargin
+                val textPaintToUse = textPaint
+                val staticLayout = StaticLayout.Builder
+                    .obtain(
+                        item.title,
+                        0,
+                        item.title.length,
+                        textPaintToUse,
+                        cell.width() - 2 * labelSideMargin
+                    )
+                    .setMaxLines(2)
+                    .setEllipsize(TextUtils.TruncateAt.END)
+                    .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                    .build()
+
+                withTranslation(textX, textY) {
+                    staticLayout.draw(this)
                 }
             }
 
             drawable?.draw(this)
+
+            // Draw Notification Badge or New App Dot (Home Screen icons only)
+            if (item.type == ITEM_TYPE_ICON && item.packageName.isNotEmpty()) {
+                val density = context.resources.displayMetrics.density
+                val count = if (context.config.showNotificationBadges) {
+                    notificationBadges[item.packageName] ?: 0
+                } else 0
+
+                val iconRight = (drawableX + iconSize).toFloat()
+                val iconTop = drawableY.toFloat()
+
+                if (count > 0) {
+                    val countText = if (count > 99) "99+" else count.toString()
+                    val badgeHeight = 16f * density
+                    val badgeRadius = badgeHeight / 2f
+                    val textWidth = badgeTextPaint.measureText(countText)
+                    val badgeWidth = maxOf(badgeHeight, textWidth + 8f * density)
+
+                    // Position badge anchored at top-right edge of icon
+                    val badgeCenterX = iconRight - (badgeRadius * 0.6f)
+                    val badgeCenterY = iconTop + (badgeRadius * 0.6f)
+
+                    val badgeRect = RectF(
+                        badgeCenterX - badgeWidth / 2f,
+                        badgeCenterY - badgeHeight / 2f,
+                        badgeCenterX + badgeWidth / 2f,
+                        badgeCenterY + badgeHeight / 2f
+                    )
+
+                    drawRoundRect(badgeRect, badgeRadius, badgeRadius, badgeBackgroundPaint)
+
+                    val fontMetrics = badgeTextPaint.fontMetrics
+                    val textBaselineY = badgeCenterY - (fontMetrics.ascent + fontMetrics.descent) / 2f
+                    drawText(countText, badgeCenterX, textBaselineY, badgeTextPaint)
+                } else if (context.config.newInstalledPackages.contains(item.packageName)) {
+                    val dotRadius = 4f * density
+                    val dotCenterX = iconRight - (dotRadius * 0.9f)
+                    val dotCenterY = iconTop + (dotRadius * 0.9f)
+
+                    drawCircle(dotCenterX, dotCenterY, dotRadius, newAppDotPaint)
+                    drawCircle(dotCenterX, dotCenterY, dotRadius, newAppDotStrokePaint)
+                }
+            }
         }
     }
 

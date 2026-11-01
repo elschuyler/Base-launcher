@@ -199,6 +199,8 @@
     <string name="lock_app_confirm_message">Lock \"%s\"? Biometric authentication or PIN will be required to open this app.</string>
     <string name="uninstall_app_confirm">Uninstall \"%s\"?</string>
     <string name="share_app">Share app</string>
+    <string name="notification_badges">Notification badges</string>
+    <string name="notification_badges_desc">Show unread count badges on home screen icons</string>
     <!--
         Haven't found some strings? There's more at
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res

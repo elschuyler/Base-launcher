@@ -510,6 +510,24 @@
     - Wired visibility logic (`canShare = gridItem.type == ITEM_TYPE_ICON && gridItem.packageName.isNotEmpty()`), showing the button on application popups and cleanly suppressing it on folders and widgets.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Popup Widening, System App Sort Fix, New App Dot, and Zero-Overhead Notification Badges]
+  - **Popup Menu Widening (`popup_app_shortcuts.xml`, `AppShortcutsPopupWindow.kt`)**:
+    - Widened popup card by 1/3 from 136dp to 180dp.
+    - Centered action buttons at 26dp with 3dp margins, allowing long shortcut titles and app names to display with enhanced breathing room.
+  - **System App Install Time Sort Fix (`AllAppsFragment.kt`, `MainActivity.kt`)**:
+    - Replaced raw `PackageInfo.firstInstallTime` fallback with `File(sourceDir).lastModified()` for system packages (`FLAG_SYSTEM`).
+    - Eliminates the Android OS quirk where uninstalling updates on preinstalled apps like Google Chrome resets their install timestamp to the update removal time.
+  - **New App Indicator Dot (`item_launcher_label.xml`, `LaunchersAdapter.kt`, `HomeScreenGrid.kt`, `Activity.kt`, `Config.kt`)**:
+    - Displayed clean white circular dot (`shape_white_dot.xml`) at top-right corner of unlaunched apps in both the App Drawer and Home Screen.
+    - Registered newly installed packages dynamically on `ACTION_PACKAGE_ADDED` and permanently removed them upon first user launch in `performActualAppLaunch()`.
+  - **Zero-Overhead Home Screen Notification Badges (`NotificationBadgeService.kt`, `SettingsActivity.kt`, `HomeScreenGrid.kt`, `MainActivity.kt`)**:
+    - Implemented Android standard `NotificationListenerService` with passive on-demand queries.
+    - Zero background CPU/RAM/battery drain: notification counts are evaluated only once upon reaching the Home Screen (`MainActivity.onResume()` or returning from App Drawer).
+    - Rendered modern red circle/pill badges with white bold count typography exclusively on Home Screen app icons.
+    - Provided master toggle in Settings under *Home Screen & Dock* with direct navigation to system notification listener settings.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+
 
 
 

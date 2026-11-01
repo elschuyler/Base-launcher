@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
+import org.fossify.commons.extensions.beGone
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getColoredDrawableWithColor
 import org.fossify.commons.extensions.getProperTextColor
@@ -88,6 +89,7 @@ class LaunchersAdapter(
                 binding.launcherLabel.setTextColor(textColor)
                 binding.launcherLabel.beVisibleIf(activity.config.showDrawerAppLabels)
                 binding.launcherIcon.setPadding(iconPadding, iconPadding, iconPadding, iconPadding)
+                binding.launcherNewDot.beVisibleIf(activity.config.newInstalledPackages.contains(launcher.packageName))
 
                 val isLocked = shura.home.helpers.AppLockManager.isAppLocked(launcher.packageName)
                 val key = when {
@@ -148,7 +150,13 @@ class LaunchersAdapter(
                     }
                 }
 
-                setOnClickListener { itemClick(launcher) }
+                setOnClickListener {
+                    if (activity.config.newInstalledPackages.contains(launcher.packageName)) {
+                        activity.config.removeNewInstalledPackage(launcher.packageName)
+                        binding.launcherNewDot.beGone()
+                    }
+                    itemClick(launcher)
+                }
                 setOnLongClickListener {
                     val location = IntArray(2)
                     getLocationOnScreen(location)

@@ -107,4 +107,26 @@ class Config(context: Context) : BaseConfig(context) {
     var gestureHaptics: Boolean
         get() = prefs.getBoolean(GESTURE_HAPTICS, false)
         set(value) = prefs.edit().putBoolean(GESTURE_HAPTICS, value).apply()
+
+    var showNotificationBadges: Boolean
+        get() = prefs.getBoolean(SHOW_NOTIFICATION_BADGES, false)
+        set(value) = prefs.edit().putBoolean(SHOW_NOTIFICATION_BADGES, value).apply()
+
+    var newInstalledPackages: Set<String>
+        get() = prefs.getStringSet(NEW_INSTALLED_PACKAGES, emptySet()) ?: emptySet()
+        set(value) = prefs.edit().putStringSet(NEW_INSTALLED_PACKAGES, value).apply()
+
+    fun addNewInstalledPackage(packageName: String) {
+        val current = newInstalledPackages.toMutableSet()
+        current.add(packageName)
+        newInstalledPackages = current
+    }
+
+    fun removeNewInstalledPackage(packageName: String) {
+        if (newInstalledPackages.contains(packageName)) {
+            val current = newInstalledPackages.toMutableSet()
+            current.remove(packageName)
+            newInstalledPackages = current
+        }
+    }
 }

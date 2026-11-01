@@ -5,6 +5,8 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
+import shura.home.services.NotificationBadgeService
 import androidx.activity.result.contract.ActivityResultContracts
 import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.dialogs.RadioGroupDialog
@@ -117,6 +119,7 @@ class SettingsActivity : SimpleActivity() {
         setupHomeColumnCount()
         setupDockColumnCount()
         setupShowHomeAppLabels()
+        setupNotificationBadges()
         setupDrawerColumnCount()
         setupDrawerSearchBar()
         setupOpenKeyboardOnAppDrawer()
@@ -338,6 +341,29 @@ class SettingsActivity : SimpleActivity() {
         binding.settingsShowHomeAppLabelsHolder.setOnClickListener {
             binding.settingsShowHomeAppLabels.toggle()
             config.showHomeAppLabels = binding.settingsShowHomeAppLabels.isChecked
+        }
+    }
+
+    private fun setupNotificationBadges() {
+        val hasAccess = NotificationBadgeService.isNotificationAccessGranted(this)
+        binding.settingsNotificationBadges.isChecked = config.showNotificationBadges && hasAccess
+        binding.settingsNotificationBadgesHolder.setOnClickListener {
+            val isCurrentlyChecked = binding.settingsNotificationBadges.isChecked
+            val targetState = !isCurrentlyChecked
+            if (targetState) {
+                if (!NotificationBadgeService.isNotificationAccessGranted(this)) {
+                    try {
+                        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    } catch (e: Exception) {
+                        toast(org.fossify.commons.R.string.unknown_error_occurred)
+                    }
+                }
+                config.showNotificationBadges = true
+                binding.settingsNotificationBadges.isChecked = true
+            } else {
+                config.showNotificationBadges = false
+                binding.settingsNotificationBadges.isChecked = false
+            }
         }
     }
 
