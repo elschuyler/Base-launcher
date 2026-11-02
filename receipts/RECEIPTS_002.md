@@ -281,6 +281,24 @@
 - **Any deviation from what was requested, and why**: None. Followed Path A and all user constraints precisely.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+### Entry 027
+- **Timestamp**: 2026-11-02T01:54:00-08:00
+- **One-line summary of what was requested**: Implement Option A: widen long-press popup menu from 180dp to 204dp with 4dp action button margins.
+- **Exact files touched**:
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/kotlin/shura/home/views/AppShortcutsPopupWindow.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - In `popup_app_shortcuts.xml`, updated `popup_card` `android:layout_width="204dp"` (from 180dp, +24dp / +13.3%).
+  - In `popup_app_shortcuts.xml`, set action bar buttons horizontal margins to 4dp (`android:layout_marginHorizontal="4dp"`), giving comfortable spacing across the 204dp bar.
+  - In `AppShortcutsPopupWindow.kt`, updated `lockedCardWidth = (204 * density).toInt()`, locking the layout measurement at 204dp.
+  - Updated `BLUEPRINT.md` and appended this Entry 027 to `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Built Option A exactly as agreed.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+
 
 
 

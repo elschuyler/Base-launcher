@@ -527,6 +527,13 @@
     - Provided master toggle in Settings under *Home Screen & Dock* with direct navigation to system notification listener settings.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Long-Press Popup Menu Widening to 204dp (Option A)]
+  - **Width Optimization (`popup_app_shortcuts.xml`, `AppShortcutsPopupWindow.kt`)**:
+    - Increased popup card width from 180dp to 204dp (+24dp / +13.3%), providing enhanced horizontal breathing room for multi-word shortcut labels and header titles.
+    - Updated bottom action bar buttons margin to 4dp (`android:layout_marginHorizontal="4dp"`), maintaining centered, comfortable touch targets without edge crowding.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+
 
 
 
