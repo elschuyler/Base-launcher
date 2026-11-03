@@ -298,6 +298,30 @@
 - **Any deviation from what was requested, and why**: None. Built Option A exactly as agreed.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+### Entry 028
+- **Timestamp**: 2026-11-03T08:58:00-08:00
+- **One-line summary of what was requested**: Widen long-press popup menu to 250dp; anchor app drawer popup menu flush to the pressed icon; set home screen apps and folders to have no labels by default.
+- **Exact files touched**:
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/kotlin/shura/home/views/AppShortcutsPopupWindow.kt`
+  - `/app/src/main/kotlin/shura/home/interfaces/AllAppsListener.kt`
+  - `/app/src/main/kotlin/shura/home/adapters/LaunchersAdapter.kt`
+  - `/app/src/main/kotlin/shura/home/fragments/AllAppsFragment.kt`
+  - `/app/src/main/kotlin/shura/home/activities/MainActivity.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/Config.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - In `popup_app_shortcuts.xml` and `AppShortcutsPopupWindow.kt`, updated popup width to 250dp (`lockedCardWidth = (250 * density).toInt()`) and action buttons horizontal margins to 6dp, giving complete clearance for multi-word shortcut labels and header titles.
+  - In `LaunchersAdapter.kt`, extracted the true on-screen bounding box of `binding.launcherIcon` using `getLocationOnScreen()` with padding insets, and passed it through `AllAppsListener` to `MainActivity.showHomeIconMenu()`.
+  - In `MainActivity.kt`, updated `showHomeIconMenu()` to accept `customIconRect` and assign exact anchor coordinates, enabling `AppShortcutsPopupWindow` to place the popup card flush against the drawer icon (6dp margin above or below) with the arrow pointing directly to the icon center.
+  - In `Config.kt`, updated `showHomeAppLabels` default from `true` to `false`, making newly added apps, shortcuts, and folders completely label-free by default on the home screen while preserving the optional toggle in Settings.
+  - Updated `BLUEPRINT.md` and appended this Entry 028 to `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Built exactly as agreed.
+- **Any known issue or follow-up needed**: Ready for on-device manual QA.
+
+
 
 
 

@@ -2,6 +2,7 @@ package shura.home.fragments
 
 import android.annotation.SuppressLint
 import android.graphics.Color
+import android.graphics.Rect
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
@@ -471,7 +472,12 @@ class AllAppsFragment(
         binding.noResultsPlaceholder.beVisibleIf(itemCount != null && itemCount == 0)
     }
 
-    override fun onAppLauncherLongPressed(x: Float, y: Float, appLauncher: AppLauncher) {
+    override fun onAppLauncherLongPressed(
+        x: Float,
+        y: Float,
+        appLauncher: AppLauncher,
+        iconRect: Rect?,
+    ) {
         val gridItem = HomeScreenGridItem(
             id = null,
             left = -1,
@@ -494,7 +500,7 @@ class AllAppsFragment(
             isArchived = appLauncher.isArchived
         }
 
-        activity?.showHomeIconMenu(x, y, gridItem, true)
+        activity?.showHomeIconMenu(x, y, gridItem, true, iconRect)
         ignoreTouches = true
 
         closeSearchMode()

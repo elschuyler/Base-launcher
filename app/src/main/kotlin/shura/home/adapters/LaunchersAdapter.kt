@@ -2,6 +2,7 @@ package shura.home.adapters
 
 import android.annotation.SuppressLint
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -158,12 +159,19 @@ class LaunchersAdapter(
                     itemClick(launcher)
                 }
                 setOnLongClickListener {
-                    val location = IntArray(2)
-                    getLocationOnScreen(location)
+                    val iconLocation = IntArray(2)
+                    binding.launcherIcon.getLocationOnScreen(iconLocation)
+                    val iconLeft = iconLocation[0] + binding.launcherIcon.paddingLeft
+                    val iconTop = iconLocation[1] + binding.launcherIcon.paddingTop
+                    val iconRight = iconLocation[0] + binding.launcherIcon.width - binding.launcherIcon.paddingRight
+                    val iconBottom = iconLocation[1] + binding.launcherIcon.height - binding.launcherIcon.paddingBottom
+                    val iconRect = Rect(iconLeft, iconTop, iconRight, iconBottom)
+
                     allAppsListener.onAppLauncherLongPressed(
-                        x = (location[0] + width / 2).toFloat(),
-                        y = location[1].toFloat(),
-                        appLauncher = launcher
+                        x = iconRect.exactCenterX(),
+                        y = iconRect.exactCenterY(),
+                        appLauncher = launcher,
+                        iconRect = iconRect
                     )
                     true
                 }

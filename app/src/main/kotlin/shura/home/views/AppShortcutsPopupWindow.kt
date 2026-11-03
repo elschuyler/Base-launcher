@@ -343,7 +343,7 @@ class AppShortcutsPopupWindow(
         val screenHeight = activity.realScreenSize.y
 
         val horizontalMargin = (12 * density).toInt()
-        val lockedCardWidth = (204 * density).toInt()
+        val lockedCardWidth = (250 * density).toInt()
         val maxAllowedWidth = (screenWidth - 2 * horizontalMargin).coerceAtLeast(80)
         val popupWidth = minOf(maxAllowedWidth, lockedCardWidth)
 

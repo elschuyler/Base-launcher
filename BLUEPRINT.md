@@ -533,6 +533,19 @@
     - Updated bottom action bar buttons margin to 4dp (`android:layout_marginHorizontal="4dp"`), maintaining centered, comfortable touch targets without edge crowding.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Standard Launcher Popup Width (250dp), Pixel-Perfect App Drawer Popup Anchoring, and Clean Label-Free Home Screen Default]
+  - **Popup Width Optimization (`popup_app_shortcuts.xml`, `AppShortcutsPopupWindow.kt`)**:
+    - Widened popup card to standard 250dp (~62% screen width, stock launcher benchmark), eliminating all truncation on long shortcut labels and headers.
+    - Set action bar button horizontal margins to 6dp, spacing all 6 actions evenly with generous touch targets.
+  - **App Drawer Popup Anchor Realignment (`LaunchersAdapter.kt`, `AllAppsListener.kt`, `AllAppsFragment.kt`, `MainActivity.kt`)**:
+    - Replaced inaccurate cell-top estimation with exact `binding.launcherIcon` on-screen bounding rectangle query (accounting for padding and scroll offsets).
+    - Passed real `iconRect` through `AllAppsListener` to `MainActivity.showHomeIconMenu`, anchoring the drawer popup card flush against the pressed icon (6dp margin above or below) with the arrow pointing directly to the icon center.
+  - **Clean Home Screen Default Without Labels (`Config.kt`)**:
+    - Defaulted `showHomeAppLabels` to `false` in `Config.kt` (previously `true`).
+    - Apps, shortcuts, and folders added to the home screen are label-free by default, preserving optional toggle in Settings.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+
 
 
 

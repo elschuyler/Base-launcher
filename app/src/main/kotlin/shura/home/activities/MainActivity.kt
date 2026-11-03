@@ -1262,12 +1262,13 @@ class MainActivity : SimpleActivity(), FlingListener {
         y: Float,
         gridItem: HomeScreenGridItem,
         isOnAllAppsFragment: Boolean,
+        customIconRect: Rect? = null,
     ) {
         if (gridItem.type != ITEM_TYPE_WIDGET) {
             binding.homeScreenGrid.root.hideResizeLines()
         }
         mLongPressedIcon = gridItem
-        val clickableRect = if (isOnAllAppsFragment || gridItem.type == ITEM_TYPE_WIDGET) {
+        val clickableRect = customIconRect ?: if (isOnAllAppsFragment || gridItem.type == ITEM_TYPE_WIDGET) {
             val iconSize = (realScreenSize.x / config.drawerColumnCount).toInt()
             Rect(
                 (x - iconSize / 2f).toInt(),
@@ -1279,15 +1280,8 @@ class MainActivity : SimpleActivity(), FlingListener {
             binding.homeScreenGrid.root.getClickableRect(gridItem)
         }
 
-        val anchorY = if (isOnAllAppsFragment || gridItem.type == ITEM_TYPE_WIDGET) {
-            val iconSize = realScreenSize.x / config.drawerColumnCount
-            y - iconSize / 2f
-        } else {
-            clickableRect.top.toFloat() - binding.homeScreenGrid.root.getCurrentIconSize() / 2f
-        }
-
-        binding.homeScreenPopupMenuAnchor.x = x
-        binding.homeScreenPopupMenuAnchor.y = anchorY
+        binding.homeScreenPopupMenuAnchor.x = clickableRect.exactCenterX()
+        binding.homeScreenPopupMenuAnchor.y = clickableRect.top.toFloat()
 
         if (mOpenPopupMenu == null) {
             mOpenPopupMenu = handleGridItemPopupMenu(

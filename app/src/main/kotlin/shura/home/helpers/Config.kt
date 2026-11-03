@@ -53,7 +53,7 @@ class Config(context: Context) : BaseConfig(context) {
         set(showDrawerAppLabels) = prefs.edit().putBoolean(SHOW_DRAWER_APP_LABELS, showDrawerAppLabels).apply()
 
     var showHomeAppLabels: Boolean
-        get() = prefs.getBoolean(SHOW_HOME_APP_LABELS, true)
+        get() = prefs.getBoolean(SHOW_HOME_APP_LABELS, false)
         set(showHomeAppLabels) = prefs.edit().putBoolean(SHOW_HOME_APP_LABELS, showHomeAppLabels).apply()
 
     var logKeeperEnabled: Boolean
