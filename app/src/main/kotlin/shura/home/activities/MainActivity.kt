@@ -1389,7 +1389,7 @@ class MainActivity : SimpleActivity(), FlingListener {
         binding.homeScreenPopupMenuAnchor.x = x
         binding.homeScreenPopupMenuAnchor.y =
             y - resources.getDimension(R.dimen.long_press_anchor_button_offset_y) * 2
-        val contextTheme = ContextThemeWrapper(this, getPopupMenuTheme())
+        val contextTheme = ContextThemeWrapper(this, R.style.Theme_App_PopupMenu_WhiteSky)
         PopupMenu(
             contextTheme,
             binding.homeScreenPopupMenuAnchor,

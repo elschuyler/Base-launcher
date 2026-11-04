@@ -321,6 +321,33 @@
 - **Any deviation from what was requested, and why**: None. Built exactly as agreed.
 - **Any known issue or follow-up needed**: Ready for on-device manual QA.
 
+### Entry 029
+- **Timestamp**: 2026-11-04T11:54:00-08:00
+- **One-line summary of what was requested**: Apply white and sky light blue color theme to launcher Settings, app drawer 3-dots menu, and home screen empty space long-press menu; apply dark theme to app drawer search bar; modernize home screen open folder popup container shape to standard launcher floating card UX with ambient shadow while keeping plus button.
+- **Exact files touched**:
+  - `/app/src/main/res/drawable/menu_popup_background_white_sky.xml`
+  - `/app/src/main/res/drawable/menu_item_selector_sky.xml`
+  - `/app/src/main/res/values/styles.xml`
+  - `/app/src/main/res/layout/activity_settings.xml`
+  - `/app/src/main/kotlin/shura/home/activities/MainActivity.kt`
+  - `/app/src/main/kotlin/shura/home/fragments/AllAppsFragment.kt`
+  - `/app/src/main/kotlin/shura/home/views/HomeScreenGrid.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Created `menu_popup_background_white_sky.xml` (pure white surface with 16dp rounded corners, subtle `#BAE6FD` stroke, 4dp insets) and `menu_item_selector_sky.xml` (`#E0F2FE` soft ripple).
+  - Defined `Theme.App.PopupMenu.WhiteSky` and `Widget.App.PopupMenu.WhiteSky` in `styles.xml` with `#FFFFFF` background, `#0F172A` charcoal slate typography, `#38BDF8` icon accents, and `#E0F2FE` ripples.
+  - Applied `Theme.App.PopupMenu.WhiteSky` to:
+    1. Home screen empty space long press menu (`showMainLongPressMenu` in `MainActivity.kt`).
+    2. App drawer 3-dots dropdown menu (`showDrawerMenu` in `AllAppsFragment.kt`).
+    3. Launcher Settings toolbar overflow 3-dots menu (`settings_toolbar` in `activity_settings.xml`).
+  - Implemented `setupSearchBarDarkTheme()` in `AllAppsFragment.kt` setting dark background (`Color.BLACK`), white text (`Color.WHITE`), muted hint (`#94A3B8`), and sky light blue icon tints (`#38BDF8`), seamlessly blending with the app drawer topbar and eliminating the bright white screen flash.
+  - In `HomeScreenGrid.kt`, upgraded the open folder container from a 16dp box to a 28dp rounded floating card (`folderCornerRadius = 28dp`) with layered GPU-accelerated ambient elevation drop shadow and subtle `#E2E8F0` border, preserving the title on left, (+) add button on right, and internal grid layout untouched.
+  - Updated `BLUEPRINT.md` and appended this Entry 029 to `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Built Option A and exact requested features as agreed.
+- **Any known issue or follow-up needed**: Run `compile_applet` and on-device QA.
+
 
 
 

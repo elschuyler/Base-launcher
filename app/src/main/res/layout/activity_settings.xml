@@ -17,6 +17,7 @@
             android:layout_height="?attr/actionBarSize"
             android:background="@color/color_primary"
             app:menu="@menu/menu_settings"
+            app:popupTheme="@style/Theme.App.PopupMenu.WhiteSky"
             app:title="@string/settings"
             app:titleTextAppearance="@style/AppTheme.ActionBar.TitleTextStyle" />
 

@@ -545,6 +545,23 @@
     - Apps, shortcuts, and folders added to the home screen are label-free by default, preserving optional toggle in Settings.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: White & Sky Light Blue Menus, Dark Search Bar, and Standard Launcher Folder Shape]
+  - **White & Sky Light Blue Popup Menus (`styles.xml`, `menu_popup_background_white_sky.xml`, `menu_item_selector_sky.xml`, `activity_settings.xml`, `MainActivity.kt`, `AllAppsFragment.kt`)**:
+    - Implemented dedicated `Theme.App.PopupMenu.WhiteSky` and `Widget.App.PopupMenu.WhiteSky` theme overlay with pure white surface (`#FFFFFF`), subtle sky light blue border (`#BAE6FD`), charcoal slate typography (`#0F172A`), and light sky blue ripple selector (`#E0F2FE`).
+    - Unified across all three menus:
+      1. Home Screen empty space long-press menu (`showMainLongPressMenu` in `MainActivity.kt`).
+      2. App Drawer 3-dots dropdown menu (`showDrawerMenu` in `AllAppsFragment.kt`).
+      3. Launcher Settings toolbar 3-dots overflow menu (`settings_toolbar` in `activity_settings.xml`).
+  - **App Drawer Search Bar Dark Theme (`AllAppsFragment.kt`)**:
+    - Implemented `setupSearchBarDarkTheme()` to eliminate the bright white background flash when opening search.
+    - Set search container and root background to `Color.BLACK` to integrate seamlessly with the app drawer topbar.
+    - Set search text color to `Color.WHITE`, hint text to `#94A3B8`, and tinted navigation/clear icons in sky light blue (`#38BDF8`).
+  - **Standard Launcher Open Folder Shape (`HomeScreenGrid.kt`)**:
+    - Modernized open folder popup container from sharp 16dp box to standard Android launcher floating card UX with 28dp rounded corners (`folderCornerRadius = 28dp`).
+    - Added GPU-accelerated layered ambient elevation drop shadow beneath the container for floating depth.
+    - Preserved folder title on left, (+) add button on right, and internal grid layout untouched ("Only shape").
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
 
 
 

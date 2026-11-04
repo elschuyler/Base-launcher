@@ -12,6 +12,8 @@ import android.util.AttributeSet
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import android.view.inputmethod.EditorInfo
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.widget.PopupMenu
@@ -302,9 +304,9 @@ class AllAppsFragment(
         }
 
         binding.searchBar.requireToolbar().beGone()
-        binding.searchBar.updateColors()
         binding.searchBar.setupMenu()
         binding.searchBar.toggleForceArrowBackIcon(true)
+        setupSearchBarDarkTheme()
 
         binding.searchBar.onNavigateBackClickListener = {
             closeSearchMode()
@@ -329,8 +331,32 @@ class AllAppsFragment(
         }
     }
 
+    private fun setupSearchBarDarkTheme() {
+        val darkBg = Color.BLACK
+        val skyBlue = Color.parseColor("#38BDF8")
+        val hintColor = Color.parseColor("#94A3B8")
+
+        binding.searchBar.setBackgroundColor(darkBg)
+        binding.searchBar.binding.root.setBackgroundColor(darkBg)
+        binding.searchBar.binding.topToolbarSearch.setTextColor(Color.WHITE)
+        binding.searchBar.binding.topToolbarSearch.setHintTextColor(hintColor)
+
+        fun tintChildImageViews(viewGroup: ViewGroup) {
+            for (i in 0 until viewGroup.childCount) {
+                val child = viewGroup.getChildAt(i)
+                if (child is ImageView) {
+                    child.applyColorFilter(skyBlue)
+                } else if (child is ViewGroup) {
+                    tintChildImageViews(child)
+                }
+            }
+        }
+        tintChildImageViews(binding.searchBar)
+    }
+
     fun openSearchMode() {
         binding.drawerIdleTopbar.beGone()
+        setupSearchBarDarkTheme()
         binding.searchBar.beVisible()
         binding.searchBar.focusView()
         activity?.showKeyboard(binding.searchBar.binding.topToolbarSearch)
@@ -352,7 +378,7 @@ class AllAppsFragment(
 
     private fun showDrawerMenu(anchorView: View) {
         val currentActivity = activity ?: return
-        val contextTheme = ContextThemeWrapper(currentActivity, currentActivity.getPopupMenuTheme())
+        val contextTheme = ContextThemeWrapper(currentActivity, R.style.Theme_App_PopupMenu_WhiteSky)
         PopupMenu(contextTheme, anchorView, Gravity.TOP or Gravity.END).apply {
             inflate(R.menu.menu_drawer)
 

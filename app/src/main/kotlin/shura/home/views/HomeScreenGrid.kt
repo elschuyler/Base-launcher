@@ -1699,23 +1699,44 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 pivotX = folderRect.centerX(),
                 pivotY = folderRect.centerY()
             ) {
+                val folderCornerRadius = 28f * resources.displayMetrics.density
+
+                // Ambient elevation shadow beneath folder container
+                val shadowLayers = 4
+                for (i in shadowLayers downTo 1) {
+                    val spread = i * 2f * resources.displayMetrics.density / folder.scale
+                    val shadowLayerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        color = Color.argb(10, 0, 0, 0)
+                        style = Paint.Style.FILL
+                    }
+                    val shadowLayerRect = RectF(
+                        folderRect.left - spread * 0.5f,
+                        folderRect.top + spread * 0.5f,
+                        folderRect.right + spread * 0.5f,
+                        folderRect.bottom + spread * 1.5f
+                    )
+                    val layerRadius = (folderCornerRadius + spread * 0.5f) / folder.scale
+                    canvas.drawRoundRect(shadowLayerRect, layerRadius, layerRadius, shadowLayerPaint)
+                }
+
+                // Folder card surface
                 canvas.drawRoundRect(
                     folderRect,
-                    roundedCornerRadius / folder.scale,
-                    roundedCornerRadius / folder.scale,
+                    folderCornerRadius / folder.scale,
+                    folderCornerRadius / folder.scale,
                     folderBackgroundPaint
                 )
 
                 // Subtle outline around folder popup
                 val popupBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     style = Paint.Style.STROKE
-                    strokeWidth = 1.5f * resources.displayMetrics.density / folder.scale
-                    color = Color.parseColor("#E5E7EB")
+                    strokeWidth = 1f * resources.displayMetrics.density / folder.scale
+                    color = Color.parseColor("#E2E8F0")
                 }
                 canvas.drawRoundRect(
                     folderRect,
-                    roundedCornerRadius / folder.scale,
-                    roundedCornerRadius / folder.scale,
+                    folderCornerRadius / folder.scale,
+                    folderCornerRadius / folder.scale,
                     popupBorderPaint
                 )
 
