@@ -73,20 +73,15 @@ object LogCatcher {
         }
     }
 
-    @Synchronized
+    private val logExecutor = java.util.concurrent.Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "LogCatcher-Worker").apply { isDaemon = true }
+    }
+
     fun log(tag: String, message: String, throwable: Throwable? = null) {
         if (!isLoggingEnabled()) return
 
         try {
             val now = System.currentTimeMillis()
-            val file = getActiveLogFile()
-
-            // Check if adding this will breach 2MB
-            if (file.exists() && file.length() >= MAX_LOG_SIZE_BYTES) {
-                dumpLogsToDownloadFolder(isAutoDump = true)
-                file.writeText("") // Reset active buffer after successful dump
-            }
-
             val timestampStr = dateFormat.format(Date(now))
             val sb = java.lang.StringBuilder()
             sb.append(timestampStr)
@@ -97,8 +92,19 @@ object LogCatcher {
             if (throwable != null) {
                 sb.append(throwable.stackTraceToString().trimEnd()).append("\n")
             }
+            val entryText = sb.toString()
 
-            file.appendText(sb.toString())
+            logExecutor.execute {
+                try {
+                    val file = getActiveLogFile()
+                    if (file.exists() && file.length() >= MAX_LOG_SIZE_BYTES) {
+                        dumpLogsToDownloadFolder(isAutoDump = true)
+                        file.writeText("")
+                    }
+                    file.appendText(entryText)
+                } catch (ignored: Exception) {
+                }
+            }
         } catch (ignored: Exception) {
             // Logging must never crash the host application.
         }

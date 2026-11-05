@@ -562,6 +562,30 @@
     - Preserved folder title on left, (+) add button on right, and internal grid layout untouched ("Only shape").
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Deep Core Architecture Overhaul & Lightweight Efficiency]
+  - **Unhidden Apps Drawer Desync Fix (`MainActivity.kt`, `HiddenIconsAdapter.kt`)**:
+    - Promoted `needsAppListRefresh` to companion object in `MainActivity`.
+    - Automatically flagged `needsAppListRefresh = true` and evicted `IconCache.launchers` when icons are unhidden in `HiddenIconsAdapter.unHideSelection()`, ensuring instant drawer synchronization without requiring app restart.
+  - **Clock Widget Background CPU Drain Elimination (`BuiltInClockWidgetView.kt`)**:
+    - Implemented `onWindowVisibilityChanged()` lifecycle management in `BuiltInClockWidgetView`.
+    - Automatically unregisters `ACTION_TIME_TICK` broadcast receiver when screen turns off or user switches apps; immediately catches up and re-registers when returning to the Home Screen.
+  - **Atomic File Resiliency in Gestures Manager (`ItemGestureManager.kt`)**:
+    - Migrated raw JSON file writes in `ItemGestureManager` to Android's `AtomicFile` (`android.util.AtomicFile`).
+    - Completely prevents file truncation, zero-byte corruption, and gesture loss during unexpected process terminations or power loss.
+  - **Asynchronous Non-Blocking Logging (`LogCatcher.kt`)**:
+    - Integrated single-threaded background daemon executor (`LogCatcher-Worker`) in `LogCatcher`.
+    - Offloaded all routine disk writes (`file.length()`, `dumpLogsToDownloadFolder()`, `file.appendText()`) from UI threads to background worker, eliminating UI frame drops and jank during touch interactions and gestures while preserving immediate synchronous execution for crash headers.
+  - **Zero-Allocation Canvas onDraw Optimization (`HomeScreenGrid.kt`)**:
+    - Pre-allocated reusable `folderShadowLayerPaint`, `folderPopupBorderPaint`, `folderPlusBgPaint`, `folderPlusStrokePaint`, and `folderShadowLayerRect` as member properties.
+    - Eliminated per-frame object instantiations and heap churn during 60 FPS folder opening animations.
+  - **100% On-Demand Notification Badge Counting (`NotificationBadgeService.kt`)**:
+    - Removed redundant background processing and IPC queries on `onNotificationPosted` and `onNotificationRemoved`.
+    - Badge counts are evaluated strictly on-demand when the user visits the Home Screen (`MainActivity.onResume()`).
+  - **Hardened Backup Security & Input Validation (`BackupHelper.kt`, `CustomIconManager.kt`)**:
+    - Added byte length limit (1MB max payload) and strict image bounds pre-check (`inJustDecodeBounds`, max 512x512) before decoding Base64 bitmaps in `BackupHelper.importBackup()`, preventing memory exhaustion (OOM) attacks.
+    - Added strict package name regex validation (`^[a-zA-Z0-9._]+$`) and path sanitization in `CustomIconManager.kt` to prevent path traversal and filesystem corruption.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
 
 
 

@@ -163,7 +163,6 @@ class MainActivity : SimpleActivity(), FlingListener {
     private val binding by viewBinding(ActivityMainBinding::inflate)
     val logKeeper by lazy { shura.home.helpers.LogKeeperHelper(applicationContext) }
 
-    private var needsAppListRefresh = true
     private val packageUpdateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val action = intent?.action ?: return
@@ -205,6 +204,7 @@ class MainActivity : SimpleActivity(), FlingListener {
     }
 
     companion object {
+        var needsAppListRefresh = true
         private var mLastUpEvent = 0L
         private const val ANIMATION_DURATION = 150L
         private const val APP_DRAWER_CLOSE_DELAY = 300L

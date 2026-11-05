@@ -121,6 +121,24 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
     private var newAppDotPaint: Paint
     private var newAppDotStrokePaint: Paint
 
+    private val folderShadowLayerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+    private val folderPopupBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.parseColor("#E2E8F0")
+    }
+    private val folderPlusBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#F3F4F6")
+        style = Paint.Style.FILL
+    }
+    private val folderPlusStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#1C1B1F")
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+    }
+    private val folderShadowLayerRect = RectF()
+
     var notificationBadges: Map<String, Int> = emptyMap()
         private set
 
@@ -1705,18 +1723,15 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 val shadowLayers = 4
                 for (i in shadowLayers downTo 1) {
                     val spread = i * 2f * resources.displayMetrics.density / folder.scale
-                    val shadowLayerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        color = Color.argb(10, 0, 0, 0)
-                        style = Paint.Style.FILL
-                    }
-                    val shadowLayerRect = RectF(
+                    folderShadowLayerPaint.color = Color.argb(10, 0, 0, 0)
+                    folderShadowLayerRect.set(
                         folderRect.left - spread * 0.5f,
                         folderRect.top + spread * 0.5f,
                         folderRect.right + spread * 0.5f,
                         folderRect.bottom + spread * 1.5f
                     )
                     val layerRadius = (folderCornerRadius + spread * 0.5f) / folder.scale
-                    canvas.drawRoundRect(shadowLayerRect, layerRadius, layerRadius, shadowLayerPaint)
+                    canvas.drawRoundRect(folderShadowLayerRect, layerRadius, layerRadius, folderShadowLayerPaint)
                 }
 
                 // Folder card surface
@@ -1728,16 +1743,12 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 )
 
                 // Subtle outline around folder popup
-                val popupBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    style = Paint.Style.STROKE
-                    strokeWidth = 1f * resources.displayMetrics.density / folder.scale
-                    color = Color.parseColor("#E2E8F0")
-                }
+                folderPopupBorderPaint.strokeWidth = 1f * resources.displayMetrics.density / folder.scale
                 canvas.drawRoundRect(
                     folderRect,
                     folderCornerRadius / folder.scale,
                     folderCornerRadius / folder.scale,
-                    popupBorderPaint
+                    folderPopupBorderPaint
                 )
 
                 val headerRect = folder.getHeaderRect()
@@ -1764,32 +1775,23 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 }
 
                 // (+) button on the right
-                val plusBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = Color.parseColor("#F3F4F6")
-                    style = Paint.Style.FILL
-                }
-                canvas.drawCircle(addBtnRect.centerX(), addBtnRect.centerY(), addBtnRect.width() / 2f, plusBgPaint)
+                canvas.drawCircle(addBtnRect.centerX(), addBtnRect.centerY(), addBtnRect.width() / 2f, folderPlusBgPaint)
 
-                val plusStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = Color.parseColor("#1C1B1F")
-                    style = Paint.Style.STROKE
-                    strokeWidth = 2f * resources.displayMetrics.density
-                    strokeCap = Paint.Cap.ROUND
-                }
+                folderPlusStrokePaint.strokeWidth = 2f * resources.displayMetrics.density
                 val plusArm = addBtnRect.width() * 0.26f
                 canvas.drawLine(
                     addBtnRect.centerX() - plusArm,
                     addBtnRect.centerY(),
                     addBtnRect.centerX() + plusArm,
                     addBtnRect.centerY(),
-                    plusStrokePaint
+                    folderPlusStrokePaint
                 )
                 canvas.drawLine(
                     addBtnRect.centerX(),
                     addBtnRect.centerY() - plusArm,
                     addBtnRect.centerX(),
                     addBtnRect.centerY() + plusArm,
-                    plusStrokePaint
+                    folderPlusStrokePaint
                 )
 
                 items.forEach { item ->

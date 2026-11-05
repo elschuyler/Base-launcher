@@ -74,13 +74,26 @@ class BuiltInClockWidgetView(context: Context) : MyAppWidgetHostView(context) {
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        registerTimeReceiver()
-        updateTime()
+        if (windowVisibility == VISIBLE) {
+            registerTimeReceiver()
+            updateTime()
+        }
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         unregisterTimeReceiver()
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        if (visibility == VISIBLE) {
+            updateTime()
+            registerTimeReceiver()
+            postInvalidate()
+        } else {
+            unregisterTimeReceiver()
+        }
     }
 
     private fun registerTimeReceiver() {

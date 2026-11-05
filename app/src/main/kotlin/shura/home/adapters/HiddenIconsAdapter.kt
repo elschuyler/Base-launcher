@@ -79,6 +79,8 @@ class HiddenIconsAdapter(
             val selectedItems = getSelectedItems()
             activity.hiddenIconsDB.removeHiddenIcons(selectedItems)
             hiddenIcons.removeAll(selectedItems)
+            shura.home.activities.MainActivity.needsAppListRefresh = true
+            shura.home.helpers.IconCache.clear()
 
             activity.runOnUiThread {
                 removeSelectedItems(positions)

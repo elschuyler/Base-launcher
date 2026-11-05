@@ -16,6 +16,12 @@ object CustomIconManager {
     private const val ICONS_DIR = "custom_icons"
     const val MAX_ICON_SIZE = 192
 
+    private val PACKAGE_NAME_REGEX = Regex("^[a-zA-Z0-9._]+$")
+
+    fun isValidPackageName(packageName: String): Boolean {
+        return packageName.length in 1..128 && PACKAGE_NAME_REGEX.matches(packageName) && !packageName.contains("..")
+    }
+
     private fun getIconsDir(context: Context): File {
         val dir = File(context.filesDir, ICONS_DIR)
         if (!dir.exists()) {
@@ -25,7 +31,8 @@ object CustomIconManager {
     }
 
     private fun getIconFile(context: Context, packageName: String): File {
-        val safeName = packageName.replace("/", "_") + ".png"
+        val sanitized = packageName.filter { it.isLetterOrDigit() || it == '.' || it == '_' }
+        val safeName = "${sanitized.ifEmpty { "unknown" }}.png"
         return File(getIconsDir(context), safeName)
     }
 

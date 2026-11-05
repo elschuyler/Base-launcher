@@ -230,7 +230,13 @@ object BackupHelper {
                     val bitmap = if (obj.has("icon_base64")) {
                         try {
                             val decoded = Base64.decode(obj.getString("icon_base64"), Base64.NO_WRAP)
-                            BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+                            if (decoded.size <= 1024 * 1024) {
+                                val boundsOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                                BitmapFactory.decodeByteArray(decoded, 0, decoded.size, boundsOpts)
+                                if (boundsOpts.outWidth in 1..512 && boundsOpts.outHeight in 1..512) {
+                                    BitmapFactory.decodeByteArray(decoded, 0, decoded.size)
+                                } else null
+                            } else null
                         } catch (e: Exception) {
                             null
                         }
@@ -397,12 +403,22 @@ object BackupHelper {
                 val keys = customIconsJson.keys()
                 while (keys.hasNext()) {
                     val pkgName = keys.next()
+                    if (!CustomIconManager.isValidPackageName(pkgName)) {
+                        LogCatcher.log(TAG, "Skipping invalid package name in custom_icons: $pkgName")
+                        continue
+                    }
                     try {
                         val base64Str = customIconsJson.getString(pkgName)
                         val bytes = Base64.decode(base64Str, Base64.NO_WRAP)
-                        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                        if (bitmap != null) {
-                            CustomIconManager.saveCustomIcon(context, pkgName, bitmap)
+                        if (bytes.size <= 1024 * 1024) {
+                            val boundsOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, boundsOpts)
+                            if (boundsOpts.outWidth in 1..512 && boundsOpts.outHeight in 1..512) {
+                                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                                if (bitmap != null) {
+                                    CustomIconManager.saveCustomIcon(context, pkgName, bitmap)
+                                }
+                            }
                         }
                     } catch (e: Exception) {
                         LogCatcher.log(TAG, "Failed to restore custom icon for $pkgName", e)

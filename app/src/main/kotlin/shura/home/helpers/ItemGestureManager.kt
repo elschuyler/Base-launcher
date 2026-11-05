@@ -1,6 +1,7 @@
 package shura.home.helpers
 
 import android.content.Context
+import android.util.AtomicFile
 import org.fossify.commons.helpers.ensureBackgroundThread
 import shura.home.models.HomeScreenGridItem
 import org.json.JSONObject
@@ -256,7 +257,9 @@ object ItemGestureManager {
             val file = getStorageFile(context)
             if (!file.exists()) return
 
-            val content = file.readText()
+            val atomicFile = AtomicFile(file)
+            val bytes = atomicFile.readFully()
+            val content = String(bytes, Charsets.UTF_8)
             if (content.isEmpty()) return
 
             val rootJson = JSONObject(content)
@@ -277,11 +280,23 @@ object ItemGestureManager {
         ensureBackgroundThread {
             try {
                 val file = getStorageFile(context)
+                val atomicFile = AtomicFile(file)
                 val rootJson = JSONObject()
                 for ((id, config) in configs) {
                     rootJson.put(id.toString(), config.toJsonObject())
                 }
-                file.writeText(rootJson.toString())
+                val bytes = rootJson.toString().toByteArray(Charsets.UTF_8)
+                var stream: java.io.FileOutputStream? = null
+                try {
+                    stream = atomicFile.startWrite()
+                    stream.write(bytes)
+                    atomicFile.finishWrite(stream)
+                } catch (e: Exception) {
+                    if (stream != null) {
+                        atomicFile.failWrite(stream)
+                    }
+                    throw e
+                }
             } catch (e: Exception) {
                 LogCatcher.log("ItemGestureManager", "Failed to save gesture configs", e)
             }

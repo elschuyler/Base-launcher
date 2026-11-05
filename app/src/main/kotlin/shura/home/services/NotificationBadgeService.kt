@@ -60,9 +60,6 @@ class NotificationBadgeService : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         instance = this
-        if (config.showNotificationBadges) {
-            getActiveBadgeCounts(this)
-        }
     }
 
     override fun onListenerDisconnected() {
@@ -74,16 +71,10 @@ class NotificationBadgeService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        if (!config.showNotificationBadges) return
-        sbn?.let {
-            getActiveBadgeCounts(this)
-        }
+        // Zero background processing: counts are queried purely on-demand when user visits Home Screen
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
-        if (!config.showNotificationBadges) return
-        sbn?.let {
-            getActiveBadgeCounts(this)
-        }
+        // Zero background processing: counts are queried purely on-demand when user visits Home Screen
     }
 }

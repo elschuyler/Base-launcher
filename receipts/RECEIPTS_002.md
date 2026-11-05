@@ -346,6 +346,34 @@
   - Updated `BLUEPRINT.md` and appended this Entry 029 to `receipts/RECEIPTS_002.md`.
 - **How it was verified**: Local build only (`compile_applet`).
 - **Any deviation from what was requested, and why**: None. Built Option A and exact requested features as agreed.
+- **Any known issue or follow-up needed**: Verified in local build.
+
+### Entry 030
+- **Timestamp**: 2026-11-05T00:56:00-08:00
+- **One-line summary of what was requested**: Path 2 Deep Core Architecture Overhaul: fix unhidden apps desync, stop clock widget background CPU drain, atomic writes for gestures manager, asynchronous non-blocking LogCatcher, pre-allocate onDraw paints, 100% on-demand notification badges, and harden backup stream parser and package regex validation.
+- **Exact files touched**:
+  - `/app/src/main/kotlin/shura/home/activities/MainActivity.kt`
+  - `/app/src/main/kotlin/shura/home/adapters/HiddenIconsAdapter.kt`
+  - `/app/src/main/kotlin/shura/home/views/BuiltInClockWidgetView.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/ItemGestureManager.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/LogCatcher.kt`
+  - `/app/src/main/kotlin/shura/home/views/HomeScreenGrid.kt`
+  - `/app/src/main/kotlin/shura/home/services/NotificationBadgeService.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/CustomIconManager.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/BackupHelper.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - In `MainActivity.kt` and `HiddenIconsAdapter.kt`, promoted `needsAppListRefresh` to `MainActivity.companion object` and invalidated `IconCache.launchers` upon unhiding icons in `HiddenIconsAdapter.unHideSelection()`, ensuring instant drawer synchronization without requiring app restart.
+  - In `BuiltInClockWidgetView.kt`, added `onWindowVisibilityChanged()` lifecycle management to unregister `ACTION_TIME_TICK` whenever the window is not visible (screen off or app switched), eliminating background CPU wakeups and battery drain.
+  - In `ItemGestureManager.kt`, migrated raw JSON file writes to Android's `AtomicFile` (`android.util.AtomicFile`) to guarantee zero file truncation or corrupted configs.
+  - In `LogCatcher.kt`, added a single-threaded background daemon executor (`LogCatcher-Worker`), offloading routine file operations from UI threads while keeping crash logging synchronous.
+  - In `HomeScreenGrid.kt`, pre-allocated reusable `folderShadowLayerPaint`, `folderPopupBorderPaint`, `folderPlusBgPaint`, `folderPlusStrokePaint`, and `folderShadowLayerRect` as member properties, eliminating per-frame object allocations inside `onDraw()` during 60 FPS animations.
+  - In `NotificationBadgeService.kt`, removed redundant background querying in `onNotificationPosted` and `onNotificationRemoved`, making notification badge count queries 100% on-demand when `MainActivity.onResume()` is triggered.
+  - In `BackupHelper.kt` and `CustomIconManager.kt`, added a 1MB payload ceiling and pre-decode bounds checking (`inJustDecodeBounds`, max 512x512) before decoding Base64 bitmaps in `importBackup()`, and added strict regex validation (`^[a-zA-Z0-9._]+$`) and path sanitization in `CustomIconManager`.
+  - Updated `BLUEPRINT.md` and appended this Entry 030 to `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local build only (`compile_applet`).
+- **Any deviation from what was requested, and why**: None. Built Path 2 Deep Core Architecture Overhaul exactly as agreed.
 - **Any known issue or follow-up needed**: Run `compile_applet` and on-device QA.
 
 
