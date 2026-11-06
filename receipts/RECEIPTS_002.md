@@ -418,6 +418,21 @@
 - **Any deviation from what was requested, and why**: None. Implemented exactly the full stability and on-demand architecture package agreed upon during discussion.
 - **Any known issue or follow-up needed**: Run on-device verification.
 
+## Entry 033
+- **Timestamp**: 2026-11-06T11:13:00-08:00
+- **Summary**: Implemented onTrimMemory memory pressure cache eviction in MainActivity to protect low-RAM devices against OOM.
+- **Exact files touched**:
+  - `/app/src/main/kotlin/shura/home/activities/MainActivity.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - Overrode `onTrimMemory(level: Int)` in `MainActivity.kt`.
+  - Configured automatic eviction of `IconCache.clear()` whenever `level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW` or `level == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN`, freeing icon bitmap memory during background app launches or OS memory pressure.
+  - Updated `BLUEPRINT.md` and appended this Entry 033 to `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local compilation via `compile_applet`.
+- **Any deviation from what was requested, and why**: None. Implemented the identified low-memory consideration.
+- **Any known issue or follow-up needed**: Run on-device QA.
+
 
 
 

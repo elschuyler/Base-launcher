@@ -612,6 +612,8 @@
     - Implemented `AppWidget.loadPreview(context)` to load preview bitmaps strictly on-demand when widget items scroll into view in `WidgetsAdapter`, reducing widget drawer opening memory consumption by 50MB–100MB+ and preventing OOM crashes.
   - **Hardened Shortcut Intent Querying (`WidgetsFragment.kt`)**:
     - Added strict `.filter { it.activityInfo != null && it.activityInfo.exported }` check when querying `ACTION_CREATE_SHORTCUT`, preventing `SecurityException` on strict OEM ROMs.
+  - **Low-Memory Pressure Cache Eviction (`MainActivity.kt`)**:
+    - Implemented `onTrimMemory(level)` in `MainActivity` to automatically evict `IconCache` whenever the system enters `TRIM_MEMORY_RUNNING_LOW` or `TRIM_MEMORY_UI_HIDDEN`, providing resilient OOM protection on low-RAM (2GB–3GB) Android devices.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
 
