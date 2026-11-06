@@ -131,8 +131,6 @@ class WidgetsFragment(context: Context, attributeSet: AttributeSet) :
                 val appTitle = appMetadata.appTitle
                 val appIcon = appMetadata.appIcon
                 val widgetTitle = info.loadLabel(packageManager)
-                val widgetPreviewImage =
-                    info.loadPreviewImage(context, resources.displayMetrics.densityDpi) ?: appIcon
                 val cellSize = context.getInitialCellSize(info, info.minWidth, info.minHeight)
                 val widthCells = cellSize.width
                 val heightCells = cellSize.height
@@ -143,7 +141,7 @@ class WidgetsFragment(context: Context, attributeSet: AttributeSet) :
                         appTitle = appTitle,
                         appIcon = appIcon,
                         widgetTitle = widgetTitle,
-                        widgetPreviewImage = widgetPreviewImage,
+                        widgetPreviewImage = null,
                         widthCells = widthCells,
                         heightCells = heightCells,
                         isShortcut = false,
@@ -158,6 +156,7 @@ class WidgetsFragment(context: Context, attributeSet: AttributeSet) :
             val intent = Intent(Intent.ACTION_CREATE_SHORTCUT, null)
             val list =
                 packageManager.queryIntentActivities(intent, PackageManager.PERMISSION_GRANTED)
+                    .filter { it.activityInfo != null && it.activityInfo.exported }
             for (info in list) {
                 val componentInfo = info.activityInfo.applicationInfo
                 val appTitle = componentInfo.loadLabel(packageManager).toString()
@@ -165,36 +164,31 @@ class WidgetsFragment(context: Context, attributeSet: AttributeSet) :
                 val appMetadata = getAppMetadataFromPackage(appPackageName) ?: continue
                 val appIcon = appMetadata.appIcon
                 val widgetTitle = info.loadLabel(packageManager).toString()
-                val widgetPreviewImage = packageManager.getDrawable(
-                    componentInfo.packageName,
-                    info.iconResource,
-                    componentInfo
-                )
                 val widget = AppWidget(
                     appPackageName = appPackageName,
                     appTitle = appTitle,
                     appIcon = appIcon,
                     widgetTitle = widgetTitle,
-                    widgetPreviewImage = widgetPreviewImage,
+                    widgetPreviewImage = null,
                     widthCells = 0,
                     heightCells = 0,
                     isShortcut = true,
                     className = "",
                     providerInfo = null,
-                    activityInfo = info.activityInfo
+                    activityInfo = info.activityInfo,
+                    iconResource = info.iconResource
                 )
                 appWidgets.add(widget)
             }
 
             // Add built-in Digital Clock (5x2) widget
-            val clockPreview = ContextCompat.getDrawable(context, R.drawable.ic_clock_widget_preview)
             val clockAppIcon = ContextCompat.getDrawable(context, R.mipmap.ic_launcher)
             val clockWidget = AppWidget(
                 appPackageName = context.packageName,
                 appTitle = context.getString(R.string.clock),
                 appIcon = clockAppIcon,
                 widgetTitle = context.getString(R.string.clock_widget_title),
-                widgetPreviewImage = clockPreview,
+                widgetPreviewImage = null,
                 widthCells = 4,
                 heightCells = 2,
                 isShortcut = false,

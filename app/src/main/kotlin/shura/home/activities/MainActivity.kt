@@ -46,6 +46,8 @@ import android.view.animation.DecelerateInterpolator
 import android.view.WindowManager
 import android.widget.PopupWindow
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.net.toUri
@@ -79,7 +81,6 @@ import shura.home.databinding.ActivityMainBinding
 import shura.home.databinding.AllAppsFragmentBinding
 import shura.home.databinding.WidgetsFragmentBinding
 import android.graphics.drawable.BitmapDrawable
-import androidx.core.content.ContextCompat
 import shura.home.adapters.ShortcutItem
 import shura.home.dialogs.AddAppDialog
 import shura.home.dialogs.AddShortcutDialog
@@ -163,6 +164,14 @@ class MainActivity : SimpleActivity(), FlingListener {
     private val binding by viewBinding(ActivityMainBinding::inflate)
     val logKeeper by lazy { shura.home.helpers.LogKeeperHelper(applicationContext) }
 
+    private val packageUpdateDebounceHandler = Handler(Looper.getMainLooper())
+    private val packageUpdateDebounceRunnable = Runnable {
+        needsAppListRefresh = true
+        ensureBackgroundThread {
+            refreshLaunchers()
+        }
+    }
+
     private val packageUpdateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val action = intent?.action ?: return
@@ -179,10 +188,8 @@ class MainActivity : SimpleActivity(), FlingListener {
                     config.removeNewInstalledPackage(packageName)
                 }
             }
-            needsAppListRefresh = true
-            ensureBackgroundThread {
-                refreshLaunchers()
-            }
+            packageUpdateDebounceHandler.removeCallbacks(packageUpdateDebounceRunnable)
+            packageUpdateDebounceHandler.postDelayed(packageUpdateDebounceRunnable, 500)
         }
     }
 
@@ -294,7 +301,12 @@ class MainActivity : SimpleActivity(), FlingListener {
             addAction(Intent.ACTION_PACKAGE_REPLACED)
             addDataScheme("package")
         }
-        registerReceiver(packageUpdateReceiver, packageFilter)
+        ContextCompat.registerReceiver(
+            this,
+            packageUpdateReceiver,
+            packageFilter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
     }
 
     private fun setupWallpaperColorListener() {
@@ -428,6 +440,7 @@ class MainActivity : SimpleActivity(), FlingListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        packageUpdateDebounceHandler.removeCallbacksAndMessages(null)
         try {
             unregisterReceiver(packageUpdateReceiver)
         } catch (e: Exception) {
@@ -509,14 +522,14 @@ class MainActivity : SimpleActivity(), FlingListener {
                     }
 
                     if (!handled) {
-                        val shortcutIntent = resultData.getParcelableExtra<Intent>(Intent.EXTRA_SHORTCUT_INTENT)
+                        val shortcutIntent = IntentCompat.getParcelableExtra(resultData, Intent.EXTRA_SHORTCUT_INTENT, Intent::class.java)
                         val label = resultData.getStringExtra(Intent.EXTRA_SHORTCUT_NAME) ?: ""
                         var iconDrawable: Drawable? = null
-                        val bitmap = resultData.getParcelableExtra<Bitmap>(Intent.EXTRA_SHORTCUT_ICON)
+                        val bitmap = IntentCompat.getParcelableExtra(resultData, Intent.EXTRA_SHORTCUT_ICON, Bitmap::class.java)
                         if (bitmap != null) {
                             iconDrawable = BitmapDrawable(resources, bitmap)
                         } else {
-                            val iconRes = resultData.getParcelableExtra<Intent.ShortcutIconResource>(Intent.EXTRA_SHORTCUT_ICON_RESOURCE)
+                            val iconRes = IntentCompat.getParcelableExtra(resultData, Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource::class.java)
                             if (iconRes != null) {
                                 try {
                                     val foreignResources = packageManager.getResourcesForApplication(iconRes.packageName)
@@ -720,16 +733,17 @@ class MainActivity : SimpleActivity(), FlingListener {
                 )
 
                 runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
                     binding.homeScreenGrid.root.skipToPage(page)
-                }
-                // delay showing the shortcut both to let the user see adding it in realtime and hackily avoid concurrent modification exception at HomeScreenGrid
-                Thread.sleep(2000)
-
-                try {
-                    item.accept()
-                    binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
-                } catch (e: IllegalStateException) {
-                    logKeeper.log("MainActivity", "Pin shortcut request accept() failed", e)
+                    binding.root.postDelayed({
+                        if (isFinishing || isDestroyed) return@postDelayed
+                        try {
+                            item.accept()
+                            binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
+                        } catch (e: IllegalStateException) {
+                            logKeeper.log("MainActivity", "Pin shortcut request accept() failed", e)
+                        }
+                    }, 300)
                 }
             }
         }
@@ -1368,12 +1382,13 @@ class MainActivity : SimpleActivity(), FlingListener {
             )
 
             runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
                 binding.homeScreenGrid.root.skipToPage(page)
-            }
-            Thread.sleep(300)
-            binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
-            runOnUiThread {
-                toast(R.string.shortcut_pinned)
+                binding.root.postDelayed({
+                    if (isFinishing || isDestroyed) return@postDelayed
+                    binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
+                    toast(R.string.shortcut_pinned)
+                }, 300)
             }
         }
     }

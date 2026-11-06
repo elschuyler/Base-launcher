@@ -100,7 +100,7 @@ class WidgetsAdapter(
             }
 
             Glide.with(activity)
-                .load(widget.widgetPreviewImage)
+                .load(widget.loadPreview(activity))
                 .into(widgetPreview.widgetImage)
 
             widgetPreview.root.setOnClickListener { itemClick() }

@@ -103,7 +103,12 @@ class BuiltInClockWidgetView(context: Context) : MyAppWidgetHostView(context) {
                 addAction(Intent.ACTION_TIME_CHANGED)
                 addAction(Intent.ACTION_TIMEZONE_CHANGED)
             }
-            context.registerReceiver(timeReceiver, filter)
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                timeReceiver,
+                filter,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            )
             isReceiverRegistered = true
         }
     }

@@ -3,6 +3,7 @@ package shura.home.fragments
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.Rect
+import android.graphics.drawable.GradientDrawable
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
@@ -336,11 +337,29 @@ class AllAppsFragment(
         val skyBlue = Color.parseColor("#38BDF8")
         val hintColor = Color.parseColor("#94A3B8")
 
+        // 1. Ensure all outer containers are seamless pure Black matching the app drawer topbar
+        binding.drawerTopbarContainer.setBackgroundColor(darkBg)
         binding.searchBar.setBackgroundColor(darkBg)
         binding.searchBar.binding.root.setBackgroundColor(darkBg)
+        binding.searchBar.binding.searchBarContainer.setBackgroundColor(darkBg)
+
+        // 2. Style the type input capsule (toolbarContainer) with slightly grey surface (#1E2229) and rounded pill shape
+        val pillRadius = 20f * resources.displayMetrics.density
+        val strokeWidth = (0.8f * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        val inputPillDrawable = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = pillRadius
+            setColor(Color.parseColor("#1E2229"))
+            setStroke(strokeWidth, Color.parseColor("#334155"))
+        }
+        binding.searchBar.binding.toolbarContainer.background = inputPillDrawable
+
+        // 3. Style text and internal toolbar
+        binding.searchBar.binding.topToolbar.setBackgroundColor(Color.TRANSPARENT)
         binding.searchBar.binding.topToolbarSearch.setTextColor(Color.WHITE)
         binding.searchBar.binding.topToolbarSearch.setHintTextColor(hintColor)
 
+        // 4. Tint all icons inside the search bar (search icon, back arrow, clear button) with sky light blue
         fun tintChildImageViews(viewGroup: ViewGroup) {
             for (i in 0 until viewGroup.childCount) {
                 val child = viewGroup.getChildAt(i)
