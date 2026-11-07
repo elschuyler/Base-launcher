@@ -43,7 +43,7 @@ val Context.lockedAppsDB: LockedAppsDao
 val Context.roleManager: RoleManager
     get() = getSystemService(RoleManager::class.java)
 
-fun Context.getDrawableForPackageName(packageName: String): Drawable? {
+fun Context.getDrawableForPackageName(packageName: String, activityName: String? = null): Drawable? {
     val customIcon = shura.home.helpers.CustomIconManager.getCustomIcon(this, packageName)
     if (customIcon != null) {
         return customIcon
@@ -53,10 +53,23 @@ fun Context.getDrawableForPackageName(packageName: String): Drawable? {
     try {
         // try getting the properly colored launcher icons
         val launcher = getSystemService(Context.LAUNCHER_APPS_SERVICE) as LauncherApps
-        val activityList = launcher.getActivityList(packageName, Process.myUserHandle())[0]
-        drawable = activityList.getBadgedIcon(0)
+        val activityList = launcher.getActivityList(packageName, Process.myUserHandle())
+        val matchingActivity = if (!activityName.isNullOrEmpty()) {
+            activityList.firstOrNull { it.componentName.className == activityName } ?: activityList.firstOrNull()
+        } else {
+            activityList.firstOrNull()
+        }
+        drawable = matchingActivity?.getBadgedIcon(0)
     } catch (e: Exception) {
     } catch (e: Error) {
+    }
+
+    if (drawable == null && !activityName.isNullOrEmpty()) {
+        drawable = try {
+            packageManager.getActivityIcon(android.content.ComponentName(packageName, activityName))
+        } catch (ignored: Exception) {
+            null
+        }
     }
 
     if (drawable == null) {

@@ -114,9 +114,13 @@ class LaunchersAdapter(
                     binding.launcherIcon.tag = key
 
                     ensureBackgroundThread {
-                        var rawDrawable = activity.getDrawableForPackageName(launcher.packageName)
+                        var rawDrawable = activity.getDrawableForPackageName(launcher.packageName, launcher.activityName)
                             ?: try {
-                                activity.packageManager.getApplicationIcon(launcher.packageName)
+                                if (launcher.activityName.isNotEmpty()) {
+                                    activity.packageManager.getActivityIcon(android.content.ComponentName(launcher.packageName, launcher.activityName))
+                                } else {
+                                    activity.packageManager.getApplicationIcon(launcher.packageName)
+                                }
                             } catch (e: Exception) {
                                 null
                             }

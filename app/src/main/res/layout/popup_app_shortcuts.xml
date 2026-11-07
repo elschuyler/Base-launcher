@@ -37,12 +37,12 @@
             <RelativeLayout
                 android:id="@+id/popup_header"
                 android:layout_width="match_parent"
-                android:layout_height="28dp"
+                android:layout_height="32dp"
                 android:gravity="center_vertical"
-                android:paddingStart="8dp"
-                android:paddingTop="2dp"
-                android:paddingEnd="6dp"
-                android:paddingBottom="2dp">
+                android:paddingStart="10dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="3dp">
 
                 <TextView
                     android:id="@+id/popup_app_title"
@@ -54,7 +54,7 @@
                     android:ellipsize="end"
                     android:singleLine="true"
                     android:textColor="#FFFFFF"
-                    android:textSize="13sp"
+                    android:textSize="14.5sp"
                     android:textStyle="bold" />
 
                 <ImageView

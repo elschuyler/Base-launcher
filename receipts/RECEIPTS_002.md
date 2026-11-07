@@ -433,6 +433,30 @@
 - **Any deviation from what was requested, and why**: None. Implemented the identified low-memory consideration.
 - **Any known issue or follow-up needed**: Run on-device QA.
 
+## Entry 034
+- **Timestamp**: 2026-11-07T10:06:00-08:00
+- **Summary**: Enlarged popup menu text size to 15sp, made folder popup background slightly translucent white (~90%), anchored folder popup corner/edge to tap location, and added activity-specific icon resolution for Phone and Call.
+- **Exact files touched**:
+  - `/app/src/main/res/layout/item_popup_shortcut.xml`
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/res/values/styles.xml`
+  - `/app/src/main/kotlin/shura/home/views/HomeScreenGrid.kt`
+  - `/app/src/main/kotlin/shura/home/extensions/Context.kt`
+  - `/app/src/main/kotlin/shura/home/adapters/LaunchersAdapter.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - In `item_popup_shortcut.xml`, increased shortcut label text size from `12sp` to `15sp`, row minimum height from `28dp` to `36dp`, padding, and icon size from `16dp` to `20dp`.
+  - In `popup_app_shortcuts.xml`, increased header title text size to `14.5sp` and height to `32dp`.
+  - In `styles.xml`, added `TextAppearance.App.PopupMenu.Large` with `15sp` text size to `Theme.App.PopupMenu.WhiteSky`.
+  - In `HomeScreenGrid.kt`, updated `folderBackgroundPaint.color` to `Color.argb(230, 255, 255, 255)` for a sleek translucent glass white surface.
+  - In `HomeScreenGrid.kt`, updated `Folder.getDrawingRect()` so the popup anchors its corner/edge to the tapped folder location instead of centering over the user's tap.
+  - In `Context.kt`, `LaunchersAdapter.kt`, and `HomeScreenGrid.kt`, updated `getDrawableForPackageName` to take `activityName`, disambiguating multiple launcher activities in the same package so Phone and Call each display their distinct, correct icons.
+  - Updated `BLUEPRINT.md` and appended this Entry 034 to `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local compilation via `compile_applet`.
+- **Any deviation from what was requested, and why**: None. Implemented all 4 items exactly as finalized in the discussion.
+- **Any known issue or follow-up needed**: Run on-device QA.
+
 
 
 

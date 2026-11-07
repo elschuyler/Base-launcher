@@ -238,7 +238,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         }
 
         folderBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
+            color = Color.argb(230, 255, 255, 255) // ~90% opacity translucent white
             style = Paint.Style.FILL
         }
 
@@ -321,7 +321,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                     var rawDrawable = if (item.icon != null) {
                         item.icon?.toDrawable(context.resources)
                     } else {
-                        context.getDrawableForPackageName(item.packageName)
+                        context.getDrawableForPackageName(item.packageName, item.activityName)
                     }
                     if (rawDrawable == null && android.os.Build.VERSION.SDK_INT >= 35) {
                         rawDrawable = try {
@@ -614,7 +614,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
                 draggedItem!!.drawable = draggedGridItem.toFolder().generateDrawable()
             } else {
                 draggedItem!!.drawable =
-                    context.getDrawableForPackageName(draggedGridItem.packageName)
+                    context.getDrawableForPackageName(draggedGridItem.packageName, draggedGridItem.activityName)
             }
         }
 
@@ -2733,26 +2733,45 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             val cellSize = getCellSize()
             val gap = getGapSize()
             val cell = cells[item.getTopLeft(rowCount)] ?: return RectF(0f, 0f, 0f, 0f)
-            val centerX = sideMargins.left + cell.centerX()
-            val centerY = sideMargins.top + cell.centerY()
             val folderDialogWidth =
                 columnsCount * cellSize + 2 * folderPadding + (columnsCount - 1) * gap
             val folderDialogHeight =
                 rowsCount * cellSize + 3 * folderPadding + headerHeight + (rowsCount - 1) * gap
-            var folderDialogTop = centerY - folderDialogHeight / 2
-            var folderDialogLeft = centerX - folderDialogWidth / 2
 
+            val cellLeftWithMargin = sideMargins.left + cell.left.toFloat()
+            val cellRightWithMargin = sideMargins.left + cell.right.toFloat()
+            val cellTopWithMargin = sideMargins.top + cell.top.toFloat()
+            val cellBottomWithMargin = sideMargins.top + cell.bottom.toFloat()
+
+            val gridMiddleY = (top + sideMargins.top + bottom - sideMargins.bottom) / 2f
+            val gridMiddleX = (left + sideMargins.left + right - sideMargins.right) / 2f
+
+            // Vertical: If folder is in the bottom half of grid, open above folder; if in top half, open below folder
+            var folderDialogTop = if (cellTopWithMargin >= gridMiddleY) {
+                cellTopWithMargin - folderDialogHeight - gap
+            } else {
+                cellBottomWithMargin + gap
+            }
+
+            // Horizontal: Anchor corner of popup to folder tap (left corner if on left side, right corner if on right side)
+            var folderDialogLeft = if (cellLeftWithMargin <= gridMiddleX) {
+                cellLeftWithMargin
+            } else {
+                cellRightWithMargin - folderDialogWidth
+            }
+
+            // Safety boundary clamp to keep popup within screen margins
             if (folderDialogLeft < left + sideMargins.left) {
-                folderDialogLeft += left + sideMargins.left - folderDialogLeft
+                folderDialogLeft = (left + sideMargins.left).toFloat()
             }
             if (folderDialogLeft + folderDialogWidth > right - sideMargins.right) {
-                folderDialogLeft -= folderDialogLeft + folderDialogWidth - (right - sideMargins.right)
+                folderDialogLeft = (right - sideMargins.right - folderDialogWidth).toFloat()
             }
             if (folderDialogTop < top + sideMargins.top) {
-                folderDialogTop += top + sideMargins.top - folderDialogTop
+                folderDialogTop = (top + sideMargins.top).toFloat()
             }
             if (folderDialogTop + folderDialogHeight > bottom - sideMargins.bottom) {
-                folderDialogTop -= folderDialogTop + folderDialogHeight - (bottom - sideMargins.bottom)
+                folderDialogTop = (bottom - sideMargins.bottom - folderDialogHeight).toFloat()
             }
 
             return RectF(

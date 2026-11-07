@@ -616,6 +616,20 @@
     - Implemented `onTrimMemory(level)` in `MainActivity` to automatically evict `IconCache` whenever the system enters `TRIM_MEMORY_RUNNING_LOW` or `TRIM_MEMORY_UI_HIDDEN`, providing resilient OOM protection on low-RAM (2GB–3GB) Android devices.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Standard Launcher UX Polish, Translucent Folder & Activity-Specific Icon Resolution]
+  - **Enlarged Popup Menu Items & Header Typography (`item_popup_shortcut.xml`, `popup_app_shortcuts.xml`, `styles.xml`)**:
+    - Increased shortcut items text size from `12sp` to `15sp` with comfortable `36dp` row height and `20dp` icon size.
+    - Increased popup header title to `14.5sp` with `32dp` header height.
+    - Added `TextAppearance.App.PopupMenu.Large` (15sp) to `Theme.App.PopupMenu.WhiteSky` for standard launcher readability and touch ergonomics.
+  - **Slightly Translucent Folder Popup Surface (`HomeScreenGrid.kt`)**:
+    - Updated `folderBackgroundPaint.color` from 100% solid white to slightly translucent white (`Color.argb(230, 255, 255, 255)`), allowing wallpaper colors to subtly glow through while retaining sharp foreground contrast and layered drop shadow.
+  - **Tapped Folder Corner/Edge Anchoring (`HomeScreenGrid.kt`)**:
+    - Refactored `Folder.getDrawingRect()` so the popup anchors its corner/edge relative to the tapped folder location (opens above when tapped in bottom half, below when in top half; anchors left or right corner to the folder cell) rather than centering over the user's finger.
+  - **Activity-Specific Icon Disambiguation (`Context.kt`, `LaunchersAdapter.kt`, `HomeScreenGrid.kt`)**:
+    - Enhanced `getDrawableForPackageName` to accept an optional `activityName` parameter, resolving the specific `LauncherActivityInfo` or `packageManager.getActivityIcon` for apps providing multiple activities under the same package.
+    - Completely fixes the issue where Phone and Call (or separate activities in the same package) showed identical icons, correctly giving each its unique launcher icon.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
 
 
 
