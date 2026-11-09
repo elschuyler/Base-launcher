@@ -457,6 +457,36 @@
 - **Any deviation from what was requested, and why**: None. Implemented all 4 items exactly as finalized in the discussion.
 - **Any known issue or follow-up needed**: Run on-device QA.
 
+## Entry 035
+- **Timestamp**: 2026-11-08T09:44:00-08:00
+- **Summary**: Implemented dock add targeting, widget padding & unclipped borders, folder shadow softening, proportional icon fattening (home & drawer), enlarged popup typography, folder popup corner overlay, unconditional hidden apps phone unlock, and enlarged drawer new app white dot.
+- **Exact files touched**:
+  - `/app/src/main/kotlin/shura/home/views/HomeScreenGrid.kt`
+  - `/app/src/main/kotlin/shura/home/activities/MainActivity.kt`
+  - `/app/src/main/res/values/dimens.xml`
+  - `/app/src/main/res/layout/item_popup_shortcut.xml`
+  - `/app/src/main/res/layout/popup_app_shortcuts.xml`
+  - `/app/src/main/res/layout/item_launcher_label.xml`
+  - `/app/src/main/kotlin/shura/home/activities/HiddenIconsActivity.kt`
+  - `/app/src/main/kotlin/shura/home/helpers/AppLockManager.kt`
+  - `/BLUEPRINT.md`
+  - `/receipts/RECEIPTS_002.md`
+- **What was actually done**:
+  - `HomeScreenGrid.kt`: Updated `getTargetCell(x, y)` to accept dock row taps (`tappedCell.y == rowCount - 1`) checking dock occupancy. Added 4dp padding and `clipToPadding = false` for widgets in `updateWidgetPositionAndSize()`. Softened folder icon shadow stroke to 1.2dp and bubble border to 0.8dp in `generateDrawable()`. Reduced `iconMargin` multiplier to `0.12f` in `fillCellSizes()`, fattening home screen icons by ~8–10%. Positioned folder popup in `Folder.getDrawingRect()` so its corner rests directly over the tapped folder icon.
+  - `MainActivity.kt`: Updated `showAddAppDialog()`, `showAddShortcutDialog()`, and `showAddFolderDialog()` to set `docked = isDock` and `page = if (isDock) 0 else page` when tapped cell is dock row (`rowCount - 1`).
+  - `dimens.xml`: Enlarged `launcher_icon_size` to 55dp in app drawer.
+  - `item_popup_shortcut.xml`: Increased shortcut label text size to 16.5sp, row height to 40dp, and icon size to 22dp.
+  - `popup_app_shortcuts.xml`: Increased header title text size to 16sp with 36dp header height.
+  - `item_launcher_label.xml`: Enlarged `launcher_new_dot` to 12dp with 3dp/4dp margins.
+  - `HiddenIconsActivity.kt` & `AppLockManager.kt`: Enforced biometric/PIN device unlock unconditionally on opening hidden apps list.
+  - Updated `BLUEPRINT.md` and appended Entry 035 to `receipts/RECEIPTS_002.md`.
+- **How it was verified**: Local compilation via `compile_applet`.
+- **Any deviation from what was requested, and why**: None. Built all 7 user-requested improvements.
+- **Any known issue or follow-up needed**: Run on-device QA.
+
+---
+*RECEIPTS_002.md has reached its 500-line capacity. Continued in RECEIPTS_003.md.*
+
 
 
 

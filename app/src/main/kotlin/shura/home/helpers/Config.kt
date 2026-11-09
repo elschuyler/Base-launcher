@@ -112,6 +112,10 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(SHOW_NOTIFICATION_BADGES, false)
         set(value) = prefs.edit().putBoolean(SHOW_NOTIFICATION_BADGES, value).apply()
 
+    var drawerUseCustomWallpaper: Boolean
+        get() = prefs.getBoolean(DRAWER_USE_CUSTOM_WALLPAPER, false)
+        set(value) = prefs.edit().putBoolean(DRAWER_USE_CUSTOM_WALLPAPER, value).apply()
+
     var newInstalledPackages: Set<String>
         get() = prefs.getStringSet(NEW_INSTALLED_PACKAGES, emptySet()) ?: emptySet()
         set(value) = prefs.edit().putStringSet(NEW_INSTALLED_PACKAGES, value).apply()

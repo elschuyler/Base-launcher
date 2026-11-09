@@ -121,6 +121,7 @@ object AppLockManager {
         activity: FragmentActivity,
         packageName: String,
         appTitle: String,
+        onError: (() -> Unit)? = null,
         onSuccess: () -> Unit
     ) {
         val config = activity.config
@@ -136,6 +137,8 @@ object AppLockManager {
                 if (success) {
                     recordUnlock(packageName)
                     onSuccess()
+                } else {
+                    onError?.invoke()
                 }
             }
             return
@@ -157,6 +160,7 @@ object AppLockManager {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
                     LogCatcher.log("AppLock", "Authentication error ($errorCode) for $packageName")
+                    onError?.invoke()
                 }
 
                 override fun onAuthenticationFailed() {
@@ -191,6 +195,8 @@ object AppLockManager {
                     if (success) {
                         recordUnlock(packageName)
                         onSuccess()
+                    } else {
+                        onError?.invoke()
                     }
                 }
             } else {

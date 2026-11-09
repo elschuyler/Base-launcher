@@ -26,17 +26,19 @@ class HiddenIconsActivity : SimpleActivity(), RefreshRecyclerViewListener {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
-        if (config.isAppLockEnabled && config.appLockProtectHiddenApps && !isAuthenticated) {
+        if (!isAuthenticated) {
             AppLockManager.authenticateAndLaunch(
                 activity = this,
                 packageName = packageName,
-                appTitle = getString(shura.home.R.string.hidden_icons)
+                appTitle = getString(shura.home.R.string.hidden_icons),
+                onError = {
+                    finish()
+                }
             ) {
                 isAuthenticated = true
                 initActivity()
             }
         } else {
-            isAuthenticated = true
             initActivity()
         }
     }

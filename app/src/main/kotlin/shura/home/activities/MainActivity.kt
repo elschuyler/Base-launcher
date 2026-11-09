@@ -1,6 +1,7 @@
 package shura.home.activities
 
 import android.animation.ObjectAnimator
+import android.view.animation.PathInterpolator
 import android.annotation.SuppressLint
 import android.app.WallpaperManager
 import android.app.WallpaperManager.OnColorsChangedListener
@@ -207,6 +208,14 @@ class MainActivity : SimpleActivity(), FlingListener {
             mPickImageLauncher.launch("image/*")
         } catch (e: Exception) {
             toast(org.fossify.commons.R.string.unknown_error_occurred)
+        }
+    }
+
+    private val mPickWallpaperLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            shura.home.helpers.WallpaperHelper.showWallpaperTargetDialog(this, uri) {
+                binding.allAppsFragment.root.setupViews()
+            }
         }
     }
 
@@ -640,7 +649,11 @@ class MainActivity : SimpleActivity(), FlingListener {
                                 a = max(0f, newY), b = mScreenHeight.toFloat()
                             )
                             binding.allAppsFragment.root.y = clampedY
-                            binding.homeScreenGrid.root.alpha = (clampedY / mScreenHeight.toFloat()).coerceIn(0f, 1f)
+                            val progress = (1f - (clampedY / mScreenHeight.toFloat())).coerceIn(0f, 1f)
+                            binding.homeScreenGrid.root.alpha = (1f - (progress * 1.05f)).coerceIn(0f, 1f)
+                            val scale = 1f - (progress * 0.06f)
+                            binding.homeScreenGrid.root.scaleX = scale
+                            binding.homeScreenGrid.root.scaleY = scale
                         }
                     } else if (abs(diffX) > abs(diffY) && !mIgnoreXMoveEvents) {
                         val hasHorizontalGesture = mTouchDownItem != null && ItemGestureManager.hasHorizontalGesture(this, mTouchDownItem!!)
@@ -839,9 +852,10 @@ class MainActivity : SimpleActivity(), FlingListener {
     }
 
     private fun showFragment(fragment: ViewBinding, animationDuration: Long = ANIMATION_DURATION) {
+        val fluidInterpolator = PathInterpolator(0.2f, 0f, 0f, 1f)
         ObjectAnimator.ofFloat(fragment.root, "y", 0f).apply {
             duration = animationDuration
-            interpolator = DecelerateInterpolator()
+            interpolator = fluidInterpolator
             start()
         }
 
@@ -856,7 +870,17 @@ class MainActivity : SimpleActivity(), FlingListener {
         if (fragment is AllAppsFragmentBinding) {
             ObjectAnimator.ofFloat(binding.homeScreenGrid.root, "alpha", 0f).apply {
                 duration = animationDuration
-                interpolator = DecelerateInterpolator()
+                interpolator = fluidInterpolator
+                start()
+            }
+            ObjectAnimator.ofFloat(binding.homeScreenGrid.root, "scaleX", 0.94f).apply {
+                duration = animationDuration
+                interpolator = fluidInterpolator
+                start()
+            }
+            ObjectAnimator.ofFloat(binding.homeScreenGrid.root, "scaleY", 0.94f).apply {
+                duration = animationDuration
+                interpolator = fluidInterpolator
                 start()
             }
             updateStatusBarIcons(Color.BLACK)
@@ -884,9 +908,10 @@ class MainActivity : SimpleActivity(), FlingListener {
     }
 
     private fun hideFragment(fragment: ViewBinding, animationDuration: Long = ANIMATION_DURATION) {
+        val fluidInterpolator = PathInterpolator(0.2f, 0f, 0f, 1f)
         ObjectAnimator.ofFloat(fragment.root, "y", mScreenHeight.toFloat()).apply {
             duration = animationDuration
-            interpolator = DecelerateInterpolator()
+            interpolator = fluidInterpolator
             start()
         }
 
@@ -900,7 +925,17 @@ class MainActivity : SimpleActivity(), FlingListener {
         if (fragment is AllAppsFragmentBinding) {
             ObjectAnimator.ofFloat(binding.homeScreenGrid.root, "alpha", 1f).apply {
                 duration = animationDuration
-                interpolator = DecelerateInterpolator()
+                interpolator = fluidInterpolator
+                start()
+            }
+            ObjectAnimator.ofFloat(binding.homeScreenGrid.root, "scaleX", 1f).apply {
+                duration = animationDuration
+                interpolator = fluidInterpolator
+                start()
+            }
+            ObjectAnimator.ofFloat(binding.homeScreenGrid.root, "scaleY", 1f).apply {
+                duration = animationDuration
+                interpolator = fluidInterpolator
                 start()
             }
             refreshHomeScreenBadges()
@@ -1066,6 +1101,8 @@ class MainActivity : SimpleActivity(), FlingListener {
             val close = {
                 binding.allAppsFragment.root.y = mScreenHeight.toFloat()
                 binding.homeScreenGrid.root.alpha = 1f
+                binding.homeScreenGrid.root.scaleX = 1f
+                binding.homeScreenGrid.root.scaleY = 1f
                 binding.allAppsFragment.allAppsGrid.scrollToPosition(0)
                 binding.allAppsFragment.root.touchDownY = -1
                 binding.allAppsFragment.root.closeSearchMode()
@@ -1458,13 +1495,14 @@ class MainActivity : SimpleActivity(), FlingListener {
                 if (isFinishing || isDestroyed) return@runOnUiThread
                 AddAppDialog(this, apps) { selectedApp ->
                     val (page, rect) = getPlacementCell(x, y)
+                    val isDock = rect.top == config.homeRowCount - 1
                     val gridItem = HomeScreenGridItem(
                         id = null,
                         left = rect.left,
                         top = rect.top,
                         right = rect.right,
                         bottom = rect.bottom,
-                        page = page,
+                        page = if (isDock) 0 else page,
                         packageName = selectedApp.packageName,
                         activityName = selectedApp.activityName,
                         title = selectedApp.title,
@@ -1473,7 +1511,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                         widgetId = -1,
                         shortcutId = "",
                         icon = selectedApp.drawable?.toBitmap(),
-                        docked = false,
+                        docked = isDock,
                         parentId = null,
                         drawable = selectedApp.drawable
                     )
@@ -1481,7 +1519,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                     ensureBackgroundThread {
                         binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
                         runOnUiThread {
-                            if (page != binding.homeScreenGrid.root.getCurrentPage()) {
+                            if (!isDock && page != binding.homeScreenGrid.root.getCurrentPage()) {
                                 binding.homeScreenGrid.root.skipToPage(page)
                             }
                             toast(getString(R.string.app_added_to_home, selectedApp.title))
@@ -1524,13 +1562,14 @@ class MainActivity : SimpleActivity(), FlingListener {
         AddShortcutDialog(this, shortcutItems) { selectedShortcut ->
             handleShorcutCreation(selectedShortcut.activityInfo) { shortcutId, label, icon ->
                 val (page, rect) = getPlacementCell(x, y)
+                val isDock = rect.top == config.homeRowCount - 1
                 val gridItem = HomeScreenGridItem(
                     id = null,
                     left = rect.left,
                     top = rect.top,
                     right = rect.right,
                     bottom = rect.bottom,
-                    page = page,
+                    page = if (isDock) 0 else page,
                     packageName = selectedShortcut.activityInfo.packageName,
                     activityName = "",
                     title = label,
@@ -1539,7 +1578,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                     widgetId = -1,
                     shortcutId = shortcutId,
                     icon = icon.toBitmap(),
-                    docked = false,
+                    docked = isDock,
                     parentId = null,
                     drawable = icon
                 )
@@ -1547,7 +1586,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                 ensureBackgroundThread {
                     binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
                     runOnUiThread {
-                        if (page != binding.homeScreenGrid.root.getCurrentPage()) {
+                        if (!isDock && page != binding.homeScreenGrid.root.getCurrentPage()) {
                             binding.homeScreenGrid.root.skipToPage(page)
                         }
                         toast(R.string.shortcut_pinned)
@@ -1560,13 +1599,14 @@ class MainActivity : SimpleActivity(), FlingListener {
     fun showAddFolderDialog(x: Float? = null, y: Float? = null) {
         CreateFolderDialog(this) { folderName ->
             val (page, rect) = getPlacementCell(x, y)
+            val isDock = rect.top == config.homeRowCount - 1
             val gridItem = HomeScreenGridItem(
                 id = null,
                 left = rect.left,
                 top = rect.top,
                 right = rect.right,
                 bottom = rect.bottom,
-                page = page,
+                page = if (isDock) 0 else page,
                 packageName = "",
                 activityName = "",
                 title = folderName,
@@ -1575,7 +1615,7 @@ class MainActivity : SimpleActivity(), FlingListener {
                 widgetId = -1,
                 shortcutId = "",
                 icon = null,
-                docked = false,
+                docked = isDock,
                 parentId = null,
                 drawable = null
             )
@@ -1583,7 +1623,7 @@ class MainActivity : SimpleActivity(), FlingListener {
             ensureBackgroundThread {
                 binding.homeScreenGrid.root.storeAndShowGridItem(gridItem)
                 runOnUiThread {
-                    if (page != binding.homeScreenGrid.root.getCurrentPage()) {
+                    if (!isDock && page != binding.homeScreenGrid.root.getCurrentPage()) {
                         binding.homeScreenGrid.root.skipToPage(page)
                     }
                     toast(R.string.folder_created)
@@ -1727,13 +1767,17 @@ class MainActivity : SimpleActivity(), FlingListener {
 
     private fun launchWallpapersIntent() {
         try {
-            Intent(Intent.ACTION_SET_WALLPAPER).apply {
-                startActivity(this)
+            mPickWallpaperLauncher.launch("image/*")
+        } catch (_: Exception) {
+            try {
+                Intent(Intent.ACTION_SET_WALLPAPER).apply {
+                    startActivity(this)
+                }
+            } catch (_: ActivityNotFoundException) {
+                toast(org.fossify.commons.R.string.no_app_found)
+            } catch (e: Exception) {
+                showErrorToast(e)
             }
-        } catch (_: ActivityNotFoundException) {
-            toast(org.fossify.commons.R.string.no_app_found)
-        } catch (e: Exception) {
-            showErrorToast(e)
         }
     }
 

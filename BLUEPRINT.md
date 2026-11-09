@@ -630,6 +630,47 @@
     - Completely fixes the issue where Phone and Call (or separate activities in the same package) showed identical icons, correctly giving each its unique launcher icon.
   - **Security Sanitization**:
     - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Dock Add Target, Widget Inset, Icon Fattening, Popup Text, Folder Corner Anchor, Hidden Apps Auth & New Dot]
+  - **Dock Placement via Add Element Menu (`HomeScreenGrid.kt`, `MainActivity.kt`)**:
+    - Updated `HomeScreenGrid.getTargetCell(x, y)`: allows tapping dock slots (`tappedCell.y == rowCount - 1`) and checks dock occupancy via `gridItems.any { it.docked && it.left == tappedCell.x }`.
+    - Updated `MainActivity.showAddAppDialog()`, `showAddShortcutDialog()`, and `showAddFolderDialog()`: checks `val isDock = rect.top == config.homeRowCount - 1`, sets `docked = isDock`, `page = if (isDock) 0 else page`, and avoids unnecessary page skipping when placing docked items. Items added to dock from long press are now placed squarely into the dock rather than jumping to row 0.
+  - **Widget Border Squeezing & Cropping Elimination (`HomeScreenGrid.kt`)**:
+    - Added standard 4dp padding (`widgetView.setPadding(widgetPadding, widgetPadding, widgetPadding, widgetPadding)`) and configured `widgetView.clipToPadding = false` for non-clock widgets in `updateWidgetPositionAndSize()`, preventing third-party OEM widgets with rounded corners from being cropped at cell borders.
+  - **Folder Icon Shadow Softening & Proportional Icon Fattening (`HomeScreenGrid.kt`, `dimens.xml`)**:
+    - Softened home screen folder squircle shadow outline stroke from 2.5dp to 1.2dp (`#33000000`) and subtle border stroke from 1.5dp to 0.8dp (`alpha 80`), eliminating harsh dark outlines.
+    - Reduced `iconMargin` multiplier in `HomeScreenGrid.fillCellSizes()` from `0.22f` to `0.12f`, fattening all home screen app icons and folder bubbles by ~8–10% without clipping.
+    - Proportionally enlarged app drawer icon size in `dimens.xml` (`launcher_icon_size`) from `50dp` to `55dp`.
+  - **Larger Popup Menu Items Typography (`item_popup_shortcut.xml`, `popup_app_shortcuts.xml`)**:
+    - Increased `shortcut_item_label` text size from `15sp` to `16.5sp`, row height to `40dp`, and icon size to `22dp`.
+    - Increased `popup_app_title` text size to `16sp` with `36dp` header height.
+  - **Folder Popup Corner Overlap Anchoring (`HomeScreenGrid.kt`)**:
+    - Positioned open folder popup so the corner rests directly over the tapped folder icon (bottom-half aligns `cellBottom - folderDialogHeight`, top-half aligns `cellTop`, left-half aligns `cellLeft`, right-half aligns `cellRight - folderDialogWidth`), cleanly hiding the tapped folder under the corresponding popup corner.
+  - **Unconditional Hidden Apps Phone Unlock Authentication (`HiddenIconsActivity.kt`, `AppLockManager.kt`)**:
+    - Updated `HiddenIconsActivity.onCreate()` to always require phone unlock (Biometric / Device PIN / Pattern) before opening the hidden apps list, finishing the activity if authentication is cancelled or failed.
+    - Added `onError` callback support to `AppLockManager.authenticateAndLaunch()`.
+  - **Enlarged New App White Indicator Dot (`item_launcher_label.xml`)**:
+    - Increased `launcher_new_dot` dimensions from `8dp` to `12dp` with tightened margins (`marginTop="3dp"`, `marginEnd="4dp"`) for prominent visibility on newly installed apps in the app drawer.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+- [Phase: Lock Screen & App Drawer Wallpaper, Fluid Parallax Swipe Transition & Symbols/Glyphs Icon Customization]
+  - **Lock Screen, Home Screen & Drawer Wallpaper Engine (`WallpaperHelper.kt`, `AndroidManifest.xml`)**:
+    - Added `android.permission.SET_WALLPAPER` in `AndroidManifest.xml`.
+    - Created `WallpaperHelper.kt`: presents a clean selection sheet targeting **Home screen only** (`FLAG_SYSTEM`), **Lock screen only** (`FLAG_LOCK`), **Home and lock screen** (`FLAG_SYSTEM or FLAG_LOCK`), or **App drawer background**.
+    - App drawer custom wallpaper is compressed and cached as `filesDir/drawer_wallpaper.png` scaled to screen bounds. Applied in `View.setupDrawerBackground()` with a subtle 30% legibility scrim (`#4D000000`). Default remains pure black (`Color.BLACK`).
+    - Wired settings in `SettingsActivity.kt` (*Set wallpaper* in Appearance, and *App drawer background* in App Drawer) and integrated with the home screen long-press *Wallpapers* action in `MainActivity.kt`.
+    - Zero ongoing resource overhead: once applied via `WallpaperManager`, the Android OS handles the lock screen wallpaper natively.
+  - **Fluid Parallax Swipe-Up Transition (`MainActivity.kt`)**:
+    - Upgraded `showFragment` and `hideFragment` with high-performance `PathInterpolator(0.2f, 0f, 0f, 1f)` (Fast-Out-Slow-In).
+    - Linked home screen scale directly to gesture drag progress in `ACTION_MOVE` (`scale = 1f - progress * 0.06f`, `alpha = 1f - progress * 1.05f`), providing an organic depth push-back effect into the background.
+    - Synchronized smooth restoration in `hideFragment` and `closeAppDrawer`.
+  - **Curated Symbols & Glyphs Custom Icon Picker (`PickSymbolDialog.kt`, `EditItemDialog.kt`, `item_symbol_glyph.xml`, `dialog_pick_symbol.xml`)**:
+    - Created `PickSymbolDialog` offering a clean 4-column grid of curated Material symbols and glyphs (folders, settings gear, lock, search, cloud, star, phone, camera, mail, play, pause, etc.).
+    - Renders chosen vector glyph onto a crisp 192x192 squircle icon plate (`#1E2229` dark surface with 20% white border) tinted with the user's dynamic primary accent color.
+    - Added "Choose from symbols & glyphs" option to `EditItemDialog`, allowing users to assign symbols directly to apps and folders without needing third-party icon pack APKs.
+  - **Security Sanitization**:
+    - Verified workspace cleanliness; guaranteed zero exposed credentials or persistent keystores.
+
+
 
 
 

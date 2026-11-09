@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.dialogs.RadioGroupDialog
 import org.fossify.commons.extensions.beVisibleIf
+import org.fossify.commons.extensions.getAlertDialogBuilder
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.launchMoreAppsFromUsIntent
 import org.fossify.commons.extensions.toast
@@ -113,6 +114,7 @@ class SettingsActivity : SimpleActivity() {
         refreshMenuItems()
 
         setupCustomizeColors()
+        setupSetWallpaper()
         setupUseEnglish()
         setupLanguage()
         setupHomeRowCount()
@@ -121,6 +123,7 @@ class SettingsActivity : SimpleActivity() {
         setupShowHomeAppLabels()
         setupNotificationBadges()
         setupDrawerColumnCount()
+        setupDrawerWallpaper()
         setupDrawerSearchBar()
         setupOpenKeyboardOnAppDrawer()
         setupCloseAppDrawerOnOtherAppOpen()
@@ -160,6 +163,52 @@ class SettingsActivity : SimpleActivity() {
         binding.settingsToolbar.menu.apply {
             findItem(R.id.more_apps_from_us).isVisible =
                 !resources.getBoolean(org.fossify.commons.R.bool.hide_google_relations)
+        }
+    }
+
+    private val pickWallpaperLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            shura.home.helpers.WallpaperHelper.showWallpaperTargetDialog(this, uri) {
+                setupDrawerWallpaper()
+            }
+        }
+    }
+
+    private fun setupSetWallpaper() {
+        binding.settingsSetWallpaperHolder.setOnClickListener {
+            pickWallpaperLauncher.launch("image/*")
+        }
+    }
+
+    private fun setupDrawerWallpaper() {
+        val hasCustom = config.drawerUseCustomWallpaper && shura.home.helpers.WallpaperHelper.hasCustomDrawerWallpaper(this)
+        binding.settingsDrawerWallpaper.text = if (hasCustom) {
+            getString(R.string.drawer_bg_custom_wallpaper)
+        } else {
+            getString(R.string.drawer_bg_pure_black)
+        }
+
+        binding.settingsDrawerWallpaperHolder.setOnClickListener {
+            val options = arrayOf(
+                getString(R.string.drawer_bg_pure_black),
+                getString(R.string.drawer_bg_custom_wallpaper)
+            )
+
+            getAlertDialogBuilder()
+                .setTitle(R.string.drawer_wallpaper)
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> {
+                            shura.home.helpers.WallpaperHelper.removeDrawerWallpaper(this)
+                            setupDrawerWallpaper()
+                        }
+                        1 -> {
+                            pickWallpaperLauncher.launch("image/*")
+                        }
+                    }
+                }
+                .setNegativeButton(org.fossify.commons.R.string.cancel, null)
+                .show()
         }
     }
 

@@ -201,6 +201,18 @@
     <string name="share_app">Share app</string>
     <string name="notification_badges">Notification badges</string>
     <string name="notification_badges_desc">Show unread count badges on home screen icons</string>
+    <string name="set_wallpaper">Set wallpaper</string>
+    <string name="wallpaper_target_home">Home screen only</string>
+    <string name="wallpaper_target_lock">Lock screen only</string>
+    <string name="wallpaper_target_both">Home and lock screen</string>
+    <string name="wallpaper_target_drawer">App drawer background</string>
+    <string name="drawer_wallpaper">App drawer background</string>
+    <string name="drawer_bg_pure_black">Pure Black (Default)</string>
+    <string name="drawer_bg_custom_wallpaper">Custom Image Wallpaper</string>
+    <string name="wallpaper_applied_successfully">Wallpaper applied successfully</string>
+    <string name="wallpaper_apply_failed">Failed to set wallpaper</string>
+    <string name="choose_from_symbols">Choose from symbols &amp; glyphs</string>
+    <string name="select_symbol">Select a symbol</string>
     <!--
         Haven't found some strings? There's more at
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res

@@ -25,5 +25,16 @@ fun View.animateScale(
     }
 
 fun View.setupDrawerBackground() {
+    if (context.config.drawerUseCustomWallpaper && shura.home.helpers.WallpaperHelper.hasCustomDrawerWallpaper(context)) {
+        val bitmap = shura.home.helpers.WallpaperHelper.loadDrawerWallpaperBitmap(context)
+        if (bitmap != null) {
+            val drawable = android.graphics.drawable.BitmapDrawable(resources, bitmap).apply {
+                // Apply subtle 30% black color filter so icons/labels remain 100% readable
+                setColorFilter(Color.parseColor("#4D000000"), android.graphics.PorterDuff.Mode.SRC_ATOP)
+            }
+            background = drawable
+            return
+        }
+    }
     setBackgroundColor(Color.BLACK)
 }

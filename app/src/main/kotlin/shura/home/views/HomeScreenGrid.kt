@@ -1499,6 +1499,9 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         val widgetDpHeight = (widgetHeight / density).toInt()
 
         if (widgetView !is BuiltInClockWidgetView) {
+            val widgetPadding = (4 * density).toInt()
+            widgetView.setPadding(widgetPadding, widgetPadding, widgetPadding, widgetPadding)
+            widgetView.clipToPadding = false
             if (isSPlus()) {
                 val sizes = listOf(SizeF(widgetDpWidth.toFloat(), widgetDpHeight.toFloat()))
                 widgetView.updateAppWidgetSize(Bundle(), sizes)
@@ -1993,7 +1996,7 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
         val effectiveCellWidth = min(cellWidth, dockCellWidth)
         val maxCols = max(columnCount, dockColumnCount)
         iconMargin =
-            (context.resources.getDimension(R.dimen.icon_side_margin) * 0.22f).toInt().coerceAtLeast(2)
+            (context.resources.getDimension(R.dimen.icon_side_margin) * 0.12f).toInt().coerceAtLeast(1)
         iconSize = min(effectiveCellWidth, cellHeight) - 2 * iconMargin
         dockCellY = (rowCount - 1) * cellHeight
         pageIndicatorsYPos = dockCellY + extraYMargin
@@ -2311,9 +2314,14 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             rect.contains(adjustedX.toInt(), adjustedY.toInt())
         }?.key
 
-        if (tappedCell != null && tappedCell.y < rowCount - 1) {
-            val isOccupied = gridItems.filterVisibleOnCurrentPageOnly().any { item ->
-                tappedCell.x in item.left..item.right && tappedCell.y in item.top..item.bottom
+        if (tappedCell != null) {
+            val isDock = tappedCell.y == rowCount - 1
+            val isOccupied = if (isDock) {
+                gridItems.any { it.docked && it.left == tappedCell.x }
+            } else {
+                gridItems.filterVisibleOnCurrentPageOnly().any { item ->
+                    tappedCell.x in item.left..item.right && tappedCell.y in item.top..item.bottom
+                }
             }
             if (!isOccupied) {
                 return tappedCell
@@ -2671,12 +2679,12 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             val inset = 3.5f * resources.displayMetrics.density
             val squirclePath = createSquirclePath(inset, inset, iconSize.toFloat() - inset, iconSize.toFloat() - inset)
 
-            // Outer drop shadow around squircle border
+            // Outer soft drop shadow around squircle border
             val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#4D000000")
+                color = Color.parseColor("#33000000")
                 style = Paint.Style.STROKE
-                strokeWidth = 2.5f * resources.displayMetrics.density
-                maskFilter = android.graphics.BlurMaskFilter(2.5f * resources.displayMetrics.density, android.graphics.BlurMaskFilter.Blur.NORMAL)
+                strokeWidth = 1.2f * resources.displayMetrics.density
+                maskFilter = android.graphics.BlurMaskFilter(1.5f * resources.displayMetrics.density, android.graphics.BlurMaskFilter.Blur.NORMAL)
             }
             canvas.drawPath(squirclePath, shadowPaint)
 
@@ -2689,9 +2697,9 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
 
             // Subtle white bubble border outline
             val bubbleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = ColorUtils.setAlphaComponent(Color.WHITE, 90)
+                color = ColorUtils.setAlphaComponent(Color.WHITE, 80)
                 style = Paint.Style.STROKE
-                strokeWidth = 1.5f * resources.displayMetrics.density
+                strokeWidth = 0.8f * resources.displayMetrics.density
             }
             canvas.drawPath(squirclePath, bubbleBorderPaint)
 
@@ -2746,17 +2754,21 @@ class HomeScreenGrid(context: Context, attrs: AttributeSet, defStyle: Int) :
             val gridMiddleY = (top + sideMargins.top + bottom - sideMargins.bottom) / 2f
             val gridMiddleX = (left + sideMargins.left + right - sideMargins.right) / 2f
 
-            // Vertical: If folder is in the bottom half of grid, open above folder; if in top half, open below folder
+            // Positioning: The corner of the popup rests directly on top of the tapped folder
+            // (folder is hidden underneath that corner of the popup).
             var folderDialogTop = if (cellTopWithMargin >= gridMiddleY) {
-                cellTopWithMargin - folderDialogHeight - gap
+                // Bottom half: bottom of popup covers folder cell bottom (popup corner sits over folder)
+                cellBottomWithMargin - folderDialogHeight
             } else {
-                cellBottomWithMargin + gap
+                // Top half: top of popup covers folder cell top (popup corner sits over folder)
+                cellTopWithMargin
             }
 
-            // Horizontal: Anchor corner of popup to folder tap (left corner if on left side, right corner if on right side)
             var folderDialogLeft = if (cellLeftWithMargin <= gridMiddleX) {
+                // Left half: left of popup covers folder cell left
                 cellLeftWithMargin
             } else {
+                // Right half: right of popup covers folder cell right
                 cellRightWithMargin - folderDialogWidth
             }
 

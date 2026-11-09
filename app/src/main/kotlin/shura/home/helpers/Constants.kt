@@ -32,6 +32,7 @@ const val FOLDER_COVER_MODE = "folder_cover_mode"
 const val GESTURE_HAPTICS = "gesture_haptics"
 const val SHOW_NOTIFICATION_BADGES = "show_notification_badges"
 const val NEW_INSTALLED_PACKAGES = "new_installed_packages"
+const val DRAWER_USE_CUSTOM_WALLPAPER = "drawer_use_custom_wallpaper"
 
 const val DRAWER_SORT_BY_NAME = 1
 const val DRAWER_SORT_BY_TIME = 2

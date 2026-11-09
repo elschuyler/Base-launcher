@@ -218,6 +218,7 @@ class EditItemDialog(
         val options = arrayOf(
             activity.getString(R.string.choose_from_gallery),
             activity.getString(R.string.choose_from_apps),
+            activity.getString(R.string.choose_from_symbols),
             activity.getString(R.string.reset_to_default_icon)
         )
 
@@ -244,6 +245,13 @@ class EditItemDialog(
                         }
                     }
                     2 -> {
+                        PickSymbolDialog(activity) { bitmap ->
+                            pendingCustomIcon = bitmap
+                            isIconReset = false
+                            binding.editItemIcon.setImageBitmap(bitmap)
+                        }
+                    }
+                    3 -> {
                         isIconReset = true
                         pendingCustomIcon = null
                         if (item.drawable != null) {
